@@ -10,6 +10,7 @@ Binary: **`camunda`**. Project / Homebrew formula: **`camunda-lab`**.
 | Command | Purpose |
 | --- | --- |
 | `install` | Download zip, configure, start |
+| `ui` | Local Lab UI (http://127.0.0.1:9090) |
 | `ai` | MCP + AI Agent connector secrets |
 | `up` / `start` | Start |
 | `down` / `stop` | Stop (keep volumes) |
@@ -52,6 +53,23 @@ camunda install --version 8.9 --profile light --yes --ai --openai-key "$OPENAI_A
 See [AI and MCP](ai-mcp.md).
 
 Fetches the official zip into `~/.camunda-lab/versions/<minor>/`, writes config, runs compose up.
+
+---
+
+## ui
+
+```bash
+camunda ui
+camunda ui --port 9090 --no-open
+```
+
+| Flag | Meaning |
+|------|---------|
+| `--host` | Listen address (loopback only; default `127.0.0.1`) |
+| `--port` | Port (default `9090`, or `CAMUNDA_LAB_UI_PORT`) |
+| `--no-open` | Do not open a browser |
+
+Serves an embedded SPA + `/api/v1` control plane: Overview, Setup, Apps, Containers, Logs, AI/MCP, Tools, Danger. No auth — refuses non-loopback binds. Spec: [lab UI design](https://github.com/nasraldin/camunda-lab/blob/main/docs/superpowers/specs/2026-07-17-lab-ui-design.md).
 
 ---
 
@@ -229,7 +247,7 @@ Camunda Lab
   Platform    Apple M1 Max
   Memory      64 GB
 
-  Features    compose · profiles · version-switch · overlays · elasticvue · ai · mcp · c8ctl · modeler · doctor · smoke
+  Features    compose · profiles · version-switch · overlays · elasticvue · ai · mcp · ui · c8ctl · modeler · doctor · smoke
 
   Repo        https://github.com/nasraldin/camunda-lab
   Docs        https://nasraldin.github.io/camunda-lab/

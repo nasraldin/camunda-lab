@@ -62,6 +62,13 @@ camunda ai enable --openai-key "$OPENAI_API_KEY"
 camunda ai config
 ```
 
+Or manage the lab from a browser (no auth, loopback only):
+
+```bash
+camunda ui
+# opens http://127.0.0.1:9090
+```
+
 Default app login from Camunda’s compose files: **demo** / **demo**.
 
 ## Why this exists
@@ -73,6 +80,7 @@ Default app login from Camunda’s compose files: **demo** / **demo**.
 | Change 8.8 → 8.9 | Manual | Chart dance | `camunda switch` |
 | “Where’s Operate?” | Dig the README | Port-forward | `camunda urls` |
 | Doctor / smoke | You write it | You write it | Built in |
+| Browser control panel | DIY | DIY | `camunda ui` |
 | MCP + AI Agent secrets | DIY | DIY | `camunda ai` |
 
 More detail: [Why Camunda Lab](comparison.md).
@@ -84,6 +92,7 @@ More detail: [Why Camunda Lab](comparison.md).
 | `camunda install` | Download the zip, configure, start |
 | `camunda wait` | Block until the stack looks healthy |
 | `camunda urls` / `open` | Ports without guessing |
+| `camunda ui` | Local control panel in the browser |
 | `camunda ai enable` / `config` | MCP endpoints + AI Agent secrets |
 | `camunda switch 8.9 --wipe` | Another minor, clean volumes |
 | `camunda doctor` | Docker, compose, config sanity |

@@ -80,6 +80,13 @@ camunda ai config    # Cursor / Claude MCP JSON
 # camunda install --version 8.9 --profile light --yes --ai --openai-key "$OPENAI_API_KEY"
 ```
 
+**Lab UI** (embedded control panel, no auth, localhost only):
+
+```bash
+camunda ui
+# http://127.0.0.1:9090
+```
+
 Default app login: **demo** / **demo**.
 
 Ports differ by Camunda minor — run `camunda urls` (see [profiles](https://nasraldin.github.io/camunda-lab/profiles/)).
@@ -94,6 +101,7 @@ Ports differ by Camunda minor — run `camunda urls` (see [profiles](https://nas
 | `camunda about` | Project + runtime info |
 | `camunda wait` / `doctor` / `smoke` | Health |
 | `camunda urls` / `open` | Where the UIs live |
+| `camunda ui` | Local Lab UI (http://127.0.0.1:9090) |
 | `camunda ai enable` / `config` | MCP + AI Agent secrets (8.9+) |
 | `camunda switch 8.9 --wipe` | Another minor, clean volumes |
 | `camunda profile light\|full\|modeler` | Compose profile |

@@ -34,8 +34,9 @@ This is an honest status page — not a delivery calendar. Dates slip; features 
 
 ## Next up
 
-Things we’re actively interested in — no ETA:
+Things we’re actively building or next in line — no hard ETA:
 
+- **Lab UI (embedded control panel)** — `camunda ui` serves a local SPA on `http://127.0.0.1:9090` (no auth, loopback only) so you can install/switch/up/down, open apps, tail logs, manage AI/MCP, and run light ops without living in the terminal. Spec: [lab UI design](https://github.com/nasraldin/camunda-lab/blob/main/docs/superpowers/specs/2026-07-17-lab-ui-design.md). *Shipping on main; next release will advertise it.*
 - Optional Cosign verify when `cosign` is on your PATH
 - Scheduled LIVE smoke in CI (nightly-ish; too heavy for every PR)
 - Optional `--write-cursor` to drop MCP JSON into the user’s Cursor config
@@ -43,6 +44,7 @@ Things we’re actively interested in — no ETA:
 
 ## Later / maybe
 
+- **Console lite (Lab UI scope 3)** — process definitions, start instance, instance/incident views, job retry, richer connector secrets, Operate deep links — inside the same localhost UI, using official Camunda APIs (not a full Optimize/Identity rebuild). Details in the [lab UI design](https://github.com/nasraldin/camunda-lab/blob/main/docs/superpowers/specs/2026-07-17-lab-ui-design.md) “Future — option 3” section
 - Named labs (`camunda --name upgrade-test`) for side-by-side minors
 - Windows support if there’s real demand
 - Thin Kind/Helm bridge that keeps the same CLI verbs for people who outgrew Compose

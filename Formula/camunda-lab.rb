@@ -33,9 +33,10 @@ class CamundaLab < Formula
 
       After install:
 
-        camunda install --version 8.8 --profile light --yes
+        camunda install --version 8.9 --profile light --yes
         camunda wait
         camunda urls
+        camunda ui   # http://127.0.0.1:9090
 
       Docs: https://nasraldin.github.io/camunda-lab/
     EOS
