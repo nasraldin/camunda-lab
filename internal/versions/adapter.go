@@ -79,6 +79,35 @@ func HasHostElasticsearch(minor, profile string) bool {
 	return false
 }
 
+// SupportsClusterMCP is true for Camunda 8.9+ (Orchestration Cluster MCP).
+func SupportsClusterMCP(minor string) bool {
+	switch minor {
+	case "8.9", "8.10":
+		return true
+	default:
+		return false
+	}
+}
+
+// SupportsProcessesMCP is true for Camunda 8.10+ (Processes MCP /mcp/processes).
+func SupportsProcessesMCP(minor string) bool {
+	return minor == "8.10"
+}
+
+// SupportsAIFeature gates camunda ai / --ai (8.9+ light|full).
+func SupportsAIFeature(minor, profile string) error {
+	if !SupportsClusterMCP(minor) {
+		return fmt.Errorf("AI/MCP requires Camunda 8.9+ (got %s)", minor)
+	}
+	if profile == "modeler" {
+		return fmt.Errorf("AI/MCP is not available on the modeler profile")
+	}
+	if profile != "light" && profile != "full" {
+		return fmt.Errorf("AI/MCP requires profile light or full (got %s)", profile)
+	}
+	return nil
+}
+
 func ReleaseTag(minor string) string {
 	return "docker-compose-" + minor
 }

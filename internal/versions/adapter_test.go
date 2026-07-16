@@ -87,3 +87,39 @@ func TestHasHostElasticsearch(t *testing.T) {
 		}
 	}
 }
+
+func TestSupportsClusterMCP(t *testing.T) {
+	if versions.SupportsClusterMCP("8.8") {
+		t.Fatal("8.8")
+	}
+	if !versions.SupportsClusterMCP("8.9") {
+		t.Fatal("8.9")
+	}
+	if !versions.SupportsClusterMCP("8.10") {
+		t.Fatal("8.10")
+	}
+}
+
+func TestSupportsProcessesMCP(t *testing.T) {
+	if versions.SupportsProcessesMCP("8.9") {
+		t.Fatal("8.9")
+	}
+	if !versions.SupportsProcessesMCP("8.10") {
+		t.Fatal("8.10")
+	}
+}
+
+func TestSupportsAIFeature(t *testing.T) {
+	if err := versions.SupportsAIFeature("8.8", "light"); err == nil {
+		t.Fatal("expected version error")
+	}
+	if err := versions.SupportsAIFeature("8.9", "modeler"); err == nil {
+		t.Fatal("expected profile error")
+	}
+	if err := versions.SupportsAIFeature("8.9", "light"); err != nil {
+		t.Fatal(err)
+	}
+	if err := versions.SupportsAIFeature("8.10", "full"); err != nil {
+		t.Fatal(err)
+	}
+}
