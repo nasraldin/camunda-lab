@@ -100,6 +100,8 @@ camunda open operate
 camunda open keycloak
 ```
 
+URLs depend on the active **minor** (8.7 vs 8.8 vs 8.9+). See [Ports and URLs](profiles.md#ports-and-urls).
+
 `open` uses `open` on macOS and `xdg-open` on Linux.
 
 ---
@@ -167,4 +169,39 @@ Stops with volumes and deletes `~/.camunda-lab` (or `CAMUNDA_LAB_HOME`). Destruc
 ```bash
 camunda version
 camunda about
+```
+
+`about` prints a docker-lab-style info card: author, CLI version, lab paths, active version/profile, Docker/Compose runtime, and feature list.
+
+```console
+$ camunda about
+Camunda Lab
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Author      Nasr Aldin
+  Website     https://nasraldin.com
+
+  Version     0.1.0
+  Tagline     Local Camunda 8 platform lab (Docker Compose)
+  CLI path    /opt/homebrew/bin/camunda
+  Global      /opt/homebrew/bin/camunda
+  Lab home    /Users/you/.camunda-lab
+  Config      /Users/you/.camunda-lab/config.yaml
+  Versions    /Users/you/.camunda-lab/versions
+  Active      version=8.8 profile=light resources=balanced project=camunda-lab
+
+  Docker      Docker 28.x (engine 28.x)
+  Compose     Docker Compose v2.x
+  Platform    Apple M1 Max
+  Memory      64 GB
+
+  Features    compose · profiles · version-switch · overlays · c8ctl · modeler · doctor · smoke
+
+  Repo        https://github.com/nasraldin/camunda-lab
+  Docs        https://nasraldin.github.io/camunda-lab/
+
+  Commands    N available — run: camunda help
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Unofficial community project — wraps Camunda's official Compose. Not affiliated with Camunda GmbH.
 ```
