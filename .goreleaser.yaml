@@ -5,6 +5,7 @@ project_name: camunda-lab
 before:
   hooks:
     - go mod tidy
+    # UI dist is built in CI before GoReleaser (make ui). Local: make ui.
 
 builds:
   - id: camunda

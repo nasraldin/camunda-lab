@@ -1,8 +1,13 @@
-.PHONY: build test vet fmt tidy lint install check
+.PHONY: build test vet fmt tidy lint install check ui
 
 VERSION ?= 0.0.0-dev
 
+ui:
+	cd internal/ui/web && npm ci && npm run build
+
+# Fast binary build when web/dist already exists (e.g. after make ui or committed dist).
 build:
+	@test -f internal/ui/web/dist/index.html || $(MAKE) ui
 	go build -ldflags "-X main.version=$(VERSION)" -o bin/camunda ./cmd/camunda
 
 test:
@@ -12,10 +17,10 @@ vet:
 	go vet ./...
 
 fmt:
-	gofmt -w $$(find . -name '*.go' -not -path './.worktrees/*')
+	gofmt -w $$(find . -name '*.go' -not -path './.worktrees/*' -not -path './internal/ui/web/node_modules/*')
 
 fmt-check:
-	@out="$$(gofmt -l $$(find . -name '*.go' -not -path './.worktrees/*'))"; \
+	@out="$$(gofmt -l $$(find . -name '*.go' -not -path './.worktrees/*' -not -path './internal/ui/web/node_modules/*'))"; \
 	if [ -n "$$out" ]; then echo "gofmt needed:"; echo "$$out"; exit 1; fi
 
 tidy:
