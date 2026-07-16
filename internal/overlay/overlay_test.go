@@ -68,7 +68,7 @@ func TestComposeOverrideFiles810Full(t *testing.T) {
 		t.Fatal(err)
 	}
 	bases := basenames(files)
-	want := []string{"elasticsearch-8.10.yaml", "elasticsearch-cors.yaml", "elasticvue.yaml"}
+	want := []string{"elasticsearch-8.10.yaml", "elasticsearch-cors.yaml", "elasticvue.yaml", "http-headers.yaml"}
 	if len(bases) != len(want) {
 		t.Fatalf("got %v want %v", bases, want)
 	}
@@ -88,7 +88,7 @@ func TestComposeOverrideFiles89Full(t *testing.T) {
 		t.Fatal(err)
 	}
 	bases := basenames(files)
-	want := []string{"elasticsearch-cors.yaml", "elasticvue.yaml"}
+	want := []string{"elasticsearch-cors.yaml", "elasticvue.yaml", "http-headers.yaml"}
 	if len(bases) != len(want) {
 		t.Fatalf("got %v want %v", bases, want)
 	}
@@ -131,7 +131,7 @@ func TestComposeOverrideFilesModelerNone(t *testing.T) {
 
 func TestOverlaysInSync(t *testing.T) {
 	root := repoRoot(t)
-	names := []string{"elasticsearch-8.10.yaml", "elasticsearch-cors.yaml", "elasticvue.yaml"}
+	names := []string{"elasticsearch-8.10.yaml", "elasticsearch-cors.yaml", "elasticvue.yaml", "http-headers.yaml"}
 	for _, name := range names {
 		embedPath := filepath.Join(root, "internal", "overlay", "embed", name)
 		repoPath := filepath.Join(root, "overlays", name)

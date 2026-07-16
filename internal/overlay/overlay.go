@@ -19,6 +19,9 @@ var elasticsearchCorsYAML []byte
 //go:embed embed/elasticvue.yaml
 var elasticvueYAML []byte
 
+//go:embed embed/http-headers.yaml
+var httpHeadersYAML []byte
+
 func ValidateResources(resources string) error {
 	switch resources {
 	case "small", "balanced", "power":
@@ -87,6 +90,11 @@ func ComposeOverrideFiles(minor, profile string) ([]string, error) {
 			return nil, err
 		}
 		if err := write("elasticvue.yaml", elasticvueYAML); err != nil {
+			return nil, err
+		}
+	}
+	if profile == "full" {
+		if err := write("http-headers.yaml", httpHeadersYAML); err != nil {
 			return nil, err
 		}
 	}
