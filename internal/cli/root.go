@@ -23,14 +23,12 @@ switching, doctor, and developer tool helpers. Not affiliated with Camunda GmbH.
 	}
 	root.AddCommand(newVersionCmd())
 	root.AddCommand(newAboutCmd())
-	// stubs registered here; real bodies in later tasks
-	root.AddCommand(placeholder("install", "Install and start a Camunda lab"))
-	root.AddCommand(placeholder("up", "Start the active lab"))
-	root.AddCommand(placeholder("start", "Alias for up"))
-	root.AddCommand(placeholder("down", "Stop the lab (keep volumes)"))
-	root.AddCommand(placeholder("stop", "Alias for down"))
-	root.AddCommand(placeholder("restart", "Restart the lab"))
-	root.AddCommand(placeholder("status", "Show lab status"))
+	root.AddCommand(newInstallCmd())
+	root.AddCommand(newUpCmd())
+	root.AddCommand(newDownCmd())
+	root.AddCommand(newRestartCmd())
+	root.AddCommand(newStatusCmd())
+	// stubs; real bodies in later tasks
 	root.AddCommand(placeholder("switch", "Switch Camunda minor version"))
 	root.AddCommand(placeholder("profile", "Set compose profile (light|full|modeler)"))
 	root.AddCommand(placeholder("resources", "Set resource profile"))
