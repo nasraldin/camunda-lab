@@ -58,6 +58,23 @@ func NeedsElasticsearchOverlay(minor, profile string) bool {
 	return minor == "8.10" && profile == "full"
 }
 
+// HasHostElasticsearch reports whether this profile publishes Elasticsearch on host :9200.
+// Matches urls.List elasticsearch entries (no ES for modeler or 8.10 light).
+func HasHostElasticsearch(minor, profile string) bool {
+	if profile == "modeler" {
+		return false
+	}
+	if minor == "8.10" && profile == "light" {
+		return false
+	}
+	switch profile {
+	case "light", "full":
+		return true
+	default:
+		return false
+	}
+}
+
 func ReleaseTag(minor string) string {
 	return "docker-compose-" + minor
 }

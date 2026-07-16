@@ -63,3 +63,26 @@ func TestPreview(t *testing.T) {
 		t.Fatal("8.8 should not be preview")
 	}
 }
+
+func TestHasHostElasticsearch(t *testing.T) {
+	cases := []struct {
+		minor, profile string
+		want           bool
+	}{
+		{"8.7", "light", true},
+		{"8.7", "full", true},
+		{"8.7", "modeler", false},
+		{"8.8", "light", true},
+		{"8.9", "light", true},
+		{"8.9", "full", true},
+		{"8.10", "light", false},
+		{"8.10", "full", true},
+		{"8.10", "modeler", false},
+	}
+	for _, tc := range cases {
+		got := versions.HasHostElasticsearch(tc.minor, tc.profile)
+		if got != tc.want {
+			t.Fatalf("%s/%s: got %v want %v", tc.minor, tc.profile, got, tc.want)
+		}
+	}
+}
