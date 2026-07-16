@@ -54,7 +54,7 @@ func (l *Lab) RecreateConnectors(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	display.Step(os.Stdout, "Recreating connectors with AI secrets overlay...")
+	display.Step(os.Stdout, "Recreating connectors...")
 	if err := l.Engine.UpService(workDir, files, envFiles, cfg.ComposeProject, "connectors"); err != nil {
 		return err
 	}

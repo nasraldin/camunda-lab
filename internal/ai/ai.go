@@ -111,25 +111,44 @@ func MCPClientConfig(cfg config.Config) (string, error) {
 		port = 8088
 	}
 	base := fmt.Sprintf("http://%s:%d", host, port)
+	oauth := fmt.Sprintf("http://%s:18080/auth/realms/camunda-platform/protocol/openid-connect/token", host)
 	cluster := base + "/mcp/cluster"
+	processes := base + "/mcp/processes"
 
 	if cfg.Profile == "full" {
-		return fmt.Sprintf(`{
-  "mcpServers": {
-    "camunda-cluster": {
+		servers := fmt.Sprintf(`    "camunda-cluster": {
       "command": "npx",
       "args": ["-y", "@camunda8/cli", "mcp-proxy"],
       "env": {
         "CAMUNDA_BASE_URL": %q,
         "CAMUNDA_CLIENT_ID": "<client-id>",
         "CAMUNDA_CLIENT_SECRET": "<client-secret>",
-        "CAMUNDA_OAUTH_URL": "http://localhost:18080/auth/realms/camunda-platform/protocol/openid-connect/token",
+        "CAMUNDA_OAUTH_URL": %q,
         "CAMUNDA_TOKEN_AUDIENCE": "orchestration-api"
       }
-    }
-  }
-}
-`, base), nil
+    }`, base, oauth)
+		if versions.SupportsProcessesMCP(cfg.Version) {
+			// Processes MCP shares the same OAuth proxy; clients that support path selection
+			// can target /mcp/processes. Listed so 8.10 full matches light discoverability.
+			servers += fmt.Sprintf(`,
+    "camunda-processes": {
+      "command": "npx",
+      "args": ["-y", "@camunda8/cli", "mcp-proxy"],
+      "env": {
+        "CAMUNDA_BASE_URL": %q,
+        "CAMUNDA_CLIENT_ID": "<client-id>",
+        "CAMUNDA_CLIENT_SECRET": "<client-secret>",
+        "CAMUNDA_OAUTH_URL": %q,
+        "CAMUNDA_TOKEN_AUDIENCE": "orchestration-api",
+        "CAMUNDA_MCP_PATH": "/mcp/processes"
+      }
+    }`, base, oauth)
+		}
+		out := fmt.Sprintf("{\n  \"mcpServers\": {\n%s\n  }\n}\n", servers)
+		if versions.SupportsProcessesMCP(cfg.Version) {
+			out += fmt.Sprintf("# Processes MCP endpoint: %s\n", processes)
+		}
+		return out, nil
 	}
 
 	servers := fmt.Sprintf(`    "camunda-cluster": {
@@ -141,7 +160,7 @@ func MCPClientConfig(cfg config.Config) (string, error) {
     "camunda-processes": {
       "type": "http",
       "url": %q
-    }`, base+"/mcp/processes")
+    }`, processes)
 	}
 	return fmt.Sprintf("{\n  \"mcpServers\": {\n%s\n  }\n}\n", servers), nil
 }

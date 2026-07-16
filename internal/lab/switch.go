@@ -24,6 +24,10 @@ func (l *Lab) Switch(ctx context.Context, minor string, wipe bool) error {
 	display.Step(os.Stdout, "Switching lab to Camunda %s...", minor)
 	_ = l.Down(ctx, wipe)
 	cfg.Version = minor
+	if cfg.AI.Enabled && versions.SupportsAIFeature(cfg.Version, cfg.Profile) != nil {
+		display.Note(os.Stderr, "disabling AI/MCP — not supported on %s/%s", cfg.Version, cfg.Profile)
+		cfg.AI.Enabled = false
+	}
 	if err := config.Save(cfg); err != nil {
 		return err
 	}
@@ -44,6 +48,10 @@ func (l *Lab) SetProfile(ctx context.Context, profile string) error {
 	display.Step(os.Stdout, "Switching profile to %s...", profile)
 	_ = l.Down(ctx, false)
 	cfg.Profile = profile
+	if cfg.AI.Enabled && versions.SupportsAIFeature(cfg.Version, cfg.Profile) != nil {
+		display.Note(os.Stderr, "disabling AI/MCP — not supported on %s/%s", cfg.Version, cfg.Profile)
+		cfg.AI.Enabled = false
+	}
 	if err := config.Save(cfg); err != nil {
 		return err
 	}

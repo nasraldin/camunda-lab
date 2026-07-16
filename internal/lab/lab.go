@@ -125,6 +125,12 @@ func (l *Lab) Install(ctx context.Context, opts InstallOpts) error {
 		return err
 	}
 
+	if opts.AI {
+		if err := ai.ValidateForEnable(version, profile, opts.AISecrets); err != nil {
+			return err
+		}
+	}
+
 	if err := l.Up(ctx); err != nil {
 		return err
 	}

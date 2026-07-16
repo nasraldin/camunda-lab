@@ -104,9 +104,10 @@ Prints active version / profile / resources and `docker compose ps` for project 
 ```bash
 camunda switch 8.9
 camunda switch 8.9 --wipe
+camunda switch 8.9 --ai --openai-key "$OPENAI_API_KEY"
 ```
 
-Changes the active minor, downloads that zip if needed, starts again. `--wipe` runs compose down with volumes first.
+Changes the active minor, downloads that zip if needed, starts again. `--wipe` runs compose down with volumes first. `--ai` enables MCP + AI Agent secrets after a successful switch (8.9+ only; validated before switch).
 
 ---
 

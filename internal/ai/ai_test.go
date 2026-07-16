@@ -62,12 +62,29 @@ func TestMCPClientConfigLight(t *testing.T) {
 }
 
 func TestMCPClientConfigFull(t *testing.T) {
-	cfg := config.Config{Version: "8.9", Profile: "full", Host: "localhost", AI: config.AIConfig{Enabled: true}}
+	cfg := config.Config{Version: "8.9", Profile: "full", Host: "myhost", AI: config.AIConfig{Enabled: true}}
 	out, err := ai.MCPClientConfig(cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !strings.Contains(out, "mcp-proxy") {
+		t.Fatalf("%s", out)
+	}
+	if !strings.Contains(out, "http://myhost:18080/auth/realms/camunda-platform/protocol/openid-connect/token") {
+		t.Fatalf("oauth host: %s", out)
+	}
+	if strings.Contains(out, "camunda-processes") {
+		t.Fatal("8.9 full should not list processes MCP")
+	}
+}
+
+func TestMCPClientConfigFull810IncludesProcesses(t *testing.T) {
+	cfg := config.Config{Version: "8.10", Profile: "full", Host: "localhost", AI: config.AIConfig{Enabled: true}}
+	out, err := ai.MCPClientConfig(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out, "camunda-processes") {
 		t.Fatalf("%s", out)
 	}
 }

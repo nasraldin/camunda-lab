@@ -6,6 +6,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/nasraldin/camunda-lab/internal/ai"
 	"github.com/nasraldin/camunda-lab/internal/config"
 	"github.com/nasraldin/camunda-lab/internal/display"
 	"github.com/nasraldin/camunda-lab/internal/lab"
@@ -22,17 +23,25 @@ func newSwitchCmd() *cobra.Command {
 		Short: "Switch Camunda minor version",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := lab.New().Switch(cmd.Context(), args[0], wipe); err != nil {
-				return err
+			minor := args[0]
+			if aiFlag {
+				cfg, err := config.Load()
+				if err != nil {
+					return err
+				}
+				s, err := resolveAISecrets(openaiKey, anthropicKey, openaiBase, isInteractive())
+				if err != nil {
+					return err
+				}
+				if err := ai.ValidateForEnable(minor, cfg.Profile, s); err != nil {
+					return err
+				}
+				if err := lab.New().Switch(cmd.Context(), minor, wipe); err != nil {
+					return err
+				}
+				return lab.New().EnableAI(cmd.Context(), s)
 			}
-			if !aiFlag {
-				return nil
-			}
-			s, err := resolveAISecrets(openaiKey, anthropicKey, openaiBase, isInteractive())
-			if err != nil {
-				return err
-			}
-			return lab.New().EnableAI(cmd.Context(), s)
+			return lab.New().Switch(cmd.Context(), minor, wipe)
 		},
 	}
 	cmd.Flags().BoolVar(&wipe, "wipe", false, "Remove volumes before switching")

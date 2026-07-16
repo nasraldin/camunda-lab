@@ -212,7 +212,7 @@ func probeMCPLine(cfg config.Config) string {
 	switch {
 	case resp.StatusCode == 401 && cfg.Profile == "full":
 		return display.Warn(fmt.Sprintf("mcp-cluster (%s) — OIDC required; use camunda ai config", detail))
-	case resp.StatusCode < 500:
+	case resp.StatusCode >= 200 && resp.StatusCode < 300:
 		return display.Success(fmt.Sprintf("mcp-cluster (%s)", detail))
 	default:
 		return display.Fail(fmt.Sprintf("mcp-cluster — %s", detail))
