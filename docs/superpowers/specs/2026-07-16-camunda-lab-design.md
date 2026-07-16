@@ -1,0 +1,259 @@
+# Camunda Lab — Design Spec
+
+**Date:** 2026-07-16  
+**Status:** Approved for implementation planning  
+**Project:** `camunda-lab`  
+**CLI:** `camunda`
+
+## Problem
+
+DevOps, platform, and application developers who want to try **Camunda 8 Self-Managed** locally face a bad trade-off:
+
+- **Helm** is the production path and is relatively easy *if* you already have Kubernetes (Kind/k3d/minikube). Setting up local k8s is friction.
+- **Official Docker Compose** (`camunda/camunda-distributions`) correctly runs the full (or light) stack, but DX is weak: download a zip, pick the right file per minor, wait through Keycloak, remember ports, switch versions manually, and know infra quirks (especially 8.7 vs 8.8+ vs 8.10).
+
+We want an open-source project that gives **Helm-like ease of use on Docker**, with a professional CLI UX modeled on [docker-lab](https://github.com/nasraldin/docker-lab) / `ducker`.
+
+## Goals
+
+- Run the **correct full Camunda 8 stack** (or light / Web Modeler profiles) via Docker Compose — not a partial toy cluster.
+- Support configurable minors: **8.7, 8.8, 8.9, 8.10** (8.10 as upgrade/preview).
+- One CLI: install, start/stop, switch version, change profile, doctor, urls, nuke.
+- Integrate developer tools (`c8ctl`, Desktop Modeler profile) without reinventing process ops.
+- Ship like docker-lab: Homebrew, install script, docs site, CI releases.
+- Platforms v1: **macOS + Linux** (Docker Engine + Compose v2).
+
+## Non-goals (v1)
+
+- Production replacement for Helm / Kubernetes.
+- Windows support.
+- Multi-instance named labs (paths designed so this can land in v2).
+- Rewriting or forking Camunda’s Compose topology (OIDC, Keycloak wiring, service graph).
+- Replacing `c8ctl` for deploy/inspect/watch/MCP.
+- Bundling Desktop Modeler or Camunda Desktop apps.
+
+## Decisions (locked)
+
+| Topic | Choice |
+| --- | --- |
+| Stack strategy | **A+ hybrid**: official Camunda distributions + our CLI + thin overlays + tool glue |
+| Implementation approach | **Thin Go wrapper** over official release zips (not vendored fork, not generated Compose) |
+| Repo / project name | `camunda-lab` |
+| CLI binary name | `camunda` |
+| Homebrew formula | `camunda-lab` → installs binary `camunda` |
+| Platforms | macOS + Linux |
+| Versions | 8.7, 8.8, 8.9, 8.10 (8.10 labeled preview) |
+| Default profile | **light**, with **interactive prompt** on install |
+| CLI language | **Go** |
+| v1 scope | Lifecycle + c8ctl bootstrap + Modeler profile helper + smoke + resource profiles |
+| Instances | Single lab now; layout ready for named instances later |
+| License | MIT |
+| Affiliation | Unofficial community project; not affiliated with Camunda GmbH |
+
+## Architecture
+
+```text
+User
+  └── camunda (Go CLI)
+        ├── ~/.camunda-lab/config.yaml
+        ├── ~/.camunda-lab/versions/{8.7,8.8,8.9,8.10}/   ← extracted official zip
+        ├── ~/.camunda-lab/overlays/                      ← resource + 8.10 ES helpers
+        └── docker compose -f <official> -f <overlay> …
+
+Optional:
+  camunda tools c8ctl …      → ensure @camunda8/cli
+  camunda tools modeler …    → Desktop Modeler connection profile
+```
+
+### Stack source of truth
+
+Official Camunda artifacts from [`camunda/camunda-distributions`](https://github.com/camunda/camunda-distributions):
+
+- Release tag pattern: `docker-compose-{minor}` (e.g. `docker-compose-8.8`)
+- Asset: `docker-compose-{minor}.zip` (+ Cosign bundle when available)
+- Profiles (as documented by Camunda):
+  - **light** — Orchestration Cluster, Connectors, Elasticsearch (≤8.9)
+  - **full** — + Optimize, Console, Management Identity, Keycloak, PostgreSQL, Web Modeler
+  - **modeler** — standalone Web Modeler compose file
+
+Docker images are production-supported; Compose files are for **local development only**. Our product targets local/dev/eval, same as upstream.
+
+### Version adapters
+
+Small Go packages map CLI profile → compose files and quirks. We do **not** rewrite upstream YAML.
+
+| Minor | Notes |
+| --- | --- |
+| **8.7** | Separate `zeebe` / `operate` / `tasklist`. light → `docker-compose-core.yaml`; full → `docker-compose.yaml`; modeler → `docker-compose-web-modeler.yaml`. (No `docker-compose-full.yaml` in this minor.) |
+| **8.8 / 8.9** | Consolidated `orchestration`. light → `docker-compose.yaml`; full → `docker-compose-full.yaml`; modeler → `docker-compose-web-modeler.yaml`. |
+| **8.10** | Same file names as 8.8/8.9. Elasticsearch **not** bundled. Full profile needs external ES — CLI applies a thin ES sidecar overlay or blocks with doctor guidance. Secondary storage configs under `configuration/` remain upstream’s. |
+
+### Thin overlays (ours)
+
+Checked into the repo under `overlays/`:
+
+- `resources-small.yaml` / `resources-balanced.yaml` / `resources-power.yaml` — memory/CPU / `JAVA_TOOL_OPTIONS` where safe
+- `elasticsearch-8.10.yaml` — optional ES sidecar for full profile on 8.10
+
+Overlays must **never** rewrite OIDC redirect URIs, Keycloak realm wiring, or core service dependency graphs.
+
+### Data layout
+
+```text
+~/.camunda-lab/
+  config.yaml
+  active.yaml
+  versions/
+    8.7/ ...
+    8.8/ ...
+    8.9/ ...
+    8.10/ ...
+  overlays/          # copied or referenced from repo overlays
+  logs/
+```
+
+v2 named instances can become `~/.camunda-lab/instances/<name>/` without changing the CLI verb set.
+
+### Config schema (`config.yaml`)
+
+```yaml
+version: "8.8"              # active minor: 8.7 | 8.8 | 8.9 | 8.10
+profile: light              # light | full | modeler
+resources: balanced         # small | balanced | power
+host: localhost
+compose_project: camunda-lab
+```
+
+## CLI surface
+
+### Lifecycle
+
+| Command | Behavior |
+| --- | --- |
+| `camunda install` | Interactive: version, profile (default light), resources. Flags: `--version`, `--profile`, `--resources`, `--yes` for CI/non-interactive |
+| `camunda up` / `start` | `docker compose up -d` for active lab |
+| `camunda down` / `stop` | Stop containers; keep volumes |
+| `camunda restart` | Restart stack |
+| `camunda status` | Version, profile, health, key URLs |
+| `camunda switch <minor>` | Change minor; warn on data risk; `--wipe` for `down -v` then clean start |
+| `camunda profile <name>` | Change light/full/modeler (may recreate) |
+| `camunda resources <name>` | Apply resource overlay |
+| `camunda urls` / `open [app]` | Print or open Operate, Tasklist, Console, Optimize, Identity, Keycloak, Modeler, etc. |
+| `camunda logs [-f] [service]` | Container logs |
+| `camunda doctor [--fix]` | Docker/Compose, disk/RAM preflight, zip integrity, health |
+| `camunda wait` | Block until healthy (orchestration + Keycloak when full) |
+| `camunda smoke` | HTTP/API smoke against running stack |
+| `camunda nuke` | Full wipe; confirm or `CONFIRM=yes` |
+| `camunda version` / `about` / `help` | Meta |
+
+### Tools
+
+| Command | Behavior |
+| --- | --- |
+| `camunda tools c8ctl install\|status` | Ensure `c8ctl`/`c8`; print profile pointing at this lab (basic auth for light; OIDC from `.env` for full) |
+| `camunda tools modeler profile` | Write/merge Desktop Modeler connection profile for local cluster |
+
+### Install flow
+
+1. Preflight: Docker + Compose v2 present and usable  
+2. Prompt version (latest stable among 8.7–8.9 default; 8.10 labeled preview)  
+3. Prompt profile (default light)  
+4. Prompt resources (default balanced)  
+5. Download zip (+ Cosign verify when possible) → extract under `versions/<minor>/`  
+6. Apply overlays → `up` → `wait` → print URLs and next steps (`tools c8ctl`, `open operate`)
+
+### Error handling
+
+- Missing Docker → actionable message (on macOS, mention docker-lab as one path)  
+- Port conflicts → `doctor` lists conflicting listeners  
+- Unhealthy after timeout → point to failing service + `camunda logs`  
+- Cross-minor switch without wipe → explicit warning that volumes may be incompatible  
+
+## Official Camunda context (reference)
+
+Upstream docs and repos this design depends on:
+
+- [Self-Managed overview](https://docs.camunda.io/docs/self-managed/about-self-managed)
+- [Docker Compose developer quickstart](https://docs.camunda.io/docs/self-managed/quickstart/developer-quickstart/docker-compose/)
+- [camunda-distributions / docker-compose](https://github.com/camunda/camunda-distributions/tree/main/docker-compose)
+- [camunda-platform-helm](https://github.com/camunda/camunda-platform-helm) — production path we intentionally do *not* reimplement
+- [`c8ctl`](https://docs.camunda.io/docs/apis-tools/c8ctl/getting-started/) — process/cluster ops we glue to, not replace
+
+Default UI credentials (upstream): `demo` / `demo`. Keycloak admin (full): `admin` / `admin`.
+
+## Project structure
+
+```text
+camunda-lab/
+  cmd/camunda/              # main
+  internal/
+    config/
+    compose/                # docker compose runner
+    versions/               # adapters 8.7–8.10 + downloader/verifier
+    overlay/
+    doctor/
+    smoke/
+    tools/                  # c8ctl + modeler helpers
+    ui/                     # urls / open
+  overlays/                 # resource + 8.10 ES compose overrides
+  docs/                     # mkdocs
+  Formula/camunda-lab.rb
+  .github/workflows/        # CI, release (goreleaser), docs
+  scripts/
+  Makefile
+  go.mod
+  install.sh
+  mkdocs.yml
+  README.md
+  LICENSE
+  CONTRIBUTING.md
+```
+
+## Testing
+
+- **Unit:** version adapters, URL map, config load/save, overlay file selection  
+- **Integration (opt-in `LIVE=1`):** light profile up → wait → smoke on a machine/CI with Docker  
+- **Tooling:** `go test`, `golangci-lint`, goreleaser snapshot builds for darwin/linux amd64+arm64  
+
+## Release & distribution
+
+- GitHub Releases via **goreleaser**  
+- Homebrew tap (e.g. `nasraldin/tools`) formula **`camunda-lab`** installs **`camunda`**  
+- `install.sh` one-liner (curl | bash)  
+- MkDocs + GitHub Pages docs (CLI reference, architecture, troubleshooting)  
+- README trademark disclaimer: unofficial community lab  
+
+## Positioning
+
+```text
+Camunda 8 Run     → tiny local engine (not full management stack)
+Official Compose  → correct stack, weak DX
+Helm / Kind       → prod-like, needs k8s
+c8ctl             → talk TO a running cluster
+camunda-lab       → get the cluster UP + versions + doctor + glue tools
+```
+
+## Success criteria (v1)
+
+1. `camunda install` on a clean macOS or Linux host with Docker brings up **light** stack and prints working Operate/Tasklist URLs.  
+2. `camunda install --profile full --version 8.8` brings up full stack; `doctor` and `urls` work.  
+3. `camunda switch 8.9 --wipe` cleanly moves to another minor.  
+4. `camunda switch 8.10` (preview) either starts with ES overlay or fails with clear doctor guidance — never a silent half-broken full stack.  
+5. `camunda tools c8ctl` and `tools modeler profile` produce usable next steps against the running lab.  
+6. Homebrew and `install.sh` install a working `camunda` binary.  
+
+## Future (explicitly out of v1)
+
+- Named instances / parallel labs  
+- Windows  
+- Kind/Helm bridge (`camunda k8s …`)  
+- Deep Playwright suite vendored from upstream  
+- Custom connector sidecar workflows  
+- MCP proxy wiring beyond documenting `c8ctl mcp-proxy`  
+
+## Open implementation notes
+
+- Exact Cosign verification flow should match upstream release assets (`*.cosign.bundle`).  
+- Desktop Modeler profile path differs per OS; implement detection + docs.  
+- Resource overlay values should be tuned against typical 16GB / 32GB / 64GB machines (small / balanced / power).  
+- Compose project name `camunda-lab` isolates containers from ad-hoc upstream runs in the same Docker engine.
