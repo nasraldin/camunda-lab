@@ -1,6 +1,6 @@
 # App screenshots
 
-What the UIs look like on a live **camunda-lab** full stack:
+What the **Camunda** UIs look like on a live **camunda-lab** full stack. For the Lab control panel itself, see [Lab UI](lab-ui.md).
 
 ```bash
 camunda install --version 8.9 --profile full --resources small --yes

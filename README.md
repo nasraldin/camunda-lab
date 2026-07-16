@@ -7,7 +7,7 @@
 <p align="center">
   <a href="https://github.com/nasraldin/camunda-lab/actions/workflows/ci.yml"><img src="https://github.com/nasraldin/camunda-lab/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/nasraldin/camunda-lab/actions/workflows/docs.yml"><img src="https://github.com/nasraldin/camunda-lab/actions/workflows/docs.yml/badge.svg" alt="Docs"></a>
-  <a href="https://github.com/nasraldin/camunda-lab/releases/tag/v0.4.0"><img src="https://img.shields.io/badge/release-v0.4.0-blue" alt="v0.4.0"></a>
+  <a href="https://github.com/nasraldin/camunda-lab/releases/tag/v0.5.0"><img src="https://img.shields.io/badge/release-v0.5.0-blue" alt="v0.5.0"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
   <a href="https://nasraldin.github.io/camunda-lab/"><img src="https://img.shields.io/badge/docs-GitHub%20Pages-indigo" alt="Docs site"></a>
 </p>
@@ -16,7 +16,13 @@ Unofficial local Camunda 8 lab. Not affiliated with Camunda GmbH.
 
 Camunda already ships solid Docker Compose files. What’s missing is the day-to-day glue: fetch the right zip, pick light vs full, wait until Keycloak is up, remember which port is Operate, switch 8.8 → 8.9 without leaving a mess. That’s what **`camunda`** does — no Kubernetes required.
 
-**Docs:** [https://nasraldin.github.io/camunda-lab/](https://nasraldin.github.io/camunda-lab/) · **Latest:** [v0.4.0](https://github.com/nasraldin/camunda-lab/releases/tag/v0.4.0)
+**Docs:** [https://nasraldin.github.io/camunda-lab/](https://nasraldin.github.io/camunda-lab/) · **Latest:** [v0.5.0](https://github.com/nasraldin/camunda-lab/releases/tag/v0.5.0)
+
+<p align="center">
+  <img src="docs/assets/screenshots/lab-ui-home.png" alt="Camunda Lab UI — Home" width="920">
+</p>
+
+<p align="center"><em>Lab UI — local browser control panel (<code>camunda ui</code>)</em></p>
 
 ---
 
@@ -80,6 +86,15 @@ camunda ai config    # Cursor / Claude MCP JSON
 # camunda install --version 8.9 --profile light --yes --ai --openai-key "$OPENAI_API_KEY"
 ```
 
+**Lab UI** (embedded control panel, no auth, localhost only):
+
+```bash
+camunda ui
+# http://localhost:9090
+```
+
+Walkthrough of every page (Apps auto sign-in, Services, Logs, …): [Lab UI docs](https://nasraldin.github.io/camunda-lab/lab-ui/).
+
 Default app login: **demo** / **demo**.
 
 Ports differ by Camunda minor — run `camunda urls` (see [profiles](https://nasraldin.github.io/camunda-lab/profiles/)).
@@ -94,6 +109,7 @@ Ports differ by Camunda minor — run `camunda urls` (see [profiles](https://nas
 | `camunda about` | Project + runtime info |
 | `camunda wait` / `doctor` / `smoke` | Health |
 | `camunda urls` / `open` | Where the UIs live |
+| `camunda ui` | Local Lab UI (http://localhost:9090) |
 | `camunda ai enable` / `config` | MCP + AI Agent secrets (8.9+) |
 | `camunda switch 8.9 --wipe` | Another minor, clean volumes |
 | `camunda profile light\|full\|modeler` | Compose profile |
@@ -111,6 +127,7 @@ More: [CLI reference](https://nasraldin.github.io/camunda-lab/cli-reference/) ·
 | --- | --- |
 | [Home](https://nasraldin.github.io/camunda-lab/) | Overview |
 | [Installation](https://nasraldin.github.io/camunda-lab/installation/) | First boot |
+| [Lab UI](https://nasraldin.github.io/camunda-lab/lab-ui/) | Browser control panel |
 | [Why Camunda Lab](https://nasraldin.github.io/camunda-lab/comparison/) | vs zip / Helm / 8 Run |
 | [Profiles](https://nasraldin.github.io/camunda-lab/profiles/) | Versions, ports, ElasticVue |
 | [AI and MCP](https://nasraldin.github.io/camunda-lab/ai-mcp/) | Cursor MCP + connector secrets |

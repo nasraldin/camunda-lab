@@ -10,9 +10,9 @@ import (
 
 // Entry is a named component URL for camunda urls / open / smoke.
 type Entry struct {
-	Name  string
-	URL   string
-	Notes string
+	Name  string `json:"name"`
+	URL   string `json:"url"`
+	Notes string `json:"notes,omitempty"`
 }
 
 // List returns component URLs for the active lab config.

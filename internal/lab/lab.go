@@ -155,7 +155,8 @@ func (l *Lab) Up(ctx context.Context) error {
 		return err
 	}
 	display.Done(os.Stdout, "Stack started.")
-	fmt.Println("Next: camunda wait && camunda status && camunda urls")
+	fmt.Println("Next: camunda wait && camunda urls")
+	fmt.Println("Lab UI: http://localhost:9090  (camunda ui)")
 	return nil
 }
 

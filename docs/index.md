@@ -4,7 +4,12 @@
 
 Local Camunda 8 on Docker. One CLI — **`camunda`** — wraps Camunda’s official Compose zips so you can install a minor, wait until it’s healthy, open Operate, and switch versions without digging through README ports.
 
-Current release: **[v0.4.0](https://github.com/nasraldin/camunda-lab/releases/tag/v0.4.0)** (Camunda 8.7–8.10, ElasticVue, AI Agent + MCP helpers).
+Current release: **[v0.5.0](https://github.com/nasraldin/camunda-lab/releases/tag/v0.5.0)** (Lab UI, Camunda 8.7–8.10, ElasticVue, AI Agent + MCP helpers).
+
+![Lab UI Home](assets/screenshots/lab-ui-home.png)
+
+!!! tip "Lab UI"
+    Run `camunda ui` for the browser control panel — install, open apps (optional auto sign-in), services, logs, AI helpers. Full walkthrough: [Lab UI](lab-ui.md).
 
 !!! warning "Unofficial"
     Community project. Not affiliated with Camunda GmbH. Fine for local tryouts — not production. For production, use [Camunda’s Helm charts](https://docs.camunda.io/docs/self-managed/setup/install/).
@@ -62,6 +67,15 @@ camunda ai enable --openai-key "$OPENAI_API_KEY"
 camunda ai config
 ```
 
+Or manage the lab from a browser (no auth, loopback only):
+
+```bash
+camunda ui
+# opens http://localhost:9090
+```
+
+See [Lab UI](lab-ui.md) for every page and option (Apps auto sign-in, Services, Logs search, …).
+
 Default app login from Camunda’s compose files: **demo** / **demo**.
 
 ## Why this exists
@@ -73,6 +87,7 @@ Default app login from Camunda’s compose files: **demo** / **demo**.
 | Change 8.8 → 8.9 | Manual | Chart dance | `camunda switch` |
 | “Where’s Operate?” | Dig the README | Port-forward | `camunda urls` |
 | Doctor / smoke | You write it | You write it | Built in |
+| Browser control panel | DIY | DIY | `camunda ui` |
 | MCP + AI Agent secrets | DIY | DIY | `camunda ai` |
 
 More detail: [Why Camunda Lab](comparison.md).
@@ -84,6 +99,7 @@ More detail: [Why Camunda Lab](comparison.md).
 | `camunda install` | Download the zip, configure, start |
 | `camunda wait` | Block until the stack looks healthy |
 | `camunda urls` / `open` | Ports without guessing |
+| `camunda ui` | Local control panel in the browser |
 | `camunda ai enable` / `config` | MCP endpoints + AI Agent secrets |
 | `camunda switch 8.9 --wipe` | Another minor, clean volumes |
 | `camunda doctor` | Docker, compose, config sanity |
@@ -93,6 +109,7 @@ More detail: [Why Camunda Lab](comparison.md).
 ## Where to go next
 
 - [Installation](installation.md) — prerequisites, first boot, state layout
+- [Lab UI](lab-ui.md) — browser control panel walkthrough + screenshots
 - [Profiles and versions](profiles.md) — light / full / modeler, ports by minor
 - [AI and MCP](ai-mcp.md) — Cursor MCP + OpenAI/Anthropic secrets
 - [App screenshots](screenshots.md) — Operate, Tasklist, Console, ElasticVue, …

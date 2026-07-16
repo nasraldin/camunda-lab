@@ -92,6 +92,15 @@ camunda ai config
 
 See [AI and MCP](ai-mcp.md).
 
+Prefer a browser? After the CLI is installed:
+
+```bash
+camunda ui
+# http://localhost:9090 — Overview, Setup, Apps, Logs, AI, …
+```
+
+Guide: [Lab UI](lab-ui.md).
+
 Login defaults from Camunda’s compose files:
 
 | Who | User | Password |

@@ -5,6 +5,7 @@ A Go CLI that downloads Camunda’s zip, stores it under your home directory, an
 ```text
 you
  └── camunda (CLI)
+       ├── camunda ui  →  http://localhost:9090  (embedded SPA + /api/v1)
        ├── ~/.camunda-lab/config.yaml
        ├── ~/.camunda-lab/ai.env            ← optional AI Agent SECRET_*
        ├── ~/.camunda-lab/versions/8.9/     ← official zip, extracted
@@ -34,6 +35,7 @@ We extract the zip and leave Camunda’s OIDC / Keycloak wiring alone. If Camund
 | `http-headers.yaml` | Larger Tomcat header limit so full-profile SSO cookies don’t 400 |
 | `connectors-ai-secrets.yaml` + `ai.env` | Opt-in AI Agent `SECRET_*` (`camunda ai`) |
 | MCP URLs / `camunda ai config` | Surface `/mcp/cluster` (+ `/mcp/processes` on 8.10+); client JSON |
+| Lab UI (`camunda ui`) | Embedded local SPA on loopback; same lab packages via `/api/v1` |
 | doctor / wait / smoke | Docker sanity and “are the UIs answering?” |
 | tools helpers | Point `c8ctl` / Desktop Modeler at this lab |
 

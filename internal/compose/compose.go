@@ -2,7 +2,9 @@ package compose
 
 import (
 	"bytes"
+	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
@@ -30,6 +32,7 @@ type Engine interface {
 	Ps(workDir, project string) (string, error)
 	PsJSON(workDir, project string) (string, error)
 	Logs(workDir, project, service string, follow bool) error
+	LogsTo(ctx context.Context, workDir, project, service string, follow bool, w io.Writer) error
 }
 
 type Runner struct {
@@ -83,15 +86,25 @@ func (r *Runner) PsJSON(workDir, project string) (string, error) {
 }
 
 func (r *Runner) Logs(workDir, project, service string, follow bool) error {
-	args := []string{"docker", "compose", "-p", project, "logs"}
+	return r.LogsTo(context.Background(), workDir, project, service, follow, os.Stdout)
+}
+
+func (r *Runner) LogsTo(ctx context.Context, workDir, project, service string, follow bool, w io.Writer) error {
+	if w == nil {
+		w = os.Stdout
+	}
+	args := []string{"compose", "-p", project, "logs", "--tail", "200"}
 	if follow {
 		args = append(args, "-f")
 	}
 	if service != "" {
 		args = append(args, service)
 	}
-	_, err := r.Exec(workDir, args)
-	return err
+	cmd := exec.CommandContext(ctx, "docker", args...)
+	cmd.Dir = workDir
+	cmd.Stdout = w
+	cmd.Stderr = w
+	return cmd.Run()
 }
 
 func defaultExec(workDir string, args []string) (string, error) {
