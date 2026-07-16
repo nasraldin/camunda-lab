@@ -35,6 +35,21 @@ Full profile + Elasticsearch is hungry. Start with:
 camunda install --profile light --resources small --yes
 ```
 
+## Do I need a local LLM for AI / MCP?
+
+No. MCP talks to Cursor/Claude (their models). The AI Agent connector uses a cloud API key (OpenAI/Anthropic) or an optional OpenAI-compatible URL (Ollama, etc.). See [AI and MCP](ai-mcp.md).
+
+```bash
+camunda ai enable --openai-key "$OPENAI_API_KEY"
+camunda ai config
+```
+
+Requires Camunda **8.9+** and profile **light** or **full**.
+
+## MCP returns 401 on full profile — broken?
+
+Expected. Full compose uses OIDC. Use `camunda ai config` for the `mcp-proxy` snippet (and `camunda tools c8ctl install` if needed). Light profile allows direct HTTP to `/mcp/cluster`.
+
 ## Does it work on Windows?
 
 Not in v1. macOS and Linux only.

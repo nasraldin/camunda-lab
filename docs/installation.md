@@ -50,9 +50,16 @@ camunda version
 ### Non-interactive (scripts / CI)
 
 ```bash
-camunda install --version 8.8 --profile light --resources small --yes
+camunda install --version 8.9 --profile light --resources small --yes
 camunda wait
 camunda urls
+```
+
+With AI Agent connector secrets + MCP URLs (8.9+ only):
+
+```bash
+camunda install --version 8.9 --profile light --resources small --yes \
+  --ai --openai-key "$OPENAI_API_KEY"
 ```
 
 ### Interactive
@@ -73,7 +80,17 @@ You’ll get asked for:
 camunda status
 camunda doctor
 camunda open operate
+camunda open elasticvue   # when host Elasticsearch is published
 ```
+
+Optional — enable MCP client config and AI Agent secrets on a running lab:
+
+```bash
+camunda ai enable --openai-key "$OPENAI_API_KEY"
+camunda ai config
+```
+
+See [AI and MCP](ai-mcp.md).
 
 Login defaults from Camunda’s compose files:
 
@@ -88,9 +105,10 @@ Everything under `~/.camunda-lab/` unless you set `CAMUNDA_LAB_HOME`:
 
 ```text
 ~/.camunda-lab/
-  config.yaml          # active version, profile, resources
-  versions/8.8/        # extracted official zip
-  overlays/            # our thin helpers (e.g. 8.10 Elasticsearch)
+  config.yaml          # active version, profile, resources, ai.enabled
+  ai.env               # SECRET_* for AI Agent connectors (mode 0600)
+  versions/8.9/        # extracted official zip
+  overlays/            # our thin helpers (ElasticVue, AI secrets, 8.10 ES, …)
   resources.env        # heap settings for the resource profile
 ```
 

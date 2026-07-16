@@ -6,10 +6,11 @@ Nothing fancy under the hood: a Go CLI that downloads Camunda’s zip, drops it 
 you
  └── camunda (CLI)
        ├── ~/.camunda-lab/config.yaml
-       ├── ~/.camunda-lab/versions/8.8/     ← official zip, extracted
+       ├── ~/.camunda-lab/ai.env            ← optional AI Agent SECRET_*
+       ├── ~/.camunda-lab/versions/8.9/     ← official zip, extracted
        ├── ~/.camunda-lab/resources.env     ← heap hints
        └── docker compose -p camunda-lab -f …
-             └── Camunda containers
+             └── Camunda containers (+ overlays)
 ```
 
 ## Source of truth
@@ -31,6 +32,8 @@ We verify what we can, extract, and leave Camunda’s OIDC / Keycloak wiring alo
 | `elasticsearch-8.10.yaml` | Sidecar ES when full profile on 8.10 needs it |
 | `elasticsearch-cors.yaml` + `elasticvue.yaml` | CORS + ElasticVue UI when host ES is published |
 | `http-headers.yaml` | Larger Tomcat header limit so full-profile SSO cookies don’t 400 |
+| `connectors-ai-secrets.yaml` + `ai.env` | Opt-in AI Agent `SECRET_*` for connectors (`camunda ai`) |
+| MCP URLs / `camunda ai config` | Surface `/mcp/cluster` (+ `/mcp/processes` on 8.10+); Cursor client JSON |
 | doctor / wait / smoke | “Is Docker fine?” and “are the UIs answering?” |
 | tools helpers | Point `c8ctl` / Desktop Modeler at this lab |
 

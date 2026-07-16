@@ -44,16 +44,24 @@ You need Docker with Compose v2 (`docker compose version`). On an Apple Silicon 
 ## First run
 
 ```bash
-camunda install --version 8.8 --profile light --resources small --yes
+camunda install --version 8.9 --profile light --resources small --yes
 camunda wait
 camunda urls
 camunda open operate
+camunda open elasticvue   # when the profile publishes Elasticsearch
 ```
 
 Or skip the flags and answer the prompts:
 
 ```bash
 camunda install
+```
+
+**AI Agent + MCP** (Camunda 8.9+, no local LLM required) — wire Cursor/Claude to the lab and inject connector secrets:
+
+```bash
+camunda ai enable --openai-key "$OPENAI_API_KEY"
+camunda ai config
 ```
 
 Default UI login from Camunda’s compose files: **demo** / **demo**.
@@ -67,6 +75,7 @@ Default UI login from Camunda’s compose files: **demo** / **demo**.
 | Change 8.8 → 8.9 | Manual | Chart dance | `camunda switch` |
 | “Where’s Operate?” | Dig through README | Port-forward | `camunda urls` |
 | Doctor / smoke | You write it | You write it | Built in |
+| MCP + AI Agent secrets | DIY | DIY | `camunda ai` |
 
 ## Commands you’ll use most
 
@@ -75,6 +84,7 @@ Default UI login from Camunda’s compose files: **demo** / **demo**.
 | `camunda install` | Download the official zip, configure, start |
 | `camunda wait` | Sit until the stack looks healthy |
 | `camunda urls` / `open` | Ports without guessing |
+| `camunda ai enable` / `config` | MCP endpoints + AI Agent connector secrets |
 | `camunda switch 8.9 --wipe` | Try another minor cleanly |
 | `camunda doctor` | Docker, compose, config sanity |
 | `camunda tools c8ctl install` | Get Camunda’s `c8ctl` for deploy/debug |
@@ -83,7 +93,8 @@ Default UI login from Camunda’s compose files: **demo** / **demo**.
 ## Where to go next
 
 - [Installation](installation.md) — prerequisites, profiles, first boot
-- [App screenshots](screenshots.md) — Operate, Tasklist, Admin on a fresh light lab
+- [AI and MCP](ai-mcp.md) — Cursor MCP + OpenAI/Anthropic secrets
+- [App screenshots](screenshots.md) — Operate, Tasklist, Console, ElasticVue, …
 - [Why Camunda Lab](comparison.md) — vs zip, Helm, Camunda 8 Run
 - [CLI reference](cli-reference.md) — every command
 - [Troubleshooting](troubleshooting.md) — when Keycloak won’t wake up

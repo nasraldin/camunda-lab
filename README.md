@@ -62,7 +62,7 @@ You need Docker + Compose v2. On Apple Silicon, [docker-lab](https://github.com/
 ## Quick start
 
 ```bash
-camunda install --version 8.8 --profile light --resources small --yes
+camunda install --version 8.9 --profile light --resources small --yes
 camunda wait
 camunda urls
 camunda open operate
@@ -78,7 +78,15 @@ camunda install
 Full stack (Identity, Keycloak, Optimize, Console, Web Modeler):
 
 ```bash
-camunda install --version 8.8 --profile full --yes
+camunda install --version 8.9 --profile full --yes
+```
+
+**AI Agent + MCP** (8.9+, no local LLM required):
+
+```bash
+camunda ai enable --openai-key "$OPENAI_API_KEY"
+camunda ai config    # Cursor / Claude MCP JSON
+# or: camunda install --version 8.9 --profile light --yes --ai --openai-key "$OPENAI_API_KEY"
 ```
 
 Default app login from Camunda’s files: **demo** / **demo**.
@@ -95,13 +103,14 @@ Ports differ by Camunda minor — run `camunda urls` (see [profiles](https://nas
 | `camunda about` | Project + runtime info card |
 | `camunda wait` / `doctor` / `smoke` | Health |
 | `camunda urls` / `open` | Where the UIs live (incl. `open elasticvue` when ES is on) |
+| `camunda ai enable` / `config` | MCP + AI Agent connector secrets (8.9+) |
 | `camunda switch 8.9 --wipe` | Another minor, clean volumes |
 | `camunda profile light\|full\|modeler` | Compose profile |
 | `camunda resources small\|balanced\|power` | Heap settings |
 | `camunda tools c8ctl install` | Official deploy/debug CLI |
 | `camunda nuke` | Wipe `~/.camunda-lab` |
 
-More detail: [CLI reference](https://nasraldin.github.io/camunda-lab/cli-reference/).
+More detail: [CLI reference](https://nasraldin.github.io/camunda-lab/cli-reference/) · [AI and MCP](https://nasraldin.github.io/camunda-lab/ai-mcp/).
 
 ---
 
@@ -111,6 +120,7 @@ More detail: [CLI reference](https://nasraldin.github.io/camunda-lab/cli-referen
 | --- | --- |
 | [Home](https://nasraldin.github.io/camunda-lab/) | Overview |
 | [Installation](https://nasraldin.github.io/camunda-lab/installation/) | First boot |
+| [AI and MCP](https://nasraldin.github.io/camunda-lab/ai-mcp/) | Cursor MCP + AI Agent secrets |
 | [Why Camunda Lab](https://nasraldin.github.io/camunda-lab/comparison/) | vs zip / Helm / 8 Run |
 | [Architecture](https://nasraldin.github.io/camunda-lab/architecture/) | How it fits |
 | [App screenshots](https://nasraldin.github.io/camunda-lab/screenshots/) | What Operate / Tasklist / Admin look like |

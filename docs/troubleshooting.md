@@ -105,6 +105,21 @@ camunda urls
 
 …after every profile/version change.
 
+## `camunda ai enable` rejected
+
+Needs Camunda **8.9+** and profile **light** or **full** (not modeler). Provide at least one of `--openai-key`, `--anthropic-key`, or `--openai-base-url` (or the matching `SECRET_*` env vars). Details: [AI and MCP](ai-mcp.md).
+
+## MCP endpoint returns 401 (full profile)
+
+Expected with OIDC. Use:
+
+```bash
+camunda ai config
+camunda tools c8ctl install   # if you need mcp-proxy
+```
+
+Light profile can use direct HTTP to `http://localhost:8080/mcp/cluster`.
+
 ## Nuclear option
 
 ```bash
