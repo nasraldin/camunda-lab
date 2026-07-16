@@ -22,8 +22,23 @@ jobs:
         with:
           go-version-file: go.mod
 
+      - name: Format
+        run: make fmt-check
+
+      - name: Vet
+        run: go vet ./...
+
       - name: Test
         run: go test ./...
 
       - name: Build
-        run: go build -o bin/camunda ./cmd/camunda
+        run: go build -ldflags "-X main.version=ci" -o bin/camunda ./cmd/camunda
+
+      - name: ShellCheck
+        uses: ludeeus/action-shellcheck@2.0.0
+        env:
+          SHELLCHECK_OPTS: -e SC2034
+        with:
+          scandir: scripts
+          additional_files: install.sh
+          severity: warning
