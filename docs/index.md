@@ -2,14 +2,32 @@
 
 ![Camunda](assets/logo-camunda-black.svg){: .brand-logo }
 
-Want Camunda 8 on your machine without Kind, Helm, or a day of YAML archaeology? This lab wraps Camunda’s **official** Docker Compose distributions and gives you a small CLI named **`camunda`**.
+Local Camunda 8 on Docker. One CLI — **`camunda`** — wraps Camunda’s official Compose zips so you can install a minor, wait until it’s healthy, open Operate, and switch versions without digging through README ports.
 
-Pick a minor (8.7–8.10), pick light or full, start it, open Operate. When you’re done testing an upgrade path, switch versions or wipe the lab clean.
+Current release: **[v0.4.0](https://github.com/nasraldin/camunda-lab/releases/tag/v0.4.0)** (Camunda 8.7–8.10, ElasticVue, AI Agent + MCP helpers).
 
 !!! warning "Unofficial"
-    Community project. Not affiliated with Camunda GmbH. Great for local tryouts — not a production install. For production, use [Camunda’s Helm charts](https://docs.camunda.io/docs/self-managed/setup/install/).
+    Community project. Not affiliated with Camunda GmbH. Fine for local tryouts — not production. For production, use [Camunda’s Helm charts](https://docs.camunda.io/docs/self-managed/setup/install/).
 
-## Install
+## Install the CLI
+
+=== "Homebrew"
+
+    ```bash
+    brew tap nasraldin/tools
+    brew install camunda-lab
+    camunda about
+    ```
+
+    Formula name is `camunda-lab`; the binary is still `camunda`.
+
+=== "One-liner"
+
+    Downloads a release binary and checks `checksums.txt`:
+
+    ```bash
+    curl -fsSL https://raw.githubusercontent.com/nasraldin/camunda-lab/main/install.sh | bash
+    ```
 
 === "From source"
 
@@ -17,29 +35,10 @@ Pick a minor (8.7–8.10), pick light or full, start it, open Operate. When you�
     git clone https://github.com/nasraldin/camunda-lab.git
     cd camunda-lab
     make build
-    make install   # puts camunda in ~/.local/bin
+    make install   # ~/.local/bin/camunda
     ```
 
-=== "One-liner"
-
-    After the first GitHub Release exists:
-
-    ```bash
-    curl -fsSL https://raw.githubusercontent.com/nasraldin/camunda-lab/main/install.sh | bash
-    ```
-
-=== "Homebrew"
-
-    Once the formula is published to the tap:
-
-    ```bash
-    brew tap nasraldin/tools
-    brew install camunda-lab
-    ```
-
-    Formula name is `camunda-lab`; the binary is still `camunda`.
-
-You need Docker with Compose v2 (`docker compose version`). On an Apple Silicon Mac, [docker-lab](https://github.com/nasraldin/docker-lab) is a solid way to get that without Desktop.
+You need Docker with Compose v2 (`docker compose version`). On Apple Silicon without Desktop, [docker-lab](https://github.com/nasraldin/docker-lab) is a solid way to get an Engine.
 
 ## First run
 
@@ -48,55 +47,57 @@ camunda install --version 8.9 --profile light --resources small --yes
 camunda wait
 camunda urls
 camunda open operate
-camunda open elasticvue   # when the profile publishes Elasticsearch
 ```
 
-Or skip the flags and answer the prompts:
+Skip the flags and answer the prompts:
 
 ```bash
 camunda install
 ```
 
-**AI Agent + MCP** (Camunda 8.9+, no local LLM required) — wire Cursor/Claude to the lab and inject connector secrets:
+Optional — wire Cursor/Claude to the lab’s MCP endpoints and inject AI Agent connector secrets (8.9+, no local LLM required):
 
 ```bash
 camunda ai enable --openai-key "$OPENAI_API_KEY"
 camunda ai config
 ```
 
-Default UI login from Camunda’s compose files: **demo** / **demo**.
+Default app login from Camunda’s compose files: **demo** / **demo**.
 
-## Why bother?
+## Why this exists
 
 | | Official zip | Helm on Kind | Camunda Lab |
 | --- | --- | --- | --- |
 | Real Camunda stack | Yes | Yes | Yes (same zips) |
 | Need local Kubernetes | No | Yes | No |
 | Change 8.8 → 8.9 | Manual | Chart dance | `camunda switch` |
-| “Where’s Operate?” | Dig through README | Port-forward | `camunda urls` |
+| “Where’s Operate?” | Dig the README | Port-forward | `camunda urls` |
 | Doctor / smoke | You write it | You write it | Built in |
 | MCP + AI Agent secrets | DIY | DIY | `camunda ai` |
 
+More detail: [Why Camunda Lab](comparison.md).
+
 ## Commands you’ll use most
 
-| Command | Meaning |
+| Command | What it does |
 | --- | --- |
-| `camunda install` | Download the official zip, configure, start |
-| `camunda wait` | Sit until the stack looks healthy |
+| `camunda install` | Download the zip, configure, start |
+| `camunda wait` | Block until the stack looks healthy |
 | `camunda urls` / `open` | Ports without guessing |
-| `camunda ai enable` / `config` | MCP endpoints + AI Agent connector secrets |
-| `camunda switch 8.9 --wipe` | Try another minor cleanly |
+| `camunda ai enable` / `config` | MCP endpoints + AI Agent secrets |
+| `camunda switch 8.9 --wipe` | Another minor, clean volumes |
 | `camunda doctor` | Docker, compose, config sanity |
-| `camunda tools c8ctl install` | Get Camunda’s `c8ctl` for deploy/debug |
+| `camunda tools c8ctl install` | Camunda’s `c8ctl` for deploy/debug |
 | `camunda nuke` | Delete `~/.camunda-lab` and volumes |
 
 ## Where to go next
 
-- [Installation](installation.md) — prerequisites, profiles, first boot
+- [Installation](installation.md) — prerequisites, first boot, state layout
+- [Profiles and versions](profiles.md) — light / full / modeler, ports by minor
 - [AI and MCP](ai-mcp.md) — Cursor MCP + OpenAI/Anthropic secrets
 - [App screenshots](screenshots.md) — Operate, Tasklist, Console, ElasticVue, …
-- [Why Camunda Lab](comparison.md) — vs zip, Helm, Camunda 8 Run
 - [CLI reference](cli-reference.md) — every command
+- [Roadmap](roadmap.md) — what’s shipped and what’s next
 - [Troubleshooting](troubleshooting.md) — when Keycloak won’t wake up
 
 ## Source

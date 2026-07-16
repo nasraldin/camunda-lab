@@ -81,7 +81,7 @@ Full-profile SSO stores large cookies. Tomcat rejects oversized request headers 
 1. In the browser, clear cookies/site data for `localhost` (or at least ports `8080`, `8083`, `8084`, `18080`).
 2. Hard-refresh and sign in again with **demo** / **demo**.
 
-camunda-lab applies an overlay that raises `SERVER_MAX_HTTP_REQUEST_HEADER_SIZE` on Optimize, Identity, and orchestration. Recreate if you upgraded mid-session:
+camunda-lab raises `SERVER_MAX_HTTP_REQUEST_HEADER_SIZE` on Optimize, Identity, and orchestration. Recreate if you upgraded mid-session:
 
 ```bash
 camunda down && camunda up
@@ -103,7 +103,7 @@ Light and full use different published ports on some minors. Trust:
 camunda urls
 ```
 
-…after every profile/version change.
+…after every profile or version change.
 
 ## `camunda ai enable` rejected
 
@@ -120,11 +120,11 @@ camunda tools c8ctl install   # if you need mcp-proxy
 
 Light profile can use direct HTTP to `http://localhost:8080/mcp/cluster`.
 
-## Nuclear option
+## Start over
 
 ```bash
 camunda nuke --yes
-camunda install --version 8.8 --profile light --resources small --yes
+camunda install --version 8.9 --profile light --resources small --yes
 ```
 
 Still stuck? Open an issue with `camunda doctor` output and your OS / Docker version: [github.com/nasraldin/camunda-lab/issues](https://github.com/nasraldin/camunda-lab/issues).

@@ -1,6 +1,6 @@
 # Architecture
 
-Nothing fancy under the hood: a Go CLI that downloads Camunda’s zip, drops it under your home dir, and runs `docker compose` with the right files.
+A Go CLI that downloads Camunda’s zip, stores it under your home directory, and runs `docker compose` with the right files plus a few thin overlays.
 
 ```text
 you
@@ -21,7 +21,7 @@ you
 docker-compose-8.8.zip
 ```
 
-We verify what we can, extract, and leave Camunda’s OIDC / Keycloak wiring alone. If Camunda fixes a bug in the zip, the next fetch picks it up.
+We extract the zip and leave Camunda’s OIDC / Keycloak wiring alone. If Camunda fixes a bug in the zip, the next fetch picks it up.
 
 ## What we add
 
@@ -30,16 +30,16 @@ We verify what we can, extract, and leave Camunda’s OIDC / Keycloak wiring alo
 | Version adapters | Map `light` / `full` / `modeler` → the right compose file per minor |
 | `resources.env` | Heap hints + `KEYCLOAK_HOST=keycloak` for container→Keycloak on full |
 | `elasticsearch-8.10.yaml` | Sidecar ES when full profile on 8.10 needs it |
-| `elasticsearch-cors.yaml` + `elasticvue.yaml` | CORS + ElasticVue UI when host ES is published |
+| `elasticsearch-cors.yaml` + `elasticvue.yaml` | CORS + ElasticVue when host ES is published |
 | `http-headers.yaml` | Larger Tomcat header limit so full-profile SSO cookies don’t 400 |
-| `connectors-ai-secrets.yaml` + `ai.env` | Opt-in AI Agent `SECRET_*` for connectors (`camunda ai`) |
-| MCP URLs / `camunda ai config` | Surface `/mcp/cluster` (+ `/mcp/processes` on 8.10+); Cursor client JSON |
-| doctor / wait / smoke | “Is Docker fine?” and “are the UIs answering?” |
+| `connectors-ai-secrets.yaml` + `ai.env` | Opt-in AI Agent `SECRET_*` (`camunda ai`) |
+| MCP URLs / `camunda ai config` | Surface `/mcp/cluster` (+ `/mcp/processes` on 8.10+); client JSON |
+| doctor / wait / smoke | Docker sanity and “are the UIs answering?” |
 | tools helpers | Point `c8ctl` / Desktop Modeler at this lab |
 
 ## Compose project name
 
-Everything runs under project name **`camunda-lab`**, so it doesn’t collide with a random `docker compose up` you ran from a hand-extracted zip.
+Everything runs under project name **`camunda-lab`**, so it doesn’t collide with a random `docker compose up` from a hand-extracted zip.
 
 ## Not in scope
 

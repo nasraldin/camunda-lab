@@ -1,6 +1,6 @@
 # App screenshots
 
-Captured from a live **camunda-lab** full stack:
+What the UIs look like on a live **camunda-lab** full stack:
 
 ```bash
 camunda install --version 8.9 --profile full --resources small --yes

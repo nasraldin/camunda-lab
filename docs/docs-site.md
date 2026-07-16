@@ -1,13 +1,13 @@
 # Docs site
 
-This site is MkDocs Material, same general setup as [docker-lab](https://nasraldin.github.io/docker-lab/).
+MkDocs Material site, same general setup as [docker-lab](https://nasraldin.github.io/docker-lab/).
 
 The header uses Camunda’s wordmark from their docs assets (`logo-camunda-black.svg`). Camunda® is a trademark of Camunda GmbH — this project is unofficial.
 
 ## Local preview
 
 ```bash
-cd ~/homelab/camunda-lab
+cd camunda-lab
 python3 -m venv .venv-docs
 source .venv-docs/bin/activate
 pip install -r requirements-docs.txt
@@ -23,3 +23,5 @@ GitHub Actions workflow `.github/workflows/docs.yml` builds on pushes to `main` 
 Enable Pages in the repo: **Settings → Pages → Build and deployment → GitHub Actions**.
 
 Public URL: [https://nasraldin.github.io/camunda-lab/](https://nasraldin.github.io/camunda-lab/)
+
+Design notes and agent specs under `docs/design/` and `docs/superpowers/` are excluded from the published site (`exclude_docs` in `mkdocs.yml`).

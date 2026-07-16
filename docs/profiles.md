@@ -18,8 +18,8 @@ camunda profile full          # recreate with full
 | Minor | Notes |
 | --- | --- |
 | **8.7** | Separate Zeebe / Operate / Tasklist. Light → `docker-compose-core.yaml`, full → `docker-compose.yaml` |
-| **8.8** | Consolidated `orchestration`; HTTP published on **host 8088** |
-| **8.9** | Consolidated `orchestration`; HTTP published on **host 8080** (current docs default) |
+| **8.8** | Consolidated `orchestration`; HTTP on host **8088** |
+| **8.9** | Consolidated `orchestration`; HTTP on host **8080** (docs default) |
 | **8.10** | Preview. Same 8080 mapping as 8.9; ES not bundled; full profile gets our ES overlay |
 
 ```bash
@@ -33,11 +33,11 @@ Without `--wipe`, we warn you: old volumes + new minor often break. Prefer wipe 
 
 These don’t rewrite Camunda’s compose topology. They write `~/.camunda-lab/resources.env` with heap settings:
 
-| Profile | Heap-ish setting | Machine vibe |
+| Profile | Heap setting | Best for |
 | --- | --- | --- |
 | `small` | `-Xms256m -Xmx512m` | 16 GB laptop, light only |
 | `balanced` | `-Xms512m -Xmx1024m` | Default |
-| `power` | `-Xms1g -Xmx2g` | You have RAM to spare |
+| `power` | `-Xms1g -Xmx2g` | Plenty of RAM |
 
 ```bash
 camunda resources small
@@ -48,7 +48,7 @@ camunda restart
 
 Ports come from Camunda’s official compose for each minor
 ([camunda-distributions](https://github.com/camunda/camunda-distributions)).
-`camunda urls` prints the map for **your** active version/profile.
+`camunda urls` prints the map for **your** active version and profile.
 
 Official docs also differ by version era:
 
@@ -105,6 +105,8 @@ No Console service in 8.7 compose.
 | gRPC | localhost:26500 |
 | Elasticsearch | http://localhost:9200 (bundled ≤8.8 light / all full ≤8.9; 8.10 full via our overlay; not in 8.9+ light) |
 | ElasticVue | http://localhost:9800 when host ES is present (light ≤8.8, full; not modeler / not 8.9+ light) |
+| MCP cluster (AI enabled, 8.9+) | http://localhost:8080/mcp/cluster |
+| MCP processes (AI enabled, 8.10+) | http://localhost:8080/mcp/processes |
 
 Default web UI credentials: `demo` / `demo`. Keycloak admin: `admin` / `admin`.
 

@@ -3,15 +3,15 @@
 ## What you need
 
 - **macOS or Linux** (Windows isn’t supported yet)
-- **Docker Engine** with **Compose v2** — check with:
+- **Docker Engine** with **Compose v2**:
 
 ```bash
 docker compose version
 ```
 
-- Disk and RAM for Elasticsearch (light) or the full stack (heavier). On a 16 GB laptop prefer `light` + `small` resources.
+- Enough disk and RAM for Elasticsearch (light) or the full stack. On a 16 GB laptop, start with `light` + `small`.
 
-Apple Silicon tip: if you don’t want Docker Desktop, use [docker-lab](https://github.com/nasraldin/docker-lab) / `ducker` for a Lima-based Engine.
+Apple Silicon tip: if you don’t want Docker Desktop, use [docker-lab](https://github.com/nasraldin/docker-lab) for a Lima-based Engine.
 
 ## Install the CLI
 
@@ -23,11 +23,11 @@ brew install camunda-lab
 camunda about
 ```
 
-The tap formula is named `camunda-lab`; you still run `camunda`.
+The formula is named `camunda-lab`; you still run `camunda`. See [Homebrew](homebrew.md).
 
 ### One-liner
 
-Downloads the GitHub Release binary and **verifies `checksums.txt`**:
+Downloads the GitHub Release binary and verifies `checksums.txt`:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/nasraldin/camunda-lab/main/install.sh | bash
@@ -36,8 +36,8 @@ curl -fsSL https://raw.githubusercontent.com/nasraldin/camunda-lab/main/install.
 ### From source
 
 ```bash
-git clone https://github.com/nasraldin/camunda-lab.git ~/homelab/camunda-lab
-cd ~/homelab/camunda-lab
+git clone https://github.com/nasraldin/camunda-lab.git
+cd camunda-lab
 make check
 make install
 camunda version
@@ -47,7 +47,7 @@ camunda version
 
 ## Start a lab
 
-### Non-interactive (scripts / CI)
+### Non-interactive
 
 ```bash
 camunda install --version 8.9 --profile light --resources small --yes
@@ -68,9 +68,9 @@ camunda install --version 8.9 --profile light --resources small --yes \
 camunda install
 ```
 
-You’ll get asked for:
+You’ll be asked for:
 
-1. **Version** — 8.7, 8.8, 8.9, or 8.10 (marked preview)
+1. **Version** — 8.7, 8.8, 8.9, or 8.10 (preview)
 2. **Profile** — light (default), full, or Web Modeler only
 3. **Resources** — small / balanced / power (tunes `JAVA_TOOL_OPTIONS`)
 
@@ -83,7 +83,7 @@ camunda open operate
 camunda open elasticvue   # when host Elasticsearch is published
 ```
 
-Optional — enable MCP client config and AI Agent secrets on a running lab:
+Enable MCP + AI Agent secrets on a running lab:
 
 ```bash
 camunda ai enable --openai-key "$OPENAI_API_KEY"
@@ -108,7 +108,7 @@ Everything under `~/.camunda-lab/` unless you set `CAMUNDA_LAB_HOME`:
   config.yaml          # active version, profile, resources, ai.enabled
   ai.env               # SECRET_* for AI Agent connectors (mode 0600)
   versions/8.9/        # extracted official zip
-  overlays/            # our thin helpers (ElasticVue, AI secrets, 8.10 ES, …)
+  overlays/            # ElasticVue, AI secrets, 8.10 ES, …
   resources.env        # heap settings for the resource profile
 ```
 

@@ -92,15 +92,16 @@ nav:
       - Why Camunda Lab: comparison.md
       - FAQ: faq.md
   - Guides:
-      - Architecture: architecture.md
       - Profiles and versions: profiles.md
       - AI and MCP: ai-mcp.md
+      - Architecture: architecture.md
       - App screenshots: screenshots.md
-  - Operations:
+  - Reference:
       - CLI reference: cli-reference.md
       - Troubleshooting: troubleshooting.md
   - Project:
-      - Homebrew: homebrew.md
-      - Releasing: releasing.md
       - Roadmap: roadmap.md
+      - Homebrew: homebrew.md
+  - Maintainers:
+      - Releasing: releasing.md
       - Docs site: docs-site.md

@@ -9,9 +9,17 @@ camunda version
 camunda about
 ```
 
+Upgrade later with:
+
+```bash
+brew update && brew upgrade camunda-lab
+```
+
 Tap repo: [`nasraldin/homebrew-tools`](https://github.com/nasraldin/homebrew-tools)
 
-## How publishing works
+---
+
+## For maintainers
 
 On each GitHub **Release** (tag `v*`), the **Homebrew** workflow:
 
@@ -22,32 +30,25 @@ On each GitHub **Release** (tag `v*`), the **Homebrew** workflow:
 
 You can also run the workflow by hand (**Actions → Homebrew → Run workflow**) and pass a tag.
 
-Local publish (uses your `gh` / git credentials):
+Local publish:
 
 ```bash
-./scripts/publish-homebrew.sh v0.2.0
+./scripts/publish-homebrew.sh v0.4.0
 ```
 
-## Secret: `HOMEBREW_TAP_TOKEN`
+### Secret: `HOMEBREW_TAP_TOKEN`
 
-Create a **fine-grained PAT** (or classic) and store it as repo secret `HOMEBREW_TAP_TOKEN`.
-
-Required access:
+Create a fine-grained PAT (or classic) and store it as repo secret `HOMEBREW_TAP_TOKEN`.
 
 | Target | Permission |
 | --- | --- |
 | `nasraldin/homebrew-tools` | **Contents: Read and write** |
 | (optional) `nasraldin/camunda-lab` | Metadata read — only if the token is org-restricted |
 
-A token that can read but not push will fail with **403** on `git push`. If CI fails that way, fix the PAT scopes or publish locally with the script above.
+A token that can read but not push fails with **403** on `git push`. Fix the PAT scopes or publish locally with the script above.
 
-Same pattern as [docker-lab’s Homebrew docs](https://nasraldin.github.io/docker-lab/homebrew/).
-
-## Status
-
-| Piece | Status |
+| Piece | Path |
 | --- | --- |
-| Formula in this repo | `Formula/camunda-lab.rb` |
+| Formula template | `Formula/camunda-lab.rb` |
 | Publish script | `scripts/publish-homebrew.sh` |
 | Workflow | `.github/workflows/homebrew.yml` |
-| Auto-publish on release | yes (when token has write access) |

@@ -215,14 +215,14 @@ Camunda Lab
   Author      Nasr Aldin
   Website     https://nasraldin.com
 
-  Version     0.1.0
+  Version     0.4.0
   Tagline     Local Camunda 8 platform lab (Docker Compose)
   CLI path    /opt/homebrew/bin/camunda
   Global      /opt/homebrew/bin/camunda
   Lab home    /Users/you/.camunda-lab
   Config      /Users/you/.camunda-lab/config.yaml
   Versions    /Users/you/.camunda-lab/versions
-  Active      version=8.8 profile=light resources=balanced project=camunda-lab
+  Active      version=8.9 profile=light resources=balanced project=camunda-lab
 
   Docker      Docker 28.x (engine 28.x)
   Compose     Docker Compose v2.x
