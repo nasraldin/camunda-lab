@@ -83,10 +83,18 @@ func TestFull810NoConsoleHasES(t *testing.T) {
 }
 
 func TestElasticvueWhenHostES(t *testing.T) {
-	mustURL(t, config.Config{Version: "8.9", Profile: "light", Host: "localhost"},
+	mustURL(t, config.Config{Version: "8.8", Profile: "light", Host: "localhost"},
+		"elasticvue", "http://localhost:9800")
+	mustURL(t, config.Config{Version: "8.9", Profile: "full", Host: "localhost"},
 		"elasticvue", "http://localhost:9800")
 	mustURL(t, config.Config{Version: "8.10", Profile: "full", Host: "localhost"},
 		"elasticvue", "http://localhost:9800")
+	if _, err := urls.Find(config.Config{Version: "8.9", Profile: "light", Host: "localhost"}, "elasticvue"); err == nil {
+		t.Fatal("8.9 light should not list elasticvue (no host ES)")
+	}
+	if _, err := urls.Find(config.Config{Version: "8.9", Profile: "light", Host: "localhost"}, "elasticsearch"); err == nil {
+		t.Fatal("8.9 light should not list elasticsearch")
+	}
 	if _, err := urls.Find(config.Config{Version: "8.10", Profile: "light", Host: "localhost"}, "elasticvue"); err == nil {
 		t.Fatal("8.10 light should not list elasticvue")
 	}

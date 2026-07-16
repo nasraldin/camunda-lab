@@ -54,7 +54,6 @@ func lightEntries(version, host string) []Entry {
 			{Name: "zeebe-http", URL: fmt.Sprintf("http://%s:8088", host), Notes: "Zeebe gateway HTTP"},
 			{Name: "rest", URL: fmt.Sprintf("http://%s:8088", host), Notes: "Desktop Modeler restAddress"},
 			{Name: "grpc", URL: fmt.Sprintf("%s:26500", host)},
-			{Name: "elasticsearch", URL: fmt.Sprintf("http://%s:9200", host)},
 		}
 	} else {
 		port := orchestrationHostPort(version)
@@ -63,11 +62,9 @@ func lightEntries(version, host string) []Entry {
 			Entry{Name: "connectors", URL: fmt.Sprintf("http://%s:8086", host)},
 			Entry{Name: "grpc", URL: fmt.Sprintf("%s:26500", host)},
 		)
-		if version != "8.10" {
-			entries = append(entries, Entry{Name: "elasticsearch", URL: fmt.Sprintf("http://%s:9200", host)})
-		}
 	}
 	if versions.HasHostElasticsearch(version, "light") {
+		entries = append(entries, Entry{Name: "elasticsearch", URL: fmt.Sprintf("http://%s:9200", host)})
 		entries = appendElasticvue(host, entries)
 	}
 	return entries

@@ -72,7 +72,7 @@ camunda down && camunda up     # recreate so CORS + ElasticVue overlays apply
 camunda open elasticvue
 ```
 
-Not listed for **modeler** or **8.10 light** (no host Elasticsearch).
+Not listed for **modeler**, **8.9+ light**, or any profile without host Elasticsearch.
 
 ## `camunda tools c8ctl install` fails
 

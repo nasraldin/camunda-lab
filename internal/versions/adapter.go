@@ -59,20 +59,24 @@ func NeedsElasticsearchOverlay(minor, profile string) bool {
 }
 
 // HasHostElasticsearch reports whether this profile publishes Elasticsearch on host :9200.
-// Matches urls.List elasticsearch entries (no ES for modeler or 8.10 light).
+// Official light compose includes ES through 8.8; 8.9+ light does not. Full includes ES
+// (8.10 via our elasticsearch overlay). Modeler never does.
 func HasHostElasticsearch(minor, profile string) bool {
 	if profile == "modeler" {
 		return false
 	}
-	if minor == "8.10" && profile == "light" {
-		return false
-	}
-	switch profile {
-	case "light", "full":
+	if profile == "full" {
 		return true
-	default:
-		return false
 	}
+	if profile == "light" {
+		switch minor {
+		case "8.7", "8.8":
+			return true
+		default:
+			return false
+		}
+	}
+	return false
 }
 
 func ReleaseTag(minor string) string {

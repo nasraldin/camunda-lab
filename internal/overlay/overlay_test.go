@@ -106,6 +106,16 @@ func TestComposeOverrideFiles810LightNone(t *testing.T) {
 	}
 }
 
+func TestComposeOverrideFiles89LightNone(t *testing.T) {
+	files, err := overlay.ComposeOverrideFiles("8.9", "light")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(files) != 0 {
+		t.Fatalf("%v", files)
+	}
+}
+
 func TestComposeOverrideFilesModelerNone(t *testing.T) {
 	files, err := overlay.ComposeOverrideFiles("8.9", "modeler")
 	if err != nil {
