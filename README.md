@@ -112,6 +112,7 @@ More detail: [CLI reference](https://nasraldin.github.io/camunda-lab/cli-referen
 | [Installation](https://nasraldin.github.io/camunda-lab/installation/) | First boot |
 | [Why Camunda Lab](https://nasraldin.github.io/camunda-lab/comparison/) | vs zip / Helm / 8 Run |
 | [Architecture](https://nasraldin.github.io/camunda-lab/architecture/) | How it fits |
+| [App screenshots](https://nasraldin.github.io/camunda-lab/screenshots/) | What Operate / Tasklist / Admin look like |
 | [Troubleshooting](https://nasraldin.github.io/camunda-lab/troubleshooting/) | When it breaks |
 
 ---

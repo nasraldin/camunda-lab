@@ -83,6 +83,7 @@ Default UI login from Camunda’s compose files: **demo** / **demo**.
 ## Where to go next
 
 - [Installation](installation.md) — prerequisites, profiles, first boot
+- [App screenshots](screenshots.md) — Operate, Tasklist, Admin on a fresh light lab
 - [Why Camunda Lab](comparison.md) — vs zip, Helm, Camunda 8 Run
 - [CLI reference](cli-reference.md) — every command
 - [Troubleshooting](troubleshooting.md) — when Keycloak won’t wake up

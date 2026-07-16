@@ -93,6 +93,7 @@ nav:
   - Guides:
       - Architecture: architecture.md
       - Profiles and versions: profiles.md
+      - App screenshots: screenshots.md
   - Operations:
       - CLI reference: cli-reference.md
       - Troubleshooting: troubleshooting.md
