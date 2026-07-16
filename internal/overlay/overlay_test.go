@@ -1,14 +1,25 @@
 package overlay_test
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
 	"github.com/nasraldin/camunda-lab/internal/overlay"
 	"github.com/nasraldin/camunda-lab/internal/paths"
 )
+
+func repoRoot(t *testing.T) string {
+	t.Helper()
+	_, file, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("runtime.Caller failed")
+	}
+	return filepath.Clean(filepath.Join(filepath.Dir(file), "..", ".."))
+}
 
 func TestJavaToolOptions(t *testing.T) {
 	got, err := overlay.JavaToolOptions("balanced")
@@ -60,5 +71,22 @@ func TestComposeOverrideFiles89FullNone(t *testing.T) {
 	}
 	if len(files) != 0 {
 		t.Fatalf("%v", files)
+	}
+}
+
+func TestElasticsearchOverlayInSync(t *testing.T) {
+	root := repoRoot(t)
+	embedPath := filepath.Join(root, "internal", "overlay", "embed", "elasticsearch-8.10.yaml")
+	repoPath := filepath.Join(root, "overlays", "elasticsearch-8.10.yaml")
+	a, err := os.ReadFile(embedPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := os.ReadFile(repoPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(a, b) {
+		t.Fatal("overlays/elasticsearch-8.10.yaml must match internal/overlay/embed/elasticsearch-8.10.yaml")
 	}
 }

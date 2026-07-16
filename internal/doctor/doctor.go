@@ -6,7 +6,6 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/nasraldin/camunda-lab/internal/compose"
 	"github.com/nasraldin/camunda-lab/internal/config"
 	"github.com/nasraldin/camunda-lab/internal/paths"
 )
@@ -49,8 +48,8 @@ func Run(fix bool) Report {
 		} else {
 			check("version dir", nil)
 		}
-		if fix {
-			_ = compose.NewRunner() // placeholder — restart via lab in CLI layer
+		if fix && r.FixHint == "" && !r.OK {
+			r.FixHint = "run: camunda install && camunda doctor"
 		}
 	}
 
