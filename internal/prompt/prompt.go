@@ -38,3 +38,24 @@ func Choose(r io.Reader, w io.Writer, question string, options []string, def int
 	}
 	return options[n-1], nil
 }
+
+// String prompts for a single line; empty input returns def.
+func String(r io.Reader, w io.Writer, question, def string) (string, error) {
+	if def != "" {
+		fmt.Fprintf(w, "%s [%s]: ", question, def)
+	} else {
+		fmt.Fprintf(w, "%s: ", question)
+	}
+	scanner := bufio.NewScanner(r)
+	if !scanner.Scan() {
+		if err := scanner.Err(); err != nil {
+			return "", err
+		}
+		return def, nil
+	}
+	line := strings.TrimSpace(scanner.Text())
+	if line == "" {
+		return def, nil
+	}
+	return line, nil
+}

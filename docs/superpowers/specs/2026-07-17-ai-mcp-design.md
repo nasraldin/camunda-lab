@@ -1,7 +1,7 @@
 # AI Agent + MCP enablement for Camunda Lab
 
 **Date:** 2026-07-17  
-**Status:** Draft — awaiting user review  
+**Status:** Approved  
 **Repo:** camunda-lab  
 
 ## Goal

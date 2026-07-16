@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/nasraldin/camunda-lab/internal/ai"
 	"github.com/nasraldin/camunda-lab/internal/compose"
 	"github.com/nasraldin/camunda-lab/internal/config"
 	"github.com/nasraldin/camunda-lab/internal/display"
@@ -25,6 +26,8 @@ type InstallOpts struct {
 	Profile   string
 	Resources string
 	Yes       bool
+	AI        bool
+	AISecrets ai.Secrets
 }
 
 type Lab struct {
@@ -122,7 +125,13 @@ func (l *Lab) Install(ctx context.Context, opts InstallOpts) error {
 		return err
 	}
 
-	return l.Up(ctx)
+	if err := l.Up(ctx); err != nil {
+		return err
+	}
+	if opts.AI {
+		return l.EnableAI(ctx, opts.AISecrets)
+	}
+	return nil
 }
 
 func (l *Lab) Up(ctx context.Context) error {
@@ -276,7 +285,7 @@ func parsePSJSON(raw string) ([]composePSRow, error) {
 }
 
 func summarizeURLs(cfg config.Config) []string {
-	wanted := []string{"operate", "tasklist", "admin", "console", "optimize", "identity", "web-modeler", "keycloak", "elasticvue", "connectors", "grpc"}
+	wanted := []string{"operate", "tasklist", "admin", "console", "optimize", "identity", "web-modeler", "keycloak", "elasticvue", "connectors", "grpc", "mcp-cluster", "mcp-processes"}
 	entries := ListStatusURLs(cfg)
 	var lines []string
 	for _, name := range wanted {
@@ -291,7 +300,7 @@ func ListStatusURLs(cfg config.Config) map[string]string {
 	out := map[string]string{}
 	for _, entry := range urls.List(cfg) {
 		switch entry.Name {
-		case "operate", "tasklist", "admin", "console", "optimize", "identity", "web-modeler", "keycloak", "elasticvue", "connectors", "grpc":
+		case "operate", "tasklist", "admin", "console", "optimize", "identity", "web-modeler", "keycloak", "elasticvue", "connectors", "grpc", "mcp-cluster", "mcp-processes":
 			out[entry.Name] = entry.URL
 		}
 	}
@@ -341,7 +350,7 @@ func (l *Lab) resolve(cfg config.Config) (workDir string, files []string, envFil
 		}
 		files = append(files, p)
 	}
-	overrides, err := overlay.ComposeOverrideFiles(cfg.Version, cfg.Profile)
+	overrides, err := overlay.ComposeOverrideFiles(cfg.Version, cfg.Profile, cfg.AI.Enabled)
 	if err != nil {
 		return "", nil, nil, err
 	}
@@ -353,14 +362,15 @@ func (l *Lab) resolve(cfg config.Config) (workDir string, files []string, envFil
 	}
 	// Compose: any --env-file disables automatic loading of the project .env.
 	// Always pass upstream .env first (image tags, secrets), then resources.env.
-	envFiles = EnvFiles(workDir, envPath)
+	envFiles = EnvFiles(workDir, envPath, cfg.AI.Enabled)
 
 	return workDir, files, envFiles, nil
 }
 
 // EnvFiles returns compose --env-file paths: upstream Camunda .env (if present),
-// then the lab resources.env. Order matters — later files override earlier keys.
-func EnvFiles(workDir, resourcesEnv string) []string {
+// then the lab resources.env, then ai.env when AI is enabled. Order matters —
+// later files override earlier keys.
+func EnvFiles(workDir, resourcesEnv string, aiEnabled bool) []string {
 	var files []string
 	upstream := filepath.Join(workDir, ".env")
 	if _, err := os.Stat(upstream); err == nil {
@@ -368,6 +378,11 @@ func EnvFiles(workDir, resourcesEnv string) []string {
 	}
 	if resourcesEnv != "" {
 		files = append(files, resourcesEnv)
+	}
+	if aiEnabled {
+		if _, err := os.Stat(paths.AIEnvFile()); err == nil {
+			files = append(files, paths.AIEnvFile())
+		}
 	}
 	return files
 }

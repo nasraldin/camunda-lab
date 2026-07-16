@@ -9,12 +9,17 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+type AIConfig struct {
+	Enabled bool `yaml:"enabled"`
+}
+
 type Config struct {
-	Version        string `yaml:"version"`
-	Profile        string `yaml:"profile"`
-	Resources      string `yaml:"resources"`
-	Host           string `yaml:"host"`
-	ComposeProject string `yaml:"compose_project"`
+	Version        string   `yaml:"version"`
+	Profile        string   `yaml:"profile"`
+	Resources      string   `yaml:"resources"`
+	Host           string   `yaml:"host"`
+	ComposeProject string   `yaml:"compose_project"`
+	AI             AIConfig `yaml:"ai"`
 }
 
 func Defaults() Config {

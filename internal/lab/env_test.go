@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/nasraldin/camunda-lab/internal/lab"
+	"github.com/nasraldin/camunda-lab/internal/paths"
 )
 
 func TestEnvFilesIncludesUpstreamDotEnv(t *testing.T) {
@@ -18,7 +19,7 @@ func TestEnvFilesIncludesUpstreamDotEnv(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got := lab.EnvFiles(dir, resources)
+	got := lab.EnvFiles(dir, resources, false)
 	if len(got) != 2 {
 		t.Fatalf("got %#v", got)
 	}
@@ -33,8 +34,21 @@ func TestEnvFilesIncludesUpstreamDotEnv(t *testing.T) {
 func TestEnvFilesWithoutUpstream(t *testing.T) {
 	dir := t.TempDir()
 	resources := filepath.Join(dir, "resources.env")
-	got := lab.EnvFiles(dir, resources)
+	got := lab.EnvFiles(dir, resources, false)
 	if len(got) != 1 || got[0] != resources {
 		t.Fatalf("%#v", got)
+	}
+}
+
+func TestEnvFilesIncludesAI(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("CAMUNDA_LAB_HOME", home)
+	paths.Reset()
+	if err := os.WriteFile(paths.AIEnvFile(), []byte("SECRET_OPENAI_API_KEY=x\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	got := lab.EnvFiles(t.TempDir(), "", true)
+	if len(got) == 0 || got[len(got)-1] != paths.AIEnvFile() {
+		t.Fatalf("%v", got)
 	}
 }

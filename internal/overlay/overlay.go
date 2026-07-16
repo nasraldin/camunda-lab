@@ -22,6 +22,9 @@ var elasticvueYAML []byte
 //go:embed embed/http-headers.yaml
 var httpHeadersYAML []byte
 
+//go:embed embed/connectors-ai-secrets.yaml
+var connectorsAISecretsYAML []byte
+
 func ValidateResources(resources string) error {
 	switch resources {
 	case "small", "balanced", "power":
@@ -67,7 +70,7 @@ func SyncResourcesEnv(resources string) (string, error) {
 }
 
 // ComposeOverrideFiles returns extra -f compose files (absolute paths).
-func ComposeOverrideFiles(minor, profile string) ([]string, error) {
+func ComposeOverrideFiles(minor, profile string, aiEnabled bool) ([]string, error) {
 	if err := os.MkdirAll(paths.OverlaysDir(), 0o755); err != nil {
 		return nil, err
 	}
@@ -95,6 +98,11 @@ func ComposeOverrideFiles(minor, profile string) ([]string, error) {
 	}
 	if profile == "full" {
 		if err := write("http-headers.yaml", httpHeadersYAML); err != nil {
+			return nil, err
+		}
+	}
+	if aiEnabled && versions.SupportsAIFeature(minor, profile) == nil {
+		if err := write("connectors-ai-secrets.yaml", connectorsAISecretsYAML); err != nil {
 			return nil, err
 		}
 	}

@@ -37,6 +37,7 @@ func Home() string {
 }
 
 func ConfigFile() string         { return filepath.Join(Home(), "config.yaml") }
+func AIEnvFile() string          { return filepath.Join(Home(), "ai.env") }
 func VersionsDir() string        { return filepath.Join(Home(), "versions") }
 func VersionDir(v string) string { return filepath.Join(VersionsDir(), v) }
 func OverlaysDir() string        { return filepath.Join(Home(), "overlays") }

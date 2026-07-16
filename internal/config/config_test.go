@@ -43,3 +43,23 @@ func TestSaveLoad(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestAIEnabledRoundTrip(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("CAMUNDA_LAB_HOME", home)
+	paths.Reset()
+
+	c := config.Defaults()
+	c.Version = "8.9"
+	c.AI.Enabled = true
+	if err := config.Save(c); err != nil {
+		t.Fatal(err)
+	}
+	got, err := config.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !got.AI.Enabled {
+		t.Fatal("expected ai.enabled")
+	}
+}

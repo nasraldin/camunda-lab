@@ -15,15 +15,31 @@ import (
 
 func newSwitchCmd() *cobra.Command {
 	var wipe bool
+	var aiFlag bool
+	var openaiKey, anthropicKey, openaiBase string
 	cmd := &cobra.Command{
 		Use:   "switch <8.7|8.8|8.9|8.10>",
 		Short: "Switch Camunda minor version",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return lab.New().Switch(cmd.Context(), args[0], wipe)
+			if err := lab.New().Switch(cmd.Context(), args[0], wipe); err != nil {
+				return err
+			}
+			if !aiFlag {
+				return nil
+			}
+			s, err := resolveAISecrets(openaiKey, anthropicKey, openaiBase, isInteractive())
+			if err != nil {
+				return err
+			}
+			return lab.New().EnableAI(cmd.Context(), s)
 		},
 	}
 	cmd.Flags().BoolVar(&wipe, "wipe", false, "Remove volumes before switching")
+	cmd.Flags().BoolVar(&aiFlag, "ai", false, "Enable MCP URLs + AI Agent connector secrets (8.9+)")
+	cmd.Flags().StringVar(&openaiKey, "openai-key", "", "OpenAI API key for connectors")
+	cmd.Flags().StringVar(&anthropicKey, "anthropic-key", "", "Anthropic API key")
+	cmd.Flags().StringVar(&openaiBase, "openai-base-url", "", "Optional OpenAI-compatible base URL")
 	return cmd
 }
 
@@ -85,7 +101,7 @@ func newURLsCmd() *cobra.Command {
 func printURLs(cmd *cobra.Command, cfg config.Config) {
 	entries := urls.List(cfg)
 	webApps := []string{"operate", "tasklist", "admin", "console", "optimize", "identity", "web-modeler", "keycloak", "elasticvue"}
-	apis := []string{"rest", "orchestration", "grpc", "zeebe-http", "connectors", "elasticsearch"}
+	apis := []string{"rest", "orchestration", "grpc", "zeebe-http", "connectors", "elasticsearch", "mcp-cluster", "mcp-processes"}
 
 	index := map[string]urls.Entry{}
 	for _, entry := range entries {
