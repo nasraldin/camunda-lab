@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -19,6 +20,7 @@ import (
 	"github.com/nasraldin/camunda-lab/internal/paths"
 	"github.com/nasraldin/camunda-lab/internal/smoke"
 	"github.com/nasraldin/camunda-lab/internal/tools"
+	"github.com/nasraldin/camunda-lab/internal/ui/sso"
 	"github.com/nasraldin/camunda-lab/internal/update"
 	"github.com/nasraldin/camunda-lab/internal/urls"
 	"github.com/nasraldin/camunda-lab/internal/versions"
@@ -36,6 +38,7 @@ func Register(mux *http.ServeMux, cliVersion string) {
 	mux.HandleFunc("POST /api/v1/profile", h.setProfile)
 	mux.HandleFunc("POST /api/v1/resources", h.setResources)
 	mux.HandleFunc("GET /api/v1/urls", h.listURLs)
+	mux.HandleFunc("GET /api/v1/sso/open", h.ssoOpen)
 	mux.HandleFunc("GET /api/v1/doctor", h.runDoctor)
 	mux.HandleFunc("GET /api/v1/smoke", h.runSmoke)
 	mux.HandleFunc("GET /api/v1/containers", h.containers)
@@ -95,7 +98,7 @@ func (h *handler) overview(w http.ResponseWriter, r *http.Request) {
 			"aiEnabled": cfg.AI.Enabled,
 		},
 		"supportedVersions": versions.Supported,
-		"uiHint":            "http://127.0.0.1:9090",
+		"uiHint":            "http://localhost:9090",
 	}
 	if configured && cfg.Version != "" {
 		containers, cErr := h.lab.ListContainers(r.Context())
@@ -265,6 +268,48 @@ func (h *handler) listURLs(w http.ResponseWriter, r *http.Request) {
 	}
 	entries := urls.List(cfg)
 	writeJSON(w, http.StatusOK, map[string]any{"urls": entries})
+}
+
+// ssoOpen warms Keycloak SSO cookies in the browser, then redirects to the app.
+// Requires Lab UI on http://localhost (same cookie host as Camunda).
+func (h *handler) ssoOpen(w http.ResponseWriter, r *http.Request) {
+	target := strings.TrimSpace(r.URL.Query().Get("url"))
+	if target == "" {
+		writeErr(w, http.StatusBadRequest, fmt.Errorf("missing url query parameter"))
+		return
+	}
+	u, err := url.Parse(target)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") {
+		writeErr(w, http.StatusBadRequest, fmt.Errorf("invalid url"))
+		return
+	}
+	host := strings.ToLower(u.Hostname())
+	if host != "localhost" && host != "127.0.0.1" && host != "::1" {
+		writeErr(w, http.StatusBadRequest, fmt.Errorf("refusing non-loopback open target"))
+		return
+	}
+
+	cfg, err := config.Load()
+	if err != nil {
+		writeErr(w, http.StatusBadRequest, err)
+		return
+	}
+	kc, err := urls.Find(cfg, "keycloak")
+	if err != nil || kc.URL == "" {
+		// No Keycloak — just redirect (light profile).
+		http.Redirect(w, r, target, http.StatusFound)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 45*time.Second)
+	defer cancel()
+	cookies, err := sso.SessionCookies(ctx, kc.URL)
+	if err != nil {
+		writeErr(w, http.StatusBadGateway, err)
+		return
+	}
+	sso.WriteCookies(w, cookies)
+	http.Redirect(w, r, target, http.StatusFound)
 }
 
 func (h *handler) runDoctor(w http.ResponseWriter, r *http.Request) {

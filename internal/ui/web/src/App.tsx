@@ -37,7 +37,7 @@ const links: {
   { to: "/", label: "Home", icon: IconOverview, end: true },
   { to: "/setup", label: "Get started", icon: IconSetup },
   { to: "/apps", label: "Apps", icon: IconApps },
-  { to: "/admin", label: "Admin", icon: IconAdmin },
+  { to: "/admin", label: "Logins", icon: IconAdmin },
   { to: "/containers", label: "Services", icon: IconContainers },
   { to: "/logs", label: "Logs", icon: IconLogs },
   { to: "/ai", label: "AI helpers", icon: IconAI },

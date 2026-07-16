@@ -70,10 +70,10 @@ export function AdminPage() {
   return (
     <div className="stack">
       <div className="page-head">
-        <h1>Admin</h1>
+        <h1>Logins</h1>
         <p className="lead">
-          Default usernames and passwords for this local lab. Change them in user management if you want — or reset the
-          lab to get these defaults back.
+          Default usernames and passwords for this local lab. After one Keycloak sign-in, Camunda apps usually stay open
+          in this browser — manage that from <Link to="/apps">Apps</Link> (Sign out / Fix broken session).
         </p>
       </div>
 

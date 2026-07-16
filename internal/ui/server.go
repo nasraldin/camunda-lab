@@ -35,7 +35,7 @@ func DefaultOptions() Options {
 		}
 	}
 	return Options{
-		Host: "127.0.0.1",
+		Host: "localhost",
 		Port: port,
 		Open: true,
 	}
@@ -44,7 +44,7 @@ func DefaultOptions() Options {
 // Run starts the Lab UI HTTP server (blocking).
 func Run(opts Options) error {
 	if opts.Host == "" {
-		opts.Host = "127.0.0.1"
+		opts.Host = "localhost"
 	}
 	if opts.Port == 0 {
 		opts.Port = 9090
@@ -93,7 +93,7 @@ func assertLoopback(host string) error {
 	if ip != nil && ip.IsLoopback() {
 		return nil
 	}
-	return fmt.Errorf("lab UI refuses non-loopback host %q (no auth); use 127.0.0.1", host)
+	return fmt.Errorf("lab UI refuses non-loopback host %q (no auth); use localhost", host)
 }
 
 func openBrowser(url string) error {
