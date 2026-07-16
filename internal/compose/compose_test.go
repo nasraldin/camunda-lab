@@ -16,10 +16,15 @@ func TestBuildArgsUp(t *testing.T) {
 	}
 }
 
-func TestBuildArgsDownVolumes(t *testing.T) {
-	args := compose.BuildArgs("down", "camunda-lab", []string{"docker-compose-full.yaml"}, nil, "-v", "--remove-orphans")
+func TestBuildArgsMultipleEnvFiles(t *testing.T) {
+	args := compose.BuildArgs("up", "camunda-lab",
+		[]string{"docker-compose.yaml"},
+		[]string{".env", "resources.env"},
+		"-d",
+	)
 	got := strings.Join(args, " ")
-	if !strings.Contains(got, "down -v --remove-orphans") {
-		t.Fatalf("%q", got)
+	want := "compose -p camunda-lab -f docker-compose.yaml --env-file .env --env-file resources.env up -d"
+	if got != want {
+		t.Fatalf("got %q want %q", got, want)
 	}
 }

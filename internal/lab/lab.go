@@ -186,10 +186,25 @@ func (l *Lab) resolve(cfg config.Config) (workDir string, files []string, envFil
 	if err != nil {
 		return "", nil, nil, err
 	}
-	envFiles = []string{envPath}
+	// Compose: any --env-file disables automatic loading of the project .env.
+	// Always pass upstream .env first (image tags, secrets), then resources.env.
+	envFiles = EnvFiles(workDir, envPath)
 
-	// Also load upstream .env from workDir if present (compose does this automatically when cwd is workDir)
 	return workDir, files, envFiles, nil
+}
+
+// EnvFiles returns compose --env-file paths: upstream Camunda .env (if present),
+// then the lab resources.env. Order matters — later files override earlier keys.
+func EnvFiles(workDir, resourcesEnv string) []string {
+	var files []string
+	upstream := filepath.Join(workDir, ".env")
+	if _, err := os.Stat(upstream); err == nil {
+		files = append(files, upstream)
+	}
+	if resourcesEnv != "" {
+		files = append(files, resourcesEnv)
+	}
+	return files
 }
 
 func (l *Lab) Logs(ctx context.Context, service string, follow bool) error {
