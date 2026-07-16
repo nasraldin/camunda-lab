@@ -11,6 +11,8 @@ copyright: Copyright &copy; 2026 Nasr Aldin — MIT License · Unofficial commun
 
 theme:
   name: material
+  logo: assets/logo-camunda-black.svg
+  favicon: assets/logo-camunda-black.svg
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
@@ -43,6 +45,9 @@ theme:
     - toc.follow
   icon:
     repo: fontawesome/brands/github
+
+extra_css:
+  - stylesheets/extra.css
 
 plugins:
   - search

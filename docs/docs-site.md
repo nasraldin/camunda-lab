@@ -2,6 +2,8 @@
 
 This site is MkDocs Material, same general setup as [docker-lab](https://nasraldin.github.io/docker-lab/).
 
+The header uses Camunda’s wordmark from their docs assets (`logo-camunda-black.svg`). Camunda® is a trademark of Camunda GmbH — this project is unofficial.
+
 ## Local preview
 
 ```bash

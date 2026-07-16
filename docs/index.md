@@ -1,5 +1,7 @@
 # Camunda Lab
 
+![Camunda](assets/logo-camunda-black.svg){: .brand-logo }
+
 Want Camunda 8 on your machine without Kind, Helm, or a day of YAML archaeology? This lab wraps Camunda’s **official** Docker Compose distributions and gives you a small CLI named **`camunda`**.
 
 Pick a minor (8.7–8.10), pick light or full, start it, open Operate. When you’re done testing an upgrade path, switch versions or wipe the lab clean.
