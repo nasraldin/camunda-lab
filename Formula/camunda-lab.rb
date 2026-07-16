@@ -1,35 +1,44 @@
-# Homebrew formula stub — update url/sha256 when cutting a release.
-# Binary name: camunda  |  Formula name: camunda-lab
+# Homebrew formula for the nasraldin/tools tap (repo: nasraldin/homebrew-tools).
+#
+# Formula name: camunda-lab
+# Installed CLI binary: camunda
+#
+# Source of truth in this repo. On GitHub Release, CI runs
+# scripts/publish-homebrew.sh to push url + sha256 into the tap.
+#
+# Users:
+#   brew tap nasraldin/tools
+#   brew install camunda-lab
+#
 class CamundaLab < Formula
   desc "Unofficial local Camunda 8 Docker lab CLI"
   homepage "https://github.com/nasraldin/camunda-lab"
-  version "0.1.0"
+  url "https://github.com/nasraldin/camunda-lab/archive/refs/tags/v0.1.0.tar.gz"
+  sha256 "0000000000000000000000000000000000000000000000000000000000000000"
   license "MIT"
 
-  on_macos do
-    on_arm do
-      url "https://github.com/nasraldin/camunda-lab/releases/download/v0.1.0/camunda-lab_0.1.0_darwin_arm64.tar.gz"
-      sha256 "REPLACE_ME"
-    end
-    on_intel do
-      url "https://github.com/nasraldin/camunda-lab/releases/download/v0.1.0/camunda-lab_0.1.0_darwin_amd64.tar.gz"
-      sha256 "REPLACE_ME"
-    end
-  end
-
-  on_linux do
-    on_arm do
-      url "https://github.com/nasraldin/camunda-lab/releases/download/v0.1.0/camunda-lab_0.1.0_linux_arm64.tar.gz"
-      sha256 "REPLACE_ME"
-    end
-    on_intel do
-      url "https://github.com/nasraldin/camunda-lab/releases/download/v0.1.0/camunda-lab_0.1.0_linux_amd64.tar.gz"
-      sha256 "REPLACE_ME"
-    end
-  end
+  depends_on "go" => :build
+  depends_on "docker"
 
   def install
-    bin.install "camunda"
+    ldflags = "-s -w -X main.version=#{version}"
+    system "go", "build", *std_go_args(ldflags: ldflags, output: bin/"camunda"), "./cmd/camunda"
+  end
+
+  def caveats
+    <<~EOS
+      The CLI is `camunda` (formula name is camunda-lab).
+
+      You need Docker Compose v2 (`docker compose version`).
+
+      After install:
+
+        camunda install --version 8.8 --profile light --yes
+        camunda wait
+        camunda urls
+
+      Docs: https://nasraldin.github.io/camunda-lab/
+    EOS
   end
 
   test do

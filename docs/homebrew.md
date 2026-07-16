@@ -1,6 +1,6 @@
 # Homebrew
 
-The CLI binary is **`camunda`**. On Homebrew the formula is **`camunda-lab`** so the name stays clear next to other tools in the tap.
+The CLI binary is **`camunda`**. On Homebrew the formula is **`camunda-lab`**.
 
 ```bash
 brew tap nasraldin/tools
@@ -10,30 +10,40 @@ camunda version
 
 Tap repo: [`nasraldin/homebrew-tools`](https://github.com/nasraldin/homebrew-tools)
 
+## How publishing works
+
+On each GitHub **Release** (tag `v*`), the **Homebrew** workflow:
+
+1. Downloads the source tarball for that tag
+2. Computes sha256
+3. Updates `Formula/camunda-lab.rb` in `nasraldin/homebrew-tools`
+4. Pushes with `HOMEBREW_TAP_TOKEN`
+
+You can also run the workflow by hand (**Actions → Homebrew → Run workflow**) and pass a tag.
+
+Local dry-run (needs `gh` auth that can push the tap):
+
+```bash
+./scripts/publish-homebrew.sh v0.1.0
+```
+
+## Secret
+
+Repo secret **`HOMEBREW_TAP_TOKEN`**: fine-grained PAT (or classic) that can push to `nasraldin/homebrew-tools` (Contents: read/write).
+
+Same pattern as [docker-lab’s Homebrew docs](https://nasraldin.github.io/docker-lab/homebrew/).
+
 ## Status
 
 | Piece | Status |
 | --- | --- |
 | Formula in this repo | `Formula/camunda-lab.rb` |
-| sha256 values | Fill in on first release |
-| Auto-publish to tap | Same pattern as docker-lab (optional) |
+| Publish script | `scripts/publish-homebrew.sh` |
+| Workflow | `.github/workflows/homebrew.yml` |
+| Auto-publish on release | yes (uses `HOMEBREW_TAP_TOKEN`) |
 
-Until a release exists with real checksums, install from source (`make build && make install`).
-
-## Local tap checkout
-
-Same layout as docker-lab:
-
-```text
-~/homelab/
-  camunda-lab/
-  taps/
-    homebrew-tools/
-```
+Until the first `v*` release exists, install from source:
 
 ```bash
-cp ~/homelab/camunda-lab/Formula/camunda-lab.rb \
-   ~/homelab/taps/homebrew-tools/Formula/camunda-lab.rb
+make build && make install
 ```
-
-Commit and push in the tap repo after you update URLs and sha256s.

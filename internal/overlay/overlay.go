@@ -1,14 +1,17 @@
 package overlay
 
 import (
+	_ "embed"
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 
 	"github.com/nasraldin/camunda-lab/internal/paths"
 	"github.com/nasraldin/camunda-lab/internal/versions"
 )
+
+//go:embed embed/elasticsearch-8.10.yaml
+var elasticsearch810YAML []byte
 
 func ValidateResources(resources string) error {
 	switch resources {
@@ -57,37 +60,12 @@ func ComposeOverrideFiles(minor, profile string) ([]string, error) {
 	if !versions.NeedsElasticsearchOverlay(minor, profile) {
 		return nil, nil
 	}
-	src, err := esOverlaySource()
-	if err != nil {
-		return nil, err
-	}
 	if err := os.MkdirAll(paths.OverlaysDir(), 0o755); err != nil {
 		return nil, err
 	}
 	dest := filepath.Join(paths.OverlaysDir(), "elasticsearch-8.10.yaml")
-	data, err := os.ReadFile(src)
-	if err != nil {
-		return nil, fmt.Errorf("read ES overlay: %w", err)
-	}
-	if err := os.WriteFile(dest, data, 0o644); err != nil {
+	if err := os.WriteFile(dest, elasticsearch810YAML, 0o644); err != nil {
 		return nil, err
 	}
 	return []string{dest}, nil
-}
-
-func esOverlaySource() (string, error) {
-	_, thisFile, _, ok := runtime.Caller(0)
-	if ok {
-		repoOverlay := filepath.Clean(filepath.Join(filepath.Dir(thisFile), "..", "..", "overlays", "elasticsearch-8.10.yaml"))
-		if _, err := os.Stat(repoOverlay); err == nil {
-			return repoOverlay, nil
-		}
-	}
-	if wd, err := os.Getwd(); err == nil {
-		p := filepath.Join(wd, "overlays", "elasticsearch-8.10.yaml")
-		if _, err := os.Stat(p); err == nil {
-			return p, nil
-		}
-	}
-	return "", fmt.Errorf("overlays/elasticsearch-8.10.yaml not found (run from camunda-lab repo or install overlays)")
 }
