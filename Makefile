@@ -1,4 +1,4 @@
-.PHONY: build test lint
+.PHONY: build test lint install
 VERSION ?= 0.0.0-dev
 
 build:
@@ -9,3 +9,6 @@ test:
 
 lint:
 	golangci-lint run ./...
+
+install: build
+	install -m 755 bin/camunda "$(HOME)/.local/bin/camunda"
