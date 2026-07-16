@@ -38,13 +38,14 @@ func List(cfg config.Config) []Entry {
 			{Name: "web-modeler", URL: fmt.Sprintf("http://%s:8070", host), Notes: "demo/demo"},
 		}
 	case "full":
-		return fullEntries(cfg.Version, host)
+		return fullEntries(cfg, host)
 	default: // light
-		return lightEntries(cfg.Version, host)
+		return lightEntries(cfg, host)
 	}
 }
 
-func lightEntries(version, host string) []Entry {
+func lightEntries(cfg config.Config, host string) []Entry {
+	version := cfg.Version
 	var entries []Entry
 	if isPre88(version) {
 		entries = []Entry{
@@ -67,10 +68,11 @@ func lightEntries(version, host string) []Entry {
 		entries = append(entries, Entry{Name: "elasticsearch", URL: fmt.Sprintf("http://%s:9200", host)})
 		entries = appendElasticvue(host, entries)
 	}
-	return entries
+	return appendMCP(cfg, host, entries)
 }
 
-func fullEntries(version, host string) []Entry {
+func fullEntries(cfg config.Config, host string) []Entry {
+	version := cfg.Version
 	var entries []Entry
 	if isPre88(version) {
 		entries = []Entry{
@@ -107,7 +109,7 @@ func fullEntries(version, host string) []Entry {
 	if versions.HasHostElasticsearch(version, "full") {
 		entries = appendElasticvue(host, entries)
 	}
-	return entries
+	return appendMCP(cfg, host, entries)
 }
 
 func appendElasticvue(host string, entries []Entry) []Entry {
@@ -116,6 +118,23 @@ func appendElasticvue(host string, entries []Entry) []Entry {
 		URL:   fmt.Sprintf("http://%s:9800", host),
 		Notes: "ElasticVue — cluster camunda-lab preconfigured",
 	})
+}
+
+func appendMCP(cfg config.Config, host string, entries []Entry) []Entry {
+	if !cfg.AI.Enabled || !versions.SupportsClusterMCP(cfg.Version) {
+		return entries
+	}
+	port := orchestrationHostPort(cfg.Version)
+	base := fmt.Sprintf("http://%s:%d", host, port)
+	note := "MCP Streamable HTTP — see camunda ai config"
+	if cfg.Profile == "full" {
+		note = "MCP (OIDC) — see camunda ai config"
+	}
+	entries = append(entries, Entry{Name: "mcp-cluster", URL: base + "/mcp/cluster", Notes: note})
+	if versions.SupportsProcessesMCP(cfg.Version) {
+		entries = append(entries, Entry{Name: "mcp-processes", URL: base + "/mcp/processes", Notes: note})
+	}
+	return entries
 }
 
 func orchestrationUI(host string, port int) []Entry {

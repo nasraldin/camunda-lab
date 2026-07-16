@@ -25,6 +25,7 @@ func BuildArgs(subcommand, project string, files, envFiles []string, extra ...st
 // Engine runs docker compose operations (injectable for tests).
 type Engine interface {
 	Up(workDir string, files, envFiles []string, project string) error
+	UpService(workDir string, files, envFiles []string, project, service string) error
 	Down(workDir string, files []string, project string, volumes bool) error
 	Ps(workDir, project string) (string, error)
 	PsJSON(workDir, project string) (string, error)
@@ -45,6 +46,15 @@ func (r *Runner) Up(workDir string, files, envFiles []string, project string) er
 	_, err := r.Exec(workDir, append([]string{"docker"}, args...))
 	if err != nil {
 		return fmt.Errorf("docker compose up: %w", err)
+	}
+	return nil
+}
+
+func (r *Runner) UpService(workDir string, files, envFiles []string, project, service string) error {
+	args := BuildArgs("up", project, files, envFiles, "-d", "--force-recreate", "--no-deps", service)
+	_, err := r.Exec(workDir, append([]string{"docker"}, args...))
+	if err != nil {
+		return fmt.Errorf("docker compose up %s: %w", service, err)
 	}
 	return nil
 }

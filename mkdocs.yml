@@ -94,6 +94,7 @@ nav:
   - Guides:
       - Architecture: architecture.md
       - Profiles and versions: profiles.md
+      - AI and MCP: ai-mcp.md
       - App screenshots: screenshots.md
   - Operations:
       - CLI reference: cli-reference.md

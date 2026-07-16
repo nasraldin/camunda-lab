@@ -69,7 +69,7 @@ func renderAbout(root *cobra.Command) string {
 	}
 	fmt.Fprintln(&b)
 
-	fmt.Fprintf(&b, "  Features    compose · profiles · version-switch · overlays · elasticvue · c8ctl · modeler · doctor · smoke\n\n")
+	fmt.Fprintf(&b, "  Features    compose · profiles · version-switch · overlays · elasticvue · ai · mcp · c8ctl · modeler · doctor · smoke\n\n")
 	fmt.Fprintf(&b, "  Repo        %s\n", aboutRepo)
 	fmt.Fprintf(&b, "  Docs        %s\n\n", aboutDocs)
 	fmt.Fprintf(&b, "  Commands    %d available — run: camunda help\n\n", countCommands(root))

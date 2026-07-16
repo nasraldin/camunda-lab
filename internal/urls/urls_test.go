@@ -102,3 +102,23 @@ func TestElasticvueWhenHostES(t *testing.T) {
 		t.Fatal("modeler should not list elasticvue")
 	}
 }
+
+func TestMCPURLsWhenAIEnabled(t *testing.T) {
+	cfg := config.Config{Version: "8.9", Profile: "light", Host: "localhost", AI: config.AIConfig{Enabled: true}}
+	mustURL(t, cfg, "mcp-cluster", "http://localhost:8080/mcp/cluster")
+	if _, err := urls.Find(cfg, "mcp-processes"); err == nil {
+		t.Fatal("8.9 should not list processes MCP")
+	}
+}
+
+func TestMCPProcessesURL810(t *testing.T) {
+	cfg := config.Config{Version: "8.10", Profile: "light", Host: "localhost", AI: config.AIConfig{Enabled: true}}
+	mustURL(t, cfg, "mcp-processes", "http://localhost:8080/mcp/processes")
+}
+
+func TestMCPURLsHiddenWhenAIDisabled(t *testing.T) {
+	cfg := config.Config{Version: "8.9", Profile: "light", Host: "localhost"}
+	if _, err := urls.Find(cfg, "mcp-cluster"); err == nil {
+		t.Fatal("expected hidden")
+	}
+}

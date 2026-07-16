@@ -10,6 +10,7 @@ Binary: **`camunda`**. Project / Homebrew formula: **`camunda-lab`**.
 | Command | Purpose |
 | --- | --- |
 | `install` | Download zip, configure, start |
+| `ai` | MCP + AI Agent connector secrets |
 | `up` / `start` | Start |
 | `down` / `stop` | Stop (keep volumes) |
 | `restart` | Restart |
@@ -34,16 +35,45 @@ Details for each command are in the sections below.
 ```bash
 camunda install
 camunda install --version 8.8 --profile light --resources small --yes
+camunda install --version 8.9 --profile light --yes --ai --openai-key "$OPENAI_API_KEY"
 ```
 
 | Flag | Meaning |
-| --- | --- |
-| `--version` | `8.7` … `8.10` |
+|------|---------|
+| `--version` | Minor (`8.7`…`8.10`) |
 | `--profile` | `light` \| `full` \| `modeler` |
 | `--resources` | `small` \| `balanced` \| `power` |
-| `-y` / `--yes` | No prompts; use flags or defaults |
+| `--yes` / `-y` | Non-interactive |
+| `--ai` | Enable MCP + AI Agent secrets (8.9+ light/full) |
+| `--openai-key` | `SECRET_OPENAI_API_KEY` |
+| `--anthropic-key` | `SECRET_ANTHROPIC_API_KEY` |
+| `--openai-base-url` | Optional OpenAI-compatible base URL |
+
+See [AI and MCP](ai-mcp.md).
 
 Fetches the official zip into `~/.camunda-lab/versions/<minor>/`, writes config, runs compose up.
+
+---
+
+## ai
+
+```bash
+camunda ai enable --openai-key "$OPENAI_API_KEY"
+camunda ai status
+camunda ai config
+camunda ai disable
+camunda ai disable --wipe-secrets
+```
+
+| Subcommand | Meaning |
+|------------|---------|
+| `enable` | Write `~/.camunda-lab/ai.env`, set `ai.enabled`, recreate connectors, print MCP client JSON |
+| `disable` | Clear `ai.enabled` and recreate connectors |
+| `disable --wipe-secrets` | Also delete `ai.env` |
+| `status` | Masked secrets + MCP HTTP probe |
+| `config` | Print Cursor/Claude MCP JSON (HTTP on light; `c8ctl mcp-proxy` on full) |
+
+Requires Camunda **8.9+** and profile **light** or **full**. See [AI and MCP](ai-mcp.md).
 
 ---
 
@@ -74,9 +104,10 @@ Prints active version / profile / resources and `docker compose ps` for project 
 ```bash
 camunda switch 8.9
 camunda switch 8.9 --wipe
+camunda switch 8.9 --ai --openai-key "$OPENAI_API_KEY"
 ```
 
-Changes the active minor, downloads that zip if needed, starts again. `--wipe` runs compose down with volumes first.
+Changes the active minor, downloads that zip if needed, starts again. `--wipe` runs compose down with volumes first. `--ai` enables MCP + AI Agent secrets after a successful switch (8.9+ only; validated before switch).
 
 ---
 
@@ -198,7 +229,7 @@ Camunda Lab
   Platform    Apple M1 Max
   Memory      64 GB
 
-  Features    compose · profiles · version-switch · overlays · elasticvue · c8ctl · modeler · doctor · smoke
+  Features    compose · profiles · version-switch · overlays · elasticvue · ai · mcp · c8ctl · modeler · doctor · smoke
 
   Repo        https://github.com/nasraldin/camunda-lab
   Docs        https://nasraldin.github.io/camunda-lab/

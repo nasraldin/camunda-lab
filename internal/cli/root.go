@@ -37,5 +37,6 @@ switching, doctor, and developer tool helpers. Not affiliated with Camunda GmbH.
 	root.AddCommand(newSmokeCmd())
 	root.AddCommand(newNukeCmd())
 	root.AddCommand(newToolsCmd())
+	root.AddCommand(newAICmd())
 	return root
 }

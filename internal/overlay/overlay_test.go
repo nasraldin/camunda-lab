@@ -63,7 +63,7 @@ func TestComposeOverrideFiles810Full(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("CAMUNDA_LAB_HOME", home)
 	paths.Reset()
-	files, err := overlay.ComposeOverrideFiles("8.10", "full")
+	files, err := overlay.ComposeOverrideFiles("8.10", "full", false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -83,7 +83,7 @@ func TestComposeOverrideFiles89Full(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("CAMUNDA_LAB_HOME", home)
 	paths.Reset()
-	files, err := overlay.ComposeOverrideFiles("8.9", "full")
+	files, err := overlay.ComposeOverrideFiles("8.9", "full", false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -100,7 +100,7 @@ func TestComposeOverrideFiles89Full(t *testing.T) {
 }
 
 func TestComposeOverrideFiles810LightNone(t *testing.T) {
-	files, err := overlay.ComposeOverrideFiles("8.10", "light")
+	files, err := overlay.ComposeOverrideFiles("8.10", "light", false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -110,7 +110,7 @@ func TestComposeOverrideFiles810LightNone(t *testing.T) {
 }
 
 func TestComposeOverrideFiles89LightNone(t *testing.T) {
-	files, err := overlay.ComposeOverrideFiles("8.9", "light")
+	files, err := overlay.ComposeOverrideFiles("8.9", "light", false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -120,7 +120,7 @@ func TestComposeOverrideFiles89LightNone(t *testing.T) {
 }
 
 func TestComposeOverrideFilesModelerNone(t *testing.T) {
-	files, err := overlay.ComposeOverrideFiles("8.9", "modeler")
+	files, err := overlay.ComposeOverrideFiles("8.9", "modeler", false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -129,9 +129,23 @@ func TestComposeOverrideFilesModelerNone(t *testing.T) {
 	}
 }
 
+func TestComposeOverrideFiles89LightAI(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("CAMUNDA_LAB_HOME", home)
+	paths.Reset()
+	files, err := overlay.ComposeOverrideFiles("8.9", "light", true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bases := basenames(files)
+	if len(bases) != 1 || bases[0] != "connectors-ai-secrets.yaml" {
+		t.Fatalf("%v", bases)
+	}
+}
+
 func TestOverlaysInSync(t *testing.T) {
 	root := repoRoot(t)
-	names := []string{"elasticsearch-8.10.yaml", "elasticsearch-cors.yaml", "elasticvue.yaml", "http-headers.yaml"}
+	names := []string{"elasticsearch-8.10.yaml", "elasticsearch-cors.yaml", "elasticvue.yaml", "http-headers.yaml", "connectors-ai-secrets.yaml"}
 	for _, name := range names {
 		embedPath := filepath.Join(root, "internal", "overlay", "embed", name)
 		repoPath := filepath.Join(root, "overlays", name)
