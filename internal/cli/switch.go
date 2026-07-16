@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"os/exec"
 	"runtime"
+	"strings"
 
 	"github.com/nasraldin/camunda-lab/internal/config"
+	"github.com/nasraldin/camunda-lab/internal/display"
 	"github.com/nasraldin/camunda-lab/internal/lab"
 	"github.com/nasraldin/camunda-lab/internal/urls"
 	"github.com/spf13/cobra"
@@ -74,16 +76,76 @@ func newURLsCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			for _, e := range urls.List(cfg) {
-				if e.Notes != "" {
-					fmt.Fprintf(cmd.OutOrStdout(), "%-14s %s  (%s)\n", e.Name, e.URL, e.Notes)
-				} else {
-					fmt.Fprintf(cmd.OutOrStdout(), "%-14s %s\n", e.Name, e.URL)
-				}
-			}
+			printURLs(cmd, cfg)
 			return nil
 		},
 	}
+}
+
+func printURLs(cmd *cobra.Command, cfg config.Config) {
+	entries := urls.List(cfg)
+	webApps := []string{"operate", "tasklist", "admin", "console", "optimize", "identity", "web-modeler", "keycloak", "elasticvue"}
+	apis := []string{"rest", "orchestration", "grpc", "zeebe-http", "connectors", "elasticsearch"}
+
+	index := map[string]urls.Entry{}
+	for _, entry := range entries {
+		index[entry.Name] = entry
+	}
+
+	rep := display.Report{
+		Title: "Camunda Lab URLs",
+		Fields: []display.Field{
+			display.KV("Version", cfg.Version),
+			display.KV("Profile", cfg.Profile),
+			display.KV("Host", cfg.Host),
+		},
+	}
+	if lines := formatURLSection(index, webApps); len(lines) > 0 {
+		rep.Sections = append(rep.Sections, display.Section{Title: "Web apps", Items: lines})
+	}
+	if lines := formatURLSection(index, apis); len(lines) > 0 {
+		rep.Sections = append(rep.Sections, display.Section{Title: "APIs and infra", Items: lines})
+	}
+	if notes := collectAuthNotes(entries); len(notes) > 0 {
+		rep.Sections = append(rep.Sections, display.Section{Title: "Auth", Items: notes})
+	}
+	rep.Write(cmd.OutOrStdout())
+}
+
+func formatURLSection(index map[string]urls.Entry, names []string) []string {
+	var lines []string
+	for _, name := range names {
+		entry, ok := index[name]
+		if !ok {
+			continue
+		}
+		lines = append(lines, fmt.Sprintf("%s -> %s", entry.Name, entry.URL))
+	}
+	return lines
+}
+
+func collectAuthNotes(entries []urls.Entry) []string {
+	seen := map[string]bool{}
+	var notes []string
+	for _, entry := range entries {
+		if entry.Notes == "" {
+			continue
+		}
+		note := strings.TrimSpace(entry.Notes)
+		switch note {
+		case "demo/demo":
+			note = "Camunda app login: demo / demo"
+		case "admin/admin":
+			note = "Keycloak admin: admin / admin"
+		default:
+			continue
+		}
+		if !seen[note] {
+			seen[note] = true
+			notes = append(notes, note)
+		}
+	}
+	return notes
 }
 
 func newOpenCmd() *cobra.Command {
@@ -104,6 +166,7 @@ func newOpenCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			display.Step(cmd.OutOrStdout(), "Opening %s → %s", name, e.URL)
 			return openBrowser(e.URL)
 		},
 	}

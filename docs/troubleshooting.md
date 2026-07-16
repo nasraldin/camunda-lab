@@ -61,6 +61,19 @@ camunda logs -f elasticsearch
 camunda doctor
 ```
 
+## ElasticVue cannot connect to the cluster
+
+ElasticVue runs at `http://localhost:9800` and talks to `http://localhost:9200` from your browser (CORS is enabled via our overlay).
+
+```bash
+camunda urls          # confirm elasticvue + elasticsearch rows
+curl -s http://localhost:9200  # ES must answer on the host
+camunda down && camunda up     # recreate so CORS + ElasticVue overlays apply
+camunda open elasticvue
+```
+
+Not listed for **modeler** or **8.10 light** (no host Elasticsearch).
+
 ## `camunda tools c8ctl install` fails
 
 Needs Node/npm on your PATH. Install Node, or install `@camunda8/cli` yourself, then:

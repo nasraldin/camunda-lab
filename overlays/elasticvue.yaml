@@ -1,0 +1,13 @@
+# camunda-lab — ElasticVue UI preconfigured for the local Camunda Elasticsearch.
+# Browser talks to http://localhost:9200; container serves UI on host :9800.
+services:
+  elasticvue:
+    image: cars10/elasticvue:1.15.0
+    container_name: camunda-lab-elasticvue
+    ports:
+      - "9800:8080"
+    environment:
+      ELASTICVUE_CLUSTERS: '[{"name":"camunda-lab","uri":"http://localhost:9200"}]'
+    restart: unless-stopped
+    networks:
+      - camunda-platform

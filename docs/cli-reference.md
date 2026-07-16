@@ -98,9 +98,12 @@ camunda restart
 camunda urls
 camunda open operate
 camunda open keycloak
+camunda open elasticvue
 ```
 
 URLs depend on the active **minor** (8.7 vs 8.8 vs 8.9+). See [Ports and URLs](profiles.md#ports-and-urls).
+
+When the profile exposes Elasticsearch, ElasticVue is included at `http://localhost:9800` with cluster **camunda-lab** preconfigured — no manual cluster add.
 
 `open` uses `open` on macOS and `xdg-open` on Linux.
 

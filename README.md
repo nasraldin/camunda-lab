@@ -66,6 +66,7 @@ camunda install --version 8.8 --profile light --resources small --yes
 camunda wait
 camunda urls
 camunda open operate
+camunda open elasticvue   # ES browser UI when the profile has Elasticsearch
 ```
 
 Interactive:

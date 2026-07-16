@@ -13,6 +13,12 @@ import (
 //go:embed embed/elasticsearch-8.10.yaml
 var elasticsearch810YAML []byte
 
+//go:embed embed/elasticsearch-cors.yaml
+var elasticsearchCorsYAML []byte
+
+//go:embed embed/elasticvue.yaml
+var elasticvueYAML []byte
+
 func ValidateResources(resources string) error {
 	switch resources {
 	case "small", "balanced", "power":
@@ -57,15 +63,30 @@ func SyncResourcesEnv(resources string) (string, error) {
 
 // ComposeOverrideFiles returns extra -f compose files (absolute paths).
 func ComposeOverrideFiles(minor, profile string) ([]string, error) {
-	if !versions.NeedsElasticsearchOverlay(minor, profile) {
-		return nil, nil
-	}
 	if err := os.MkdirAll(paths.OverlaysDir(), 0o755); err != nil {
 		return nil, err
 	}
-	dest := filepath.Join(paths.OverlaysDir(), "elasticsearch-8.10.yaml")
-	if err := os.WriteFile(dest, elasticsearch810YAML, 0o644); err != nil {
-		return nil, err
+	var out []string
+	write := func(name string, data []byte) error {
+		dest := filepath.Join(paths.OverlaysDir(), name)
+		if err := os.WriteFile(dest, data, 0o644); err != nil {
+			return err
+		}
+		out = append(out, dest)
+		return nil
 	}
-	return []string{dest}, nil
+	if versions.NeedsElasticsearchOverlay(minor, profile) {
+		if err := write("elasticsearch-8.10.yaml", elasticsearch810YAML); err != nil {
+			return nil, err
+		}
+	}
+	if versions.HasHostElasticsearch(minor, profile) {
+		if err := write("elasticsearch-cors.yaml", elasticsearchCorsYAML); err != nil {
+			return nil, err
+		}
+		if err := write("elasticvue.yaml", elasticvueYAML); err != nil {
+			return nil, err
+		}
+	}
+	return out, nil
 }

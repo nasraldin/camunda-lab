@@ -1,0 +1,7 @@
+# camunda-lab — enable CORS so browser ElasticVue can reach Elasticsearch.
+services:
+  elasticsearch:
+    environment:
+      - http.cors.enabled=true
+      - http.cors.allow-origin=/.*/
+      - http.cors.allow-headers=X-Requested-With,Content-Type,Content-Length,Authorization
