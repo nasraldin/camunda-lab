@@ -5,7 +5,7 @@ A Go CLI that downloads Camunda’s zip, stores it under your home directory, an
 ```text
 you
  └── camunda (CLI)
-       ├── camunda ui  →  http://127.0.0.1:9090  (embedded SPA + /api/v1)
+       ├── camunda ui  →  http://localhost:9090  (embedded SPA + /api/v1)
        ├── ~/.camunda-lab/config.yaml
        ├── ~/.camunda-lab/ai.env            ← optional AI Agent SECRET_*
        ├── ~/.camunda-lab/versions/8.9/     ← official zip, extracted

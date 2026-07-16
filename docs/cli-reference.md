@@ -10,7 +10,7 @@ Binary: **`camunda`**. Project / Homebrew formula: **`camunda-lab`**.
 | Command | Purpose |
 | --- | --- |
 | `install` | Download zip, configure, start |
-| `ui` | Local Lab UI (http://127.0.0.1:9090) |
+| `ui` | Local Lab UI (http://localhost:9090) |
 | `ai` | MCP + AI Agent connector secrets |
 | `up` / `start` | Start |
 | `down` / `stop` | Stop (keep volumes) |
@@ -65,7 +65,7 @@ camunda ui --port 9090 --no-open
 
 | Flag | Meaning |
 |------|---------|
-| `--host` | Listen address (loopback only; default `127.0.0.1`) |
+| `--host` | Listen address (loopback only; default `localhost`) |
 | `--port` | Port (default `9090`, or `CAMUNDA_LAB_UI_PORT`) |
 | `--no-open` | Do not open a browser |
 
@@ -233,7 +233,7 @@ Camunda Lab
   Author      Nasr Aldin
   Website     https://nasraldin.com
 
-  Version     0.4.0
+  Version     0.5.0
   Tagline     Local Camunda 8 platform lab (Docker Compose)
   CLI path    /opt/homebrew/bin/camunda
   Global      /opt/homebrew/bin/camunda

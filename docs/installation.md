@@ -96,8 +96,10 @@ Prefer a browser? After the CLI is installed:
 
 ```bash
 camunda ui
-# http://127.0.0.1:9090 — Overview, Setup, Apps, Logs, AI, …
+# http://localhost:9090 — Overview, Setup, Apps, Logs, AI, …
 ```
+
+Guide: [Lab UI](lab-ui.md).
 
 Login defaults from Camunda’s compose files:
 
