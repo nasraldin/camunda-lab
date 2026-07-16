@@ -1,0 +1,8 @@
+/bin/
+/dist/
+*.exe
+.DS_Store
+.venv-docs/
+site/
+.worktrees/
+.superpowers/
