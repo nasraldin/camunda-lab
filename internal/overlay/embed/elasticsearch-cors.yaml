@@ -1,0 +1,14 @@
+# camunda-lab — Elasticsearch tweaks for local labs:
+# - CORS so browser ElasticVue can reach :9200
+# - disable memlock (docker-lab / restricted runtimes reject ulimit memlock=-1)
+services:
+  elasticsearch:
+    environment:
+      - bootstrap.memory_lock=false
+      - http.cors.enabled=true
+      - http.cors.allow-origin=/.*/
+      - http.cors.allow-headers=X-Requested-With,Content-Type,Content-Length,Authorization
+    ulimits:
+      memlock:
+        soft: 65536
+        hard: 65536

@@ -27,8 +27,10 @@ We verify what we can, extract, and leave Camunda’s OIDC / Keycloak wiring alo
 | Piece | Role |
 | --- | --- |
 | Version adapters | Map `light` / `full` / `modeler` → the right compose file per minor |
-| `resources.env` | `JAVA_TOOL_OPTIONS` for small / balanced / power |
+| `resources.env` | Heap hints + `KEYCLOAK_HOST=keycloak` for container→Keycloak on full |
 | `elasticsearch-8.10.yaml` | Sidecar ES when full profile on 8.10 needs it |
+| `elasticsearch-cors.yaml` + `elasticvue.yaml` | CORS + ElasticVue UI when host ES is published |
+| `http-headers.yaml` | Larger Tomcat header limit so full-profile SSO cookies don’t 400 |
 | doctor / wait / smoke | “Is Docker fine?” and “are the UIs answering?” |
 | tools helpers | Point `c8ctl` / Desktop Modeler at this lab |
 

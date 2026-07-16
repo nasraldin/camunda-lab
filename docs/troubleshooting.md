@@ -61,6 +61,32 @@ camunda logs -f elasticsearch
 camunda doctor
 ```
 
+## ElasticVue cannot connect to the cluster
+
+ElasticVue runs at `http://localhost:9800` and talks to `http://localhost:9200` from your browser (CORS is enabled via our overlay).
+
+```bash
+camunda urls          # confirm elasticvue + elasticsearch rows
+curl -s http://localhost:9200  # ES must answer on the host
+camunda down && camunda up     # recreate so CORS + ElasticVue overlays apply
+camunda open elasticvue
+```
+
+Not listed for **modeler**, **8.9+ light**, or any profile without host Elasticsearch.
+
+## HTTP 400 Bad Request on Optimize / Identity / apps
+
+Full-profile SSO stores large cookies. Tomcat rejects oversized request headers with **HTTP 400**.
+
+1. In the browser, clear cookies/site data for `localhost` (or at least ports `8080`, `8083`, `8084`, `18080`).
+2. Hard-refresh and sign in again with **demo** / **demo**.
+
+camunda-lab applies an overlay that raises `SERVER_MAX_HTTP_REQUEST_HEADER_SIZE` on Optimize, Identity, and orchestration. Recreate if you upgraded mid-session:
+
+```bash
+camunda down && camunda up
+```
+
 ## `camunda tools c8ctl install` fails
 
 Needs Node/npm on your PATH. Install Node, or install `@camunda8/cli` yourself, then:

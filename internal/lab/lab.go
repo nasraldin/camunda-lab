@@ -2,16 +2,21 @@ package lab
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/nasraldin/camunda-lab/internal/compose"
 	"github.com/nasraldin/camunda-lab/internal/config"
+	"github.com/nasraldin/camunda-lab/internal/display"
 	"github.com/nasraldin/camunda-lab/internal/overlay"
 	"github.com/nasraldin/camunda-lab/internal/paths"
 	"github.com/nasraldin/camunda-lab/internal/prompt"
+	"github.com/nasraldin/camunda-lab/internal/urls"
 	"github.com/nasraldin/camunda-lab/internal/versions"
 )
 
@@ -101,13 +106,14 @@ func (l *Lab) Install(ctx context.Context, opts InstallOpts) error {
 	}
 
 	if versions.IsPreview(version) {
-		fmt.Fprintf(os.Stderr, "note: Camunda %s is marked preview in camunda-lab\n", version)
+		display.Note(os.Stderr, "Camunda %s is marked preview in camunda-lab", version)
 	}
 
-	fmt.Printf("Fetching Camunda %s compose distribution...\n", version)
+	display.Step(os.Stdout, "Fetching Camunda %s compose distribution...", version)
 	if _, err := versions.Ensure(version, versions.DownloadOptions{SkipIfPresent: true}); err != nil {
 		return err
 	}
+	display.Done(os.Stdout, "Distribution ready for Camunda %s.", version)
 
 	cfg.Version = version
 	cfg.Profile = profile
@@ -129,11 +135,12 @@ func (l *Lab) Up(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Starting camunda-lab (%s / %s)...\n", cfg.Version, cfg.Profile)
+	display.Step(os.Stdout, "Starting lab (%s / %s / %s)...", cfg.Version, cfg.Profile, cfg.Resources)
 	if err := l.Engine.Up(workDir, files, envFiles, cfg.ComposeProject); err != nil {
 		return err
 	}
-	fmt.Println("Stack started. Run: camunda status | camunda urls | camunda wait")
+	display.Done(os.Stdout, "Stack started.")
+	fmt.Println("Next: camunda wait && camunda status && camunda urls")
 	return nil
 }
 
@@ -147,7 +154,16 @@ func (l *Lab) Down(ctx context.Context, volumes bool) error {
 	if err != nil {
 		return err
 	}
-	return l.Engine.Down(workDir, files, cfg.ComposeProject, volumes)
+	if volumes {
+		display.Step(os.Stdout, "Stopping lab and removing volumes...")
+	} else {
+		display.Step(os.Stdout, "Stopping lab (volumes kept)...")
+	}
+	if err := l.Engine.Down(workDir, files, cfg.ComposeProject, volumes); err != nil {
+		return err
+	}
+	display.Done(os.Stdout, "Lab stopped.")
+	return nil
 }
 
 func (l *Lab) Status(ctx context.Context) (string, error) {
@@ -157,10 +173,159 @@ func (l *Lab) Status(ctx context.Context) (string, error) {
 		return "", err
 	}
 	workDir := paths.VersionDir(cfg.Version)
-	out, err := l.Engine.Ps(workDir, cfg.ComposeProject)
-	header := fmt.Sprintf("version=%s profile=%s resources=%s\nproject=%s\nworkdir=%s\n\n",
-		cfg.Version, cfg.Profile, cfg.Resources, cfg.ComposeProject, workDir)
-	return header + out, err
+	raw, err := l.Engine.PsJSON(workDir, cfg.ComposeProject)
+	if err != nil {
+		out, fallbackErr := l.Engine.Ps(workDir, cfg.ComposeProject)
+		header := fmt.Sprintf("Camunda Lab Status\n==================\n\nVersion    %s\nProfile    %s\nResources  %s\nProject    %s\nWorkdir    %s\n\n",
+			cfg.Version, cfg.Profile, cfg.Resources, cfg.ComposeProject, workDir)
+		if fallbackErr != nil {
+			return "", fallbackErr
+		}
+		return header + out, nil
+	}
+	return formatStatus(cfg, workDir, raw)
+}
+
+type composePSRow struct {
+	Name       string `json:"Name"`
+	Service    string `json:"Service"`
+	Image      string `json:"Image"`
+	State      string `json:"State"`
+	Health     string `json:"Health"`
+	Status     string `json:"Status"`
+	RunningFor string `json:"RunningFor"`
+	Publishers []struct {
+		URL           string `json:"URL"`
+		TargetPort    int    `json:"TargetPort"`
+		PublishedPort int    `json:"PublishedPort"`
+		Protocol      string `json:"Protocol"`
+	} `json:"Publishers"`
+}
+
+func formatStatus(cfg config.Config, workDir, raw string) (string, error) {
+	rows, err := parsePSJSON(raw)
+	if err != nil {
+		return "", err
+	}
+	sort.Slice(rows, func(i, j int) bool { return rows[i].Service < rows[j].Service })
+
+	total := len(rows)
+	healthy := 0
+	running := 0
+	for _, row := range rows {
+		if row.State == "running" {
+			running++
+		}
+		if row.Health == "healthy" || strings.Contains(strings.ToLower(row.Status), "healthy") {
+			healthy++
+		}
+	}
+
+	rep := display.Report{
+		Title: "Camunda Lab Status",
+		Fields: []display.Field{
+			display.KV("Version", cfg.Version),
+			display.KV("Profile", cfg.Profile),
+			display.KV("Resources", cfg.Resources),
+			display.KV("Project", cfg.ComposeProject),
+			display.KV("Workdir", workDir),
+			display.KV("Services", fmt.Sprintf("%d total, %d running, %d healthy", total, running, healthy)),
+		},
+	}
+	if urlEntries := summarizeURLs(cfg); len(urlEntries) > 0 {
+		rep.Sections = append(rep.Sections, display.Section{Title: "Apps", Items: urlEntries})
+	}
+
+	var containerItems []string
+	for _, row := range rows {
+		containerItems = append(containerItems, "  - "+row.Service)
+		containerItems = append(containerItems, "    state   "+prettyState(row))
+		if row.RunningFor != "" {
+			containerItems = append(containerItems, "    uptime  "+row.RunningFor)
+		}
+		if row.Image != "" {
+			containerItems = append(containerItems, "    image   "+row.Image)
+		}
+		if ports := publishedPorts(row); ports != "" {
+			containerItems = append(containerItems, "    ports   "+ports)
+		}
+	}
+	if len(containerItems) > 0 {
+		rep.Sections = append(rep.Sections, display.Section{Title: "Containers", Items: containerItems, Raw: true})
+	}
+
+	var b strings.Builder
+	rep.Write(&b)
+	return b.String(), nil
+}
+
+func parsePSJSON(raw string) ([]composePSRow, error) {
+	var rows []composePSRow
+	for _, line := range strings.Split(strings.TrimSpace(raw), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		var row composePSRow
+		if err := json.Unmarshal([]byte(line), &row); err != nil {
+			return nil, fmt.Errorf("parse docker compose ps json: %w", err)
+		}
+		rows = append(rows, row)
+	}
+	return rows, nil
+}
+
+func summarizeURLs(cfg config.Config) []string {
+	wanted := []string{"operate", "tasklist", "admin", "console", "optimize", "identity", "web-modeler", "keycloak", "elasticvue", "connectors", "grpc"}
+	entries := ListStatusURLs(cfg)
+	var lines []string
+	for _, name := range wanted {
+		if url, ok := entries[name]; ok {
+			lines = append(lines, fmt.Sprintf("%s -> %s", name, url))
+		}
+	}
+	return lines
+}
+
+func ListStatusURLs(cfg config.Config) map[string]string {
+	out := map[string]string{}
+	for _, entry := range urls.List(cfg) {
+		switch entry.Name {
+		case "operate", "tasklist", "admin", "console", "optimize", "identity", "web-modeler", "keycloak", "elasticvue", "connectors", "grpc":
+			out[entry.Name] = entry.URL
+		}
+	}
+	return out
+}
+
+func prettyState(row composePSRow) string {
+	switch {
+	case row.Health != "":
+		return row.Health
+	case row.State != "":
+		return row.State
+	case row.Status != "":
+		return row.Status
+	default:
+		return "unknown"
+	}
+}
+
+func publishedPorts(row composePSRow) string {
+	seen := map[string]bool{}
+	var ports []string
+	for _, p := range row.Publishers {
+		if p.PublishedPort == 0 {
+			continue
+		}
+		item := strconv.Itoa(p.PublishedPort) + "->" + strconv.Itoa(p.TargetPort) + "/" + p.Protocol
+		if !seen[item] {
+			seen[item] = true
+			ports = append(ports, item)
+		}
+	}
+	sort.Strings(ports)
+	return strings.Join(ports, ", ")
 }
 
 func (l *Lab) resolve(cfg config.Config) (workDir string, files []string, envFiles []string, err error) {

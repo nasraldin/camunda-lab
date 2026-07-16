@@ -1,0 +1,12 @@
+# camunda-lab — raise Tomcat/Spring max request header size.
+# Full-profile SSO accumulates large Cookie headers; default ~8KB yields HTTP 400.
+services:
+  optimize:
+    environment:
+      SERVER_MAX_HTTP_REQUEST_HEADER_SIZE: 64KB
+  identity:
+    environment:
+      SERVER_MAX_HTTP_REQUEST_HEADER_SIZE: 64KB
+  orchestration:
+    environment:
+      SERVER_MAX_HTTP_REQUEST_HEADER_SIZE: 64KB

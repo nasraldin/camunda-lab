@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/nasraldin/camunda-lab/internal/config"
+	"github.com/nasraldin/camunda-lab/internal/versions"
 )
 
 // Entry is a named component URL for camunda urls / open / smoke.
@@ -44,33 +45,35 @@ func List(cfg config.Config) []Entry {
 }
 
 func lightEntries(version, host string) []Entry {
+	var entries []Entry
 	if isPre88(version) {
-		return []Entry{
+		entries = []Entry{
 			{Name: "operate", URL: fmt.Sprintf("http://%s:8081", host), Notes: "demo/demo"},
 			{Name: "tasklist", URL: fmt.Sprintf("http://%s:8082", host), Notes: "demo/demo"},
 			{Name: "connectors", URL: fmt.Sprintf("http://%s:8085", host)},
 			{Name: "zeebe-http", URL: fmt.Sprintf("http://%s:8088", host), Notes: "Zeebe gateway HTTP"},
 			{Name: "rest", URL: fmt.Sprintf("http://%s:8088", host), Notes: "Desktop Modeler restAddress"},
 			{Name: "grpc", URL: fmt.Sprintf("%s:26500", host)},
-			{Name: "elasticsearch", URL: fmt.Sprintf("http://%s:9200", host)},
 		}
+	} else {
+		port := orchestrationHostPort(version)
+		entries = orchestrationUI(host, port)
+		entries = append(entries,
+			Entry{Name: "connectors", URL: fmt.Sprintf("http://%s:8086", host)},
+			Entry{Name: "grpc", URL: fmt.Sprintf("%s:26500", host)},
+		)
 	}
-
-	port := orchestrationHostPort(version)
-	entries := orchestrationUI(host, port)
-	entries = append(entries,
-		Entry{Name: "connectors", URL: fmt.Sprintf("http://%s:8086", host)},
-		Entry{Name: "grpc", URL: fmt.Sprintf("%s:26500", host)},
-	)
-	if version != "8.10" {
+	if versions.HasHostElasticsearch(version, "light") {
 		entries = append(entries, Entry{Name: "elasticsearch", URL: fmt.Sprintf("http://%s:9200", host)})
+		entries = appendElasticvue(host, entries)
 	}
 	return entries
 }
 
 func fullEntries(version, host string) []Entry {
+	var entries []Entry
 	if isPre88(version) {
-		return []Entry{
+		entries = []Entry{
 			{Name: "operate", URL: fmt.Sprintf("http://%s:8081", host), Notes: "demo/demo"},
 			{Name: "tasklist", URL: fmt.Sprintf("http://%s:8082", host), Notes: "demo/demo"},
 			{Name: "optimize", URL: fmt.Sprintf("http://%s:8083", host), Notes: "demo/demo"},
@@ -83,25 +86,36 @@ func fullEntries(version, host string) []Entry {
 			{Name: "grpc", URL: fmt.Sprintf("%s:26500", host)},
 			{Name: "elasticsearch", URL: fmt.Sprintf("http://%s:9200", host)},
 		}
+	} else {
+		port := orchestrationHostPort(version)
+		entries = orchestrationUI(host, port)
+		entries = append(entries,
+			Entry{Name: "optimize", URL: fmt.Sprintf("http://%s:8083", host), Notes: "demo/demo"},
+			Entry{Name: "identity", URL: fmt.Sprintf("http://%s:8084", host), Notes: "demo/demo"},
+			Entry{Name: "connectors", URL: fmt.Sprintf("http://%s:8086", host)},
+			Entry{Name: "web-modeler", URL: fmt.Sprintf("http://%s:8070", host), Notes: "demo/demo"},
+			Entry{Name: "keycloak", URL: fmt.Sprintf("http://%s:18080/auth/", host), Notes: "admin/admin"},
+			Entry{Name: "grpc", URL: fmt.Sprintf("%s:26500", host)},
+		)
+		// Console exists in 8.8–8.9 full compose; 8.10 full currently ships Hub instead of Console.
+		if version == "8.8" || version == "8.9" {
+			entries = append(entries, Entry{Name: "console", URL: fmt.Sprintf("http://%s:8087", host), Notes: "demo/demo"})
+		}
+		// ES is bundled through 8.9; 8.10 full uses our elasticsearch overlay on :9200.
+		entries = append(entries, Entry{Name: "elasticsearch", URL: fmt.Sprintf("http://%s:9200", host)})
 	}
-
-	port := orchestrationHostPort(version)
-	entries := orchestrationUI(host, port)
-	entries = append(entries,
-		Entry{Name: "optimize", URL: fmt.Sprintf("http://%s:8083", host), Notes: "demo/demo"},
-		Entry{Name: "identity", URL: fmt.Sprintf("http://%s:8084", host), Notes: "demo/demo"},
-		Entry{Name: "connectors", URL: fmt.Sprintf("http://%s:8086", host)},
-		Entry{Name: "web-modeler", URL: fmt.Sprintf("http://%s:8070", host), Notes: "demo/demo"},
-		Entry{Name: "keycloak", URL: fmt.Sprintf("http://%s:18080/auth/", host), Notes: "admin/admin"},
-		Entry{Name: "grpc", URL: fmt.Sprintf("%s:26500", host)},
-	)
-	// Console exists in 8.8–8.9 full compose; 8.10 full currently ships Hub instead of Console.
-	if version == "8.8" || version == "8.9" {
-		entries = append(entries, Entry{Name: "console", URL: fmt.Sprintf("http://%s:8087", host), Notes: "demo/demo"})
+	if versions.HasHostElasticsearch(version, "full") {
+		entries = appendElasticvue(host, entries)
 	}
-	// ES is bundled through 8.9; 8.10 full uses our elasticsearch overlay on :9200.
-	entries = append(entries, Entry{Name: "elasticsearch", URL: fmt.Sprintf("http://%s:9200", host)})
 	return entries
+}
+
+func appendElasticvue(host string, entries []Entry) []Entry {
+	return append(entries, Entry{
+		Name:  "elasticvue",
+		URL:   fmt.Sprintf("http://%s:9800", host),
+		Notes: "ElasticVue — cluster camunda-lab preconfigured",
+	})
 }
 
 func orchestrationUI(host string, port int) []Entry {

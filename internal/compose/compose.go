@@ -27,6 +27,7 @@ type Engine interface {
 	Up(workDir string, files, envFiles []string, project string) error
 	Down(workDir string, files []string, project string, volumes bool) error
 	Ps(workDir, project string) (string, error)
+	PsJSON(workDir, project string) (string, error)
 	Logs(workDir, project, service string, follow bool) error
 }
 
@@ -63,6 +64,11 @@ func (r *Runner) Down(workDir string, files []string, project string, volumes bo
 
 func (r *Runner) Ps(workDir, project string) (string, error) {
 	args := []string{"docker", "compose", "-p", project, "ps"}
+	return r.Exec(workDir, args)
+}
+
+func (r *Runner) PsJSON(workDir, project string) (string, error) {
+	args := []string{"docker", "compose", "-p", project, "ps", "--format", "json"}
 	return r.Exec(workDir, args)
 }
 

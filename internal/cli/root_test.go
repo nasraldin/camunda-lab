@@ -51,3 +51,30 @@ func TestAboutCard(t *testing.T) {
 		}
 	}
 }
+
+func TestURLsOutputDeduplicatesLoginNotes(t *testing.T) {
+	cli.SetVersion("1.2.3")
+	cmd := cli.NewRoot()
+	buf := new(bytes.Buffer)
+	cmd.SetOut(buf)
+	cmd.SetArgs([]string{"urls"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	out := buf.String()
+	for _, want := range []string{
+		"Camunda Lab URLs",
+		"Web apps",
+		"APIs and infra",
+		"Camunda app login: demo / demo",
+		"operate ->",
+		"tasklist ->",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("urls missing %q:\n%s", want, out)
+		}
+	}
+	if strings.Count(out, "demo / demo") != 1 {
+		t.Fatalf("expected one demo/demo note, got:\n%s", out)
+	}
+}

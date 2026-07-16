@@ -55,6 +55,7 @@ plugins:
 
 exclude_docs: |
   design/**
+  superpowers/**
 
 markdown_extensions:
   - admonition

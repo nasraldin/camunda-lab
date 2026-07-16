@@ -69,6 +69,7 @@ Official docs also differ by version era:
 | Keycloak (full) | http://localhost:18080/auth/ |
 | gRPC | localhost:26500 |
 | Elasticsearch | http://localhost:9200 |
+| ElasticVue | http://localhost:9800 (preconfigured → localhost:9200) |
 
 No Console service in 8.7 compose.
 
@@ -88,6 +89,7 @@ No Console service in 8.7 compose.
 | Keycloak (full) | http://localhost:18080/auth/ |
 | gRPC | localhost:26500 |
 | Elasticsearch | http://localhost:9200 |
+| ElasticVue | http://localhost:9800 (preconfigured → localhost:9200; light ≤8.8 and full) |
 
 ### 8.9 / 8.10 (orchestration on host 8080)
 
@@ -101,6 +103,9 @@ No Console service in 8.7 compose.
 | Console (full, 8.9) | http://localhost:8087 |
 | Optimize / Identity / Web Modeler / Keycloak (full) | same as 8.8 table |
 | gRPC | localhost:26500 |
-| Elasticsearch | http://localhost:9200 (bundled ≤8.9; 8.10 full via our overlay; not listed for 8.10 light) |
+| Elasticsearch | http://localhost:9200 (bundled ≤8.8 light / all full ≤8.9; 8.10 full via our overlay; not in 8.9+ light) |
+| ElasticVue | http://localhost:9800 when host ES is present (light ≤8.8, full; not modeler / not 8.9+ light) |
 
 Default web UI credentials: `demo` / `demo`. Keycloak admin: `admin` / `admin`.
+
+ElasticVue ([cars10/elasticvue](https://github.com/cars10/elasticvue)) starts automatically with any profile that exposes Elasticsearch on `:9200`. Open it with `camunda open elasticvue` — cluster **camunda-lab** is preconfigured to `http://localhost:9200`.

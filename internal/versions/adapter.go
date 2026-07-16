@@ -58,6 +58,27 @@ func NeedsElasticsearchOverlay(minor, profile string) bool {
 	return minor == "8.10" && profile == "full"
 }
 
+// HasHostElasticsearch reports whether this profile publishes Elasticsearch on host :9200.
+// Official light compose includes ES through 8.8; 8.9+ light does not. Full includes ES
+// (8.10 via our elasticsearch overlay). Modeler never does.
+func HasHostElasticsearch(minor, profile string) bool {
+	if profile == "modeler" {
+		return false
+	}
+	if profile == "full" {
+		return true
+	}
+	if profile == "light" {
+		switch minor {
+		case "8.7", "8.8":
+			return true
+		default:
+			return false
+		}
+	}
+	return false
+}
+
 func ReleaseTag(minor string) string {
 	return "docker-compose-" + minor
 }

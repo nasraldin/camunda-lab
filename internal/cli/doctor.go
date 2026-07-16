@@ -2,10 +2,10 @@ package cli
 
 import (
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/nasraldin/camunda-lab/internal/config"
+	"github.com/nasraldin/camunda-lab/internal/display"
 	"github.com/nasraldin/camunda-lab/internal/doctor"
 	"github.com/nasraldin/camunda-lab/internal/lab"
 	"github.com/nasraldin/camunda-lab/internal/smoke"
@@ -21,12 +21,7 @@ func newDoctorCmd() *cobra.Command {
 		Short: "Run health diagnostics",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rep := doctor.Run(fix)
-			for _, line := range rep.Lines {
-				fmt.Fprintln(cmd.OutOrStdout(), line)
-			}
-			if rep.FixHint != "" {
-				fmt.Fprintln(cmd.OutOrStdout(), "hint:", rep.FixHint)
-			}
+			fmt.Fprint(cmd.OutOrStdout(), rep.Format())
 			if !rep.OK {
 				return fmt.Errorf("doctor found issues")
 			}
@@ -47,8 +42,12 @@ func newWaitCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Waiting up to %s for lab health...\n", timeout)
-			return smoke.Wait(cmd.Context(), cfg, timeout)
+			display.Step(cmd.OutOrStdout(), "Waiting up to %s for healthy endpoints...", timeout)
+			if err := smoke.Wait(cmd.Context(), cfg, timeout); err != nil {
+				return err
+			}
+			display.Done(cmd.OutOrStdout(), "Lab is healthy.")
+			return nil
 		},
 	}
 	cmd.Flags().DurationVar(&timeout, "timeout", 10*time.Minute, "Max wait duration")
@@ -64,10 +63,11 @@ func newSmokeCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if err := smoke.Run(cmd.Context(), cfg); err != nil {
-				return err
+			res := smoke.Probe(cmd.Context(), cfg)
+			fmt.Fprint(cmd.OutOrStdout(), res.Format(cfg))
+			if !res.OK {
+				return fmt.Errorf("smoke checks failed")
 			}
-			fmt.Fprintln(cmd.OutOrStdout(), "smoke OK")
 			return nil
 		},
 	}
@@ -104,11 +104,18 @@ func newToolsCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			rep := display.Report{Title: "c8ctl"}
 			if !ok {
-				fmt.Fprintln(cmd.OutOrStdout(), "c8ctl: not installed (try: camunda tools c8ctl install)")
+				rep.Fields = []display.Field{display.KV("Status", "not installed")}
+				rep.Footer = []string{"Install with: camunda tools c8ctl install"}
+				rep.Write(cmd.OutOrStdout())
 				return nil
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "c8ctl: %s\n", path)
+			rep.Fields = []display.Field{
+				display.KV("Status", "installed"),
+				display.KV("Path", path),
+			}
+			rep.Write(cmd.OutOrStdout())
 			return nil
 		},
 	})
@@ -116,7 +123,12 @@ func newToolsCmd() *cobra.Command {
 		Use:   "install",
 		Short: "Install c8ctl via npm (@camunda8/cli)",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return tools.C8ctlInstall()
+			display.Step(cmd.OutOrStdout(), "Installing @camunda8/cli via npm...")
+			if err := tools.C8ctlInstall(); err != nil {
+				return err
+			}
+			display.Done(cmd.OutOrStdout(), "c8ctl installed.")
+			return nil
 		},
 	})
 
@@ -140,9 +152,16 @@ func newToolsCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Wrote Modeler profile 'camunda-lab' → %s\n", path)
-			fmt.Fprintln(cmd.OutOrStdout(), "Open Desktop Modeler and select the camunda-lab profile.")
-			_ = os.Stdout
+			display.Report{
+				Title: "Desktop Modeler Profile",
+				Fields: []display.Field{
+					display.KV("Name", "camunda-lab"),
+					display.KV("REST", rest),
+					display.KV("gRPC", grpc),
+					display.KV("Wrote", path),
+				},
+				Footer: []string{"Open Desktop Modeler and select the camunda-lab profile."},
+			}.Write(cmd.OutOrStdout())
 			return nil
 		},
 	})

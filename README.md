@@ -66,6 +66,7 @@ camunda install --version 8.8 --profile light --resources small --yes
 camunda wait
 camunda urls
 camunda open operate
+camunda open elasticvue   # ES browser UI when the profile has Elasticsearch
 ```
 
 Interactive:
@@ -93,7 +94,7 @@ Ports differ by Camunda minor — run `camunda urls` (see [profiles](https://nas
 | `camunda install` | Fetch zip, configure, start |
 | `camunda about` | Project + runtime info card |
 | `camunda wait` / `doctor` / `smoke` | Health |
-| `camunda urls` / `open` | Where the UIs live |
+| `camunda urls` / `open` | Where the UIs live (incl. `open elasticvue` when ES is on) |
 | `camunda switch 8.9 --wipe` | Another minor, clean volumes |
 | `camunda profile light\|full\|modeler` | Compose profile |
 | `camunda resources small\|balanced\|power` | Heap settings |
