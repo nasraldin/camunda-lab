@@ -192,6 +192,16 @@ func (l *Lab) resolve(cfg config.Config) (workDir string, files []string, envFil
 	return workDir, files, envFiles, nil
 }
 
+func (l *Lab) Logs(ctx context.Context, service string, follow bool) error {
+	_ = ctx
+	cfg, err := config.Load()
+	if err != nil {
+		return err
+	}
+	workDir := paths.VersionDir(cfg.Version)
+	return l.Engine.Logs(workDir, cfg.ComposeProject, service, follow)
+}
+
 func checkDocker() error {
 	r := compose.NewRunner()
 	_, err := r.Exec(".", []string{"docker", "compose", "version"})
