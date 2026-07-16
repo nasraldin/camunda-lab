@@ -1,8 +1,6 @@
 package cli
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 )
 
@@ -40,14 +38,4 @@ switching, doctor, and developer tool helpers. Not affiliated with Camunda GmbH.
 	root.AddCommand(newNukeCmd())
 	root.AddCommand(newToolsCmd())
 	return root
-}
-
-func placeholder(use, short string) *cobra.Command {
-	return &cobra.Command{
-		Use:   use,
-		Short: short,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return fmt.Errorf("%s: not implemented yet", use)
-		},
-	}
 }
