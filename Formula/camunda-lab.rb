@@ -13,8 +13,8 @@
 class CamundaLab < Formula
   desc "Unofficial local Camunda 8 Docker lab CLI"
   homepage "https://github.com/nasraldin/camunda-lab"
-  url "https://github.com/nasraldin/camunda-lab/archive/refs/tags/v0.3.0.tar.gz"
-  sha256 "7cf70538fab53f9a3e256c0029f559be16e16c1249e84437ab1ebcaafc6c4004"
+  url "https://github.com/nasraldin/camunda-lab/archive/refs/tags/v0.4.0.tar.gz"
+  sha256 "0df1bc69adc9e43685154f9937d72bb4813f97b724f9b06b4b946998f35e23d0"
   license "MIT"
 
   depends_on "go" => :build
