@@ -2,10 +2,10 @@ package lab
 
 import (
 	"context"
-	"fmt"
 	"os"
 
 	"github.com/nasraldin/camunda-lab/internal/config"
+	"github.com/nasraldin/camunda-lab/internal/display"
 	"github.com/nasraldin/camunda-lab/internal/overlay"
 	"github.com/nasraldin/camunda-lab/internal/versions"
 )
@@ -19,8 +19,9 @@ func (l *Lab) Switch(ctx context.Context, minor string, wipe bool) error {
 		return err
 	}
 	if cfg.Version != minor && !wipe {
-		fmt.Fprintf(os.Stderr, "warning: switching %s → %s without --wipe may leave incompatible volumes\n", cfg.Version, minor)
+		display.Note(os.Stderr, "switching %s → %s without --wipe may leave incompatible volumes", cfg.Version, minor)
 	}
+	display.Step(os.Stdout, "Switching lab to Camunda %s...", minor)
 	_ = l.Down(ctx, wipe)
 	cfg.Version = minor
 	if err := config.Save(cfg); err != nil {
@@ -40,6 +41,7 @@ func (l *Lab) SetProfile(ctx context.Context, profile string) error {
 	if err != nil {
 		return err
 	}
+	display.Step(os.Stdout, "Switching profile to %s...", profile)
 	_ = l.Down(ctx, false)
 	cfg.Profile = profile
 	if err := config.Save(cfg); err != nil {
@@ -63,6 +65,7 @@ func (l *Lab) SetResources(ctx context.Context, resources string) error {
 	if _, err := overlay.SyncResourcesEnv(resources); err != nil {
 		return err
 	}
-	fmt.Printf("resources=%s (restart with: camunda restart)\n", resources)
+	display.Done(os.Stdout, "Resources set to %s.", resources)
+	display.Note(os.Stdout, "restart to apply: camunda restart")
 	return nil
 }

@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/nasraldin/camunda-lab/internal/display"
 	"github.com/nasraldin/camunda-lab/internal/paths"
 	"gopkg.in/yaml.v3"
 )
@@ -37,11 +38,12 @@ func (l *Lab) Nuke(ctx context.Context, yes bool) error {
 			return fmt.Errorf("aborted")
 		}
 	}
+	display.Step(os.Stdout, "Stopping stack and removing lab data...")
 	_ = l.Down(ctx, true)
 	home := paths.Home()
 	if err := os.RemoveAll(home); err != nil {
 		return err
 	}
-	fmt.Printf("Removed %s\n", home)
+	display.Done(os.Stdout, "Removed %s", home)
 	return nil
 }

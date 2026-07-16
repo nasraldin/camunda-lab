@@ -7,56 +7,93 @@ import (
 	"strings"
 
 	"github.com/nasraldin/camunda-lab/internal/config"
+	"github.com/nasraldin/camunda-lab/internal/display"
 	"github.com/nasraldin/camunda-lab/internal/paths"
 )
 
 type Report struct {
 	OK      bool
-	Lines   []string
 	FixHint string
+	cfg     config.Config
+	hasCfg  bool
+	checks  []string
+	notes   []string
 }
 
 func Run(fix bool) Report {
 	var r Report
 	r.OK = true
+
 	check := func(name string, err error) {
 		if err != nil {
 			r.OK = false
-			r.Lines = append(r.Lines, fmt.Sprintf("FAIL  %s: %v", name, err))
-		} else {
-			r.Lines = append(r.Lines, fmt.Sprintf("OK    %s", name))
+			r.checks = append(r.checks, display.Fail(fmt.Sprintf("%s — %v", name, err)))
+			return
 		}
+		r.checks = append(r.checks, display.Success(name))
 	}
 
-	check("docker", exec.Command("docker", "version", "--format", "{{.Server.Version}}").Run())
+	check("Docker Engine reachable", exec.Command("docker", "version", "--format", "{{.Server.Version}}").Run())
 	out, err := exec.Command("docker", "compose", "version").CombinedOutput()
 	if err != nil {
-		check("docker compose v2", fmt.Errorf("%s", strings.TrimSpace(string(out))))
+		check("Docker Compose v2", fmt.Errorf("%s", strings.TrimSpace(string(out))))
 	} else {
-		check("docker compose v2", nil)
-		r.Lines[len(r.Lines)-1] = "OK    docker compose v2 (" + strings.TrimSpace(string(out)) + ")"
+		ver := strings.TrimSpace(string(out))
+		r.checks = append(r.checks, display.Success("Docker Compose v2 ("+ver+")"))
 	}
 
 	cfg, err := config.Load()
-	check("config", err)
-	if err == nil {
-		r.Lines = append(r.Lines, fmt.Sprintf("INFO  version=%s profile=%s resources=%s", cfg.Version, cfg.Profile, cfg.Resources))
+	if err != nil {
+		check("Lab config", err)
+	} else {
+		r.hasCfg = true
+		r.cfg = cfg
+		r.checks = append(r.checks, display.Success("Lab config readable"))
 		dir := paths.VersionDir(cfg.Version)
 		if _, err := os.Stat(dir); err != nil {
-			check("version dir "+dir, err)
-			r.FixHint = "run: camunda install"
+			check("Distribution directory", err)
+			r.FixHint = "camunda install"
 		} else {
-			check("version dir", nil)
+			r.checks = append(r.checks, display.Success("Distribution directory present"))
 		}
 		if fix && r.FixHint == "" && !r.OK {
-			r.FixHint = "run: camunda install && camunda doctor"
+			r.FixHint = "camunda install && camunda doctor"
 		}
 	}
 
 	if _, err := exec.LookPath("cosign"); err != nil {
-		r.Lines = append(r.Lines, "INFO  cosign not installed (optional zip verify skipped)")
+		r.notes = append(r.notes, display.Info("cosign not installed (optional zip verify)"))
 	} else {
-		r.Lines = append(r.Lines, "OK    cosign available")
+		r.checks = append(r.checks, display.Success("cosign available"))
 	}
 	return r
+}
+
+func (r Report) Format() string {
+	rep := display.Report{Title: "Camunda Lab Doctor"}
+	if r.hasCfg {
+		rep.Fields = []display.Field{
+			display.KV("Version", r.cfg.Version),
+			display.KV("Profile", r.cfg.Profile),
+			display.KV("Resources", r.cfg.Resources),
+			display.KV("Project", r.cfg.ComposeProject),
+		}
+	}
+	if len(r.checks) > 0 {
+		rep.Sections = append(rep.Sections, display.Section{Title: "Checks", Items: r.checks})
+	}
+	if len(r.notes) > 0 {
+		rep.Sections = append(rep.Sections, display.Section{Title: "Notes", Items: r.notes})
+	}
+	if r.OK {
+		rep.Footer = []string{"Result: healthy — lab prerequisites look good."}
+	} else {
+		rep.Footer = []string{"Result: issues found."}
+		if r.FixHint != "" {
+			rep.Footer = append(rep.Footer, "Hint: "+r.FixHint)
+		}
+	}
+	var b strings.Builder
+	rep.Write(&b)
+	return b.String()
 }
