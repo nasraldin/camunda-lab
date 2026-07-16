@@ -9,9 +9,14 @@ services:
       - xpack.security.enabled=false
       - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
       - cluster.name=elasticsearch
+      - bootstrap.memory_lock=false
       - http.cors.enabled=true
       - http.cors.allow-origin=/.*/
       - http.cors.allow-headers=X-Requested-With,Content-Type,Content-Length,Authorization
+    ulimits:
+      memlock:
+        soft: 65536
+        hard: 65536
     ports:
       - "9200:9200"
     healthcheck:

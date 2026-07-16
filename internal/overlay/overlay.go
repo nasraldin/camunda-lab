@@ -54,7 +54,9 @@ func SyncResourcesEnv(resources string) (string, error) {
 		return "", err
 	}
 	path := filepath.Join(paths.Home(), "resources.env")
-	content := fmt.Sprintf("JAVA_TOOL_OPTIONS=%s\n", opts)
+	// KEYCLOAK_HOST=keycloak: container→Keycloak on the compose network.
+	// Browser issuer URLs still use HOST=localhost from Camunda's .env.
+	content := fmt.Sprintf("JAVA_TOOL_OPTIONS=%s\nKEYCLOAK_HOST=keycloak\n", opts)
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		return "", err
 	}

@@ -1,32 +1,31 @@
 # App screenshots
 
-These shots were taken from a real **camunda-lab** install:
+Captured from a live **camunda-lab** full stack:
 
 ```bash
-camunda install --version 8.9 --profile light --resources small --yes
+camunda install --version 8.9 --profile full --resources small --yes
 camunda wait
 camunda smoke
 ```
 
-Stack: Camunda **8.9.13** orchestration + connectors (light profile). Default login: **demo** / **demo**.
+Stack: Camunda **8.9** full (orchestration, Identity, Keycloak, Console, Optimize, Web Modeler, Elasticsearch, ElasticVue, connectors).  
+App login: **demo** / **demo**. Keycloak admin: **admin** / **admin**.
 
-Open the same UIs on your machine with `camunda urls` and `camunda open operate`.
+Open the same UIs with `camunda urls` and `camunda open <app>`.
 
 ---
 
-## Operate — login
+## Operate — login (OIDC)
 
-`http://localhost:8080/operate` (redirects to `/operate/login`)
+`camunda open operate` redirects through Camunda Identity / Keycloak SSO on the full profile.
 
 ![Operate login](assets/screenshots/operate-login.png)
-
-Footer shows the patch version from Camunda’s images (here **8.9.13**).
 
 ---
 
 ## Operate — dashboard
 
-After login you land on the empty Operate dashboard — expected on a fresh lab with no process instances yet.
+After login you land on the Operate dashboard — empty until you deploy and run processes.
 
 ![Operate dashboard](assets/screenshots/operate-dashboard.png)
 
@@ -34,7 +33,7 @@ After login you land on the empty Operate dashboard — expected on a fresh lab 
 
 ## Operate — processes
 
-Processes view with Active / Incidents filters. No diagrams until you deploy something.
+Process instances view with Active / Incidents filters.
 
 ![Operate processes](assets/screenshots/operate-processes.png)
 
@@ -46,7 +45,7 @@ camunda open operate
 
 ## Tasklist
 
-`http://localhost:8080/tasklist` — human tasks from your BPMN. Empty until you start a process with user tasks.
+`http://localhost:8080/tasklist` — human tasks from your BPMN.
 
 ![Tasklist](assets/screenshots/tasklist.png)
 
@@ -58,11 +57,9 @@ camunda open tasklist
 
 ## Admin (orchestration)
 
-`http://localhost:8080/admin` — users, groups, roles, authorizations for the orchestration cluster (light profile uses embedded auth, not Keycloak).
+`http://localhost:8080/admin` — mapping rules, users, groups, roles, authorizations for the orchestration cluster.
 
-![Admin users](assets/screenshots/admin.png)
-
-The default **demo** user is created by Camunda’s compose initialization.
+![Admin](assets/screenshots/admin.png)
 
 ```bash
 camunda open admin
@@ -70,37 +67,91 @@ camunda open admin
 
 ---
 
-## Connectors health
+## Console
 
-Connectors do not ship a full product UI on the light stack. Health is exposed for ops checks:
+`http://localhost:8087` — Camunda Console (full profile).
+
+![Console](assets/screenshots/console.png)
+
+```bash
+camunda open console
+```
+
+---
+
+## Identity
+
+`http://localhost:8084` — Management Identity (applications, roles, permissions).
+
+![Identity](assets/screenshots/identity.png)
+
+```bash
+camunda open identity
+```
+
+---
+
+## Optimize
+
+`http://localhost:8083` — process analytics dashboards.
+
+![Optimize](assets/screenshots/optimize.png)
+
+```bash
+camunda open optimize
+```
+
+---
+
+## Web Modeler
+
+`http://localhost:8070` — Web Modeler home (SSO via Keycloak on full).
+
+![Web Modeler](assets/screenshots/web-modeler.png)
+
+```bash
+camunda open web-modeler
+```
+
+---
+
+## Keycloak
+
+`http://localhost:18080/auth/admin/` — Keycloak Administration Console sign-in (**admin** / **admin**).
+
+![Keycloak](assets/screenshots/keycloak.png)
+
+```bash
+camunda open keycloak
+```
+
+---
+
+## ElasticVue
+
+`http://localhost:9800` — Elasticsearch GUI with cluster **camunda-lab** preconfigured to `http://localhost:9200` (no manual setup).
+
+![ElasticVue](assets/screenshots/elasticvue.png)
+
+```bash
+camunda open elasticvue
+```
+
+---
+
+## Elasticsearch cluster health
+
+`http://localhost:9200/_cluster/health?pretty`
+
+![Elasticsearch health](assets/screenshots/elasticsearch.png)
+
+---
+
+## Connectors health
 
 `http://localhost:8086/actuator/health`
 
 ![Connectors health JSON](assets/screenshots/connectors-health.png)
-
-All components report **UP**, including `zeebeClient` with a healthy partition.
-
----
-
-## What this profile does *not* include
-
-Light profile is intentionally small. You will **not** see these UIs until you switch to **full**:
-
-| App | Typical URL (full) |
-| --- | --- |
-| Console | http://localhost:8087 |
-| Optimize | http://localhost:8083 |
-| Identity | http://localhost:8084 |
-| Web Modeler | http://localhost:8070 |
-| Keycloak | http://localhost:18080/auth/ |
-
-```bash
-camunda profile full
-camunda wait
-camunda urls
-```
-
-Ports also differ by minor — especially **8.7** vs **8.8** vs **8.9+**. See [Profiles and versions](profiles.md).
 
 ---
 
@@ -108,10 +159,12 @@ Ports also differ by minor — especially **8.7** vs **8.8** vs **8.9+**. See [P
 
 ```bash
 brew upgrade camunda-lab   # or: make install
-camunda version            # expect a recent release
-camunda install --version 8.9 --profile light --resources small --yes
+camunda install --version 8.9 --profile full --resources small --yes
 camunda wait
 camunda smoke
 camunda urls
 camunda open operate
+camunda open elasticvue
 ```
+
+Ports also differ by minor — especially **8.7** vs **8.8** vs **8.9+**. See [Profiles and versions](profiles.md).

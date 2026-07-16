@@ -54,6 +54,9 @@ func TestSyncResourcesEnv(t *testing.T) {
 	if !strings.Contains(string(data), "JAVA_TOOL_OPTIONS=") {
 		t.Fatalf("%s", data)
 	}
+	if !strings.Contains(string(data), "KEYCLOAK_HOST=keycloak") {
+		t.Fatalf("missing KEYCLOAK_HOST in %s", data)
+	}
 }
 
 func TestComposeOverrideFiles810Full(t *testing.T) {
