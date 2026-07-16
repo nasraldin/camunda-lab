@@ -85,8 +85,10 @@ EOF
 fi
 
 cd "${WORKDIR}/tap"
-git config user.name "github-actions[bot]"
-git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
+  git config user.name "github-actions[bot]"
+  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+fi
 
 if [[ -n "${GH_TOKEN:-}" ]]; then
   git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${TAP_REPO}.git"

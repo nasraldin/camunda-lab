@@ -13,7 +13,6 @@
 
 Unofficial local Camunda 8 lab. Not affiliated with Camunda GmbH.
 
-
 Camunda already ships solid Docker Compose files. What’s missing is the day-to-day glue: fetch the right zip, pick light vs full, wait until Keycloak wakes up, remember which port is Operate, switch 8.8 → 8.9 without leaving a mess. That’s what **`camunda`** does — without asking you to stand up Kubernetes.
 
 Docs: [https://nasraldin.github.io/camunda-lab/](https://nasraldin.github.io/camunda-lab/)
@@ -33,26 +32,27 @@ Docs: [https://nasraldin.github.io/camunda-lab/](https://nasraldin.github.io/cam
 
 ## Install
 
-### From source
+### Homebrew
 
 ```bash
-git clone https://github.com/nasraldin/camunda-lab.git
-cd camunda-lab
-make build
-make install   # ~/.local/bin/camunda
+brew tap nasraldin/tools
+brew install camunda-lab
+camunda about
 ```
 
-### One-liner (after first release)
+### One-liner (checksum-verified release binary)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/nasraldin/camunda-lab/main/install.sh | bash
 ```
 
-### Homebrew (after formula publish)
+### From source
 
 ```bash
-brew tap nasraldin/tools
-brew install camunda-lab
+git clone https://github.com/nasraldin/camunda-lab.git
+cd camunda-lab
+make check
+make install   # ~/.local/bin/camunda
 ```
 
 You need Docker + Compose v2. On Apple Silicon, [docker-lab](https://github.com/nasraldin/docker-lab) is an easy Engine if you don’t want Desktop.
@@ -82,6 +82,8 @@ camunda install --version 8.8 --profile full --yes
 
 Default app login from Camunda’s files: **demo** / **demo**.
 
+Ports differ by Camunda minor — run `camunda urls` (see [profiles](https://nasraldin.github.io/camunda-lab/profiles/)).
+
 ---
 
 ## Handy commands
@@ -89,6 +91,7 @@ Default app login from Camunda’s files: **demo** / **demo**.
 | Command | Meaning |
 | --- | --- |
 | `camunda install` | Fetch zip, configure, start |
+| `camunda about` | Project + runtime info card |
 | `camunda wait` / `doctor` / `smoke` | Health |
 | `camunda urls` / `open` | Where the UIs live |
 | `camunda switch 8.9 --wipe` | Another minor, clean volumes |
@@ -112,6 +115,10 @@ More detail: [CLI reference](https://nasraldin.github.io/camunda-lab/cli-referen
 | [Troubleshooting](https://nasraldin.github.io/camunda-lab/troubleshooting/) | When it breaks |
 
 ---
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md), and [SECURITY.md](SECURITY.md).
 
 ## Disclaimer
 

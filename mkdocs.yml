@@ -54,7 +54,7 @@ plugins:
   - tags
 
 exclude_docs: |
-  superpowers/**
+  design/**
 
 markdown_extensions:
   - admonition
@@ -98,5 +98,6 @@ nav:
       - Troubleshooting: troubleshooting.md
   - Project:
       - Homebrew: homebrew.md
+      - Releasing: releasing.md
       - Roadmap: roadmap.md
       - Docs site: docs-site.md

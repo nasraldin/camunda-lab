@@ -15,34 +15,35 @@ Apple Silicon tip: if you don’t want Docker Desktop, use [docker-lab](https://
 
 ## Install the CLI
 
-### From source (works today)
-
-```bash
-git clone https://github.com/nasraldin/camunda-lab.git ~/homelab/camunda-lab
-cd ~/homelab/camunda-lab
-make build
-make install
-camunda version
-```
-
-`make install` copies the binary to `~/.local/bin/camunda`. Put that directory on your `PATH` if it isn’t already.
-
-### One-liner
-
-After a release is published on GitHub:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/nasraldin/camunda-lab/main/install.sh | bash
-```
-
 ### Homebrew
 
 ```bash
 brew tap nasraldin/tools
 brew install camunda-lab
+camunda about
 ```
 
-The tap formula is named `camunda-lab` so it doesn’t clash with anything else; you still run `camunda`.
+The tap formula is named `camunda-lab`; you still run `camunda`.
+
+### One-liner
+
+Downloads the GitHub Release binary and **verifies `checksums.txt`**:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/nasraldin/camunda-lab/main/install.sh | bash
+```
+
+### From source
+
+```bash
+git clone https://github.com/nasraldin/camunda-lab.git ~/homelab/camunda-lab
+cd ~/homelab/camunda-lab
+make check
+make install
+camunda version
+```
+
+`make install` copies the binary to `~/.local/bin/camunda`. Put that directory on your `PATH` if it isn’t already.
 
 ## Start a lab
 
