@@ -1,20 +1,170 @@
 # CLI reference
 
+Binary: **`camunda`**. Project / Homebrew formula: **`camunda-lab`**.
+
+!!! tip "How to read this"
+    `$` lines are what you type. Output is abbreviated and will differ on your machine.
+
+## Command map
+
 | Command | Purpose |
 | --- | --- |
-| `install` | Interactive or flagged install + start |
-| `up` / `start` | Start stack |
+| `install` | Download zip, configure, start |
+| `up` / `start` | Start |
 | `down` / `stop` | Stop (keep volumes) |
 | `restart` | Restart |
-| `status` | Config + `compose ps` |
-| `switch <minor> [--wipe]` | Change Camunda minor |
-| `profile <light\|full\|modeler>` | Change profile |
-| `resources <small\|balanced\|power>` | Resource env |
-| `urls` / `open [app]` | Component URLs |
-| `logs [-f] [service]` | Logs |
-| `doctor [--fix]` | Diagnostics |
+| `status` | Config + compose ps |
+| `switch` | Change minor |
+| `profile` | light / full / modeler |
+| `resources` | small / balanced / power |
+| `urls` / `open` | Component links |
+| `logs` | Container logs |
+| `doctor` | Diagnostics |
 | `wait` / `smoke` | Health |
-| `tools c8ctl …` | c8ctl helpers |
-| `tools modeler profile` | Desktop Modeler profile |
+| `tools` | c8ctl + Modeler helpers |
 | `nuke` | Wipe lab home |
 | `version` / `about` | Meta |
+
+Details for each command are in the sections below.
+
+---
+
+## install
+
+```bash
+camunda install
+camunda install --version 8.8 --profile light --resources small --yes
+```
+
+| Flag | Meaning |
+| --- | --- |
+| `--version` | `8.7` … `8.10` |
+| `--profile` | `light` \| `full` \| `modeler` |
+| `--resources` | `small` \| `balanced` \| `power` |
+| `-y` / `--yes` | No prompts; use flags or defaults |
+
+Fetches the official zip into `~/.camunda-lab/versions/<minor>/`, writes config, runs compose up.
+
+---
+
+## up / down / restart
+
+```bash
+camunda up
+camunda down
+camunda restart
+```
+
+`down` keeps volumes. Use `nuke` or `switch --wipe` when you want empty disks.
+
+---
+
+## status
+
+```bash
+camunda status
+```
+
+Prints active version / profile / resources and `docker compose ps` for project `camunda-lab`.
+
+---
+
+## switch
+
+```bash
+camunda switch 8.9
+camunda switch 8.9 --wipe
+```
+
+Changes the active minor, downloads that zip if needed, starts again. `--wipe` runs compose down with volumes first.
+
+---
+
+## profile / resources
+
+```bash
+camunda profile full
+camunda resources power
+camunda restart
+```
+
+`profile` recreates the stack with a different compose file set. `resources` rewrites `resources.env`; restart to apply.
+
+---
+
+## urls / open
+
+```bash
+camunda urls
+camunda open operate
+camunda open keycloak
+```
+
+`open` uses `open` on macOS and `xdg-open` on Linux.
+
+---
+
+## logs
+
+```bash
+camunda logs
+camunda logs -f orchestration
+camunda logs -f keycloak
+```
+
+---
+
+## doctor
+
+```bash
+camunda doctor
+camunda doctor --fix
+```
+
+Checks Docker, Compose v2, config, whether the version directory exists. Mentions optional `cosign` if you care about signed zip verify later.
+
+---
+
+## wait / smoke
+
+```bash
+camunda wait
+camunda wait --timeout 15m
+camunda smoke
+```
+
+`wait` polls HTTP endpoints until they answer (or timeout). `smoke` is a one-shot check.
+
+---
+
+## tools
+
+```bash
+camunda tools c8ctl status
+camunda tools c8ctl install
+camunda tools modeler profile
+```
+
+`c8ctl install` runs `npm install -g @camunda8/cli` when npm is available.  
+`modeler profile` writes a Desktop Modeler connection profile named `camunda-lab`.
+
+---
+
+## nuke
+
+```bash
+camunda nuke
+CONFIRM=yes camunda nuke
+camunda nuke --yes
+```
+
+Stops with volumes and deletes `~/.camunda-lab` (or `CAMUNDA_LAB_HOME`). Destructive — that’s the point.
+
+---
+
+## version / about
+
+```bash
+camunda version
+camunda about
+```

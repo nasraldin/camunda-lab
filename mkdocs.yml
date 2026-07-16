@@ -1,17 +1,97 @@
 site_name: Camunda Lab
-site_description: Unofficial local Camunda 8 Docker lab CLI
+site_description: Local Camunda 8 on Docker — official stacks, one CLI, no Kubernetes required
+site_author: Nasr Aldin
 site_url: https://nasraldin.github.io/camunda-lab/
+
+repo_name: nasraldin/camunda-lab
 repo_url: https://github.com/nasraldin/camunda-lab
+edit_uri: edit/main/docs/
+
+copyright: Copyright &copy; 2026 Nasr Aldin — MIT License · Unofficial community project
+
 theme:
   name: material
-nav:
-  - Home: index.md
-  - Installation: installation.md
-  - CLI reference: cli-reference.md
-  - Architecture: architecture.md
-  - Troubleshooting: troubleshooting.md
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: deep orange
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: deep orange
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  font:
+    text: IBM Plex Sans
+    code: IBM Plex Mono
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.action.edit
+    - toc.follow
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  - search
+  - tags
+
+exclude_docs: |
+  superpowers/**
+
 markdown_extensions:
   - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
   - tables
   - toc:
       permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/nasraldin/camunda-lab
+    - icon: fontawesome/solid/globe
+      link: https://nasraldin.com
+
+nav:
+  - Home: index.md
+  - Getting started:
+      - Installation: installation.md
+      - Why Camunda Lab: comparison.md
+      - FAQ: faq.md
+  - Guides:
+      - Architecture: architecture.md
+      - Profiles and versions: profiles.md
+  - Operations:
+      - CLI reference: cli-reference.md
+      - Troubleshooting: troubleshooting.md
+  - Project:
+      - Homebrew: homebrew.md
+      - Roadmap: roadmap.md
+      - Docs site: docs-site.md

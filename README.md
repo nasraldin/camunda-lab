@@ -1,26 +1,28 @@
 # Camunda Lab
 
+[![CI](https://github.com/nasraldin/camunda-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/nasraldin/camunda-lab/actions/workflows/ci.yml)
+[![Docs](https://github.com/nasraldin/camunda-lab/actions/workflows/docs.yml/badge.svg)](https://github.com/nasraldin/camunda-lab/actions/workflows/docs.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Docs site](https://img.shields.io/badge/docs-GitHub%20Pages-indigo)](https://nasraldin.github.io/camunda-lab/)
 
-**Unofficial** local Camunda 8 platform lab. Not affiliated with Camunda GmbH.
+Unofficial local Camunda 8 lab. Not affiliated with Camunda GmbH.
 
-Run the official Camunda Docker Compose stack (light / full / Web Modeler) with one CLI — switch minors (8.7–8.10), doctor the stack, and glue developer tools — without standing up Kubernetes.
+Camunda already ships solid Docker Compose files. What’s missing is the day-to-day glue: fetch the right zip, pick light vs full, wait until Keycloak wakes up, remember which port is Operate, switch 8.8 → 8.9 without leaving a mess. That’s what **`camunda`** does — without asking you to stand up Kubernetes.
 
-## Why
+Docs: [https://nasraldin.github.io/camunda-lab/](https://nasraldin.github.io/camunda-lab/)
 
-| | Official Compose zip | Helm / Kind | **camunda-lab** |
+---
+
+## Why bother?
+
+| | Official zip | Helm on Kind | Camunda Lab |
 | --- | --- | --- | --- |
-| Full / light stack | Yes | Yes | Yes (official zips) |
-| Version switch | Manual | Chart version | `camunda switch 8.9` |
-| Install DX | Download + extract | k8s required | `camunda install` |
-| Doctor / URLs | DIY | DIY | Built-in |
+| Real Camunda stack | Yes | Yes | Yes (same zips) |
+| Need local k8s | No | Yes | No |
+| Change minor | Manual | Chart work | `camunda switch` |
+| Doctor / URLs | DIY | DIY | Built in |
 
-## Prerequisites
-
-- macOS or Linux
-- Docker Engine + Compose **v2** (`docker compose version`)
-
-On Apple Silicon, [docker-lab](https://github.com/nasraldin/docker-lab) is one way to get a light Linux Docker host.
+---
 
 ## Install
 
@@ -30,9 +32,7 @@ On Apple Silicon, [docker-lab](https://github.com/nasraldin/docker-lab) is one w
 git clone https://github.com/nasraldin/camunda-lab.git
 cd camunda-lab
 make build
-./bin/camunda cli-install  # optional: symlink — or: make install
-# for now:
-sudo cp bin/camunda /usr/local/bin/camunda   # or ~/.local/bin
+make install   # ~/.local/bin/camunda
 ```
 
 ### One-liner (after first release)
@@ -41,12 +41,16 @@ sudo cp bin/camunda /usr/local/bin/camunda   # or ~/.local/bin
 curl -fsSL https://raw.githubusercontent.com/nasraldin/camunda-lab/main/install.sh | bash
 ```
 
-### Homebrew (after tap publish)
+### Homebrew (after formula publish)
 
 ```bash
 brew tap nasraldin/tools
-brew install camunda-lab   # installs binary named camunda
+brew install camunda-lab
 ```
+
+You need Docker + Compose v2. On Apple Silicon, [docker-lab](https://github.com/nasraldin/docker-lab) is an easy Engine if you don’t want Desktop.
+
+---
 
 ## Quick start
 
@@ -57,7 +61,7 @@ camunda urls
 camunda open operate
 ```
 
-Interactive install (prompts for version / profile / resources):
+Interactive:
 
 ```bash
 camunda install
@@ -69,32 +73,42 @@ Full stack (Identity, Keycloak, Optimize, Console, Web Modeler):
 camunda install --version 8.8 --profile full --yes
 ```
 
+Default app login from Camunda’s files: **demo** / **demo**.
+
+---
+
 ## Handy commands
 
 | Command | Meaning |
 | --- | --- |
-| `camunda install` | Fetch official zip, configure, start |
-| `camunda up` / `down` / `restart` | Lifecycle |
-| `camunda switch 8.9 [--wipe]` | Change minor |
-| `camunda profile light\|full\|modeler` | Change compose profile |
-| `camunda resources small\|balanced\|power` | Heap / resource env |
-| `camunda status` / `urls` / `open` | What’s running |
-| `camunda doctor` / `wait` / `smoke` | Health |
-| `camunda tools c8ctl install` | Bootstrap official `c8ctl` |
-| `camunda tools modeler profile` | Desktop Modeler connection |
+| `camunda install` | Fetch zip, configure, start |
+| `camunda wait` / `doctor` / `smoke` | Health |
+| `camunda urls` / `open` | Where the UIs live |
+| `camunda switch 8.9 --wipe` | Another minor, clean volumes |
+| `camunda profile light\|full\|modeler` | Compose profile |
+| `camunda resources small\|balanced\|power` | Heap settings |
+| `camunda tools c8ctl install` | Official deploy/debug CLI |
 | `camunda nuke` | Wipe `~/.camunda-lab` |
+
+More detail: [CLI reference](https://nasraldin.github.io/camunda-lab/cli-reference/).
+
+---
 
 ## Docs
 
-- [Architecture](docs/architecture.md)
-- [Installation](docs/installation.md)
-- [CLI reference](docs/cli-reference.md)
-- [Troubleshooting](docs/troubleshooting.md)
-- [Design spec](docs/superpowers/specs/2026-07-16-camunda-lab-design.md)
+| Page | About |
+| --- | --- |
+| [Home](https://nasraldin.github.io/camunda-lab/) | Overview |
+| [Installation](https://nasraldin.github.io/camunda-lab/installation/) | First boot |
+| [Why Camunda Lab](https://nasraldin.github.io/camunda-lab/comparison/) | vs zip / Helm / 8 Run |
+| [Architecture](https://nasraldin.github.io/camunda-lab/architecture/) | How it fits |
+| [Troubleshooting](https://nasraldin.github.io/camunda-lab/troubleshooting/) | When it breaks |
+
+---
 
 ## Disclaimer
 
-This is a community project for **local development**. Camunda Docker images may be used in production; the Compose files and this lab are not. Production: [Camunda Helm](https://docs.camunda.io/docs/self-managed/setup/install/).
+Local development only. Production → [Camunda Helm](https://docs.camunda.io/docs/self-managed/setup/install/).
 
 ## License
 
