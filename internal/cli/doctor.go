@@ -129,18 +129,11 @@ func newToolsCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			rest := "http://localhost:8080"
+			rest := urls.ModelerRESTBase(cfg)
 			grpc := "localhost:26500"
 			for _, e := range urls.List(cfg) {
-				if e.Name == "rest" {
-					rest = e.URL
-				}
 				if e.Name == "grpc" {
 					grpc = e.URL
-				}
-				if e.Name == "operate" && cfg.Profile == "full" {
-					// operate shares orchestration HTTP on full
-					rest = "http://localhost:8088"
 				}
 			}
 			path, err := tools.WriteModelerProfile("camunda-lab", rest, grpc)

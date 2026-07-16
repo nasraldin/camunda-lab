@@ -5,7 +5,7 @@
 | Profile | Roughly includes | When to use |
 | --- | --- | --- |
 | `light` (default) | Orchestration, connectors, ES (≤8.9) | Day-to-day coding |
-| `full` | + Identity, Keycloak, Optimize, Console, Web Modeler | Platform / IAM / Optimize checks |
+| `full` | + Identity, Keycloak, Optimize, Console (8.8–8.9), Web Modeler | Platform / IAM / Optimize checks |
 | `modeler` | Web Modeler stack only | Modeling without the rest |
 
 ```bash
@@ -17,9 +17,10 @@ camunda profile full          # recreate with full
 
 | Minor | Notes |
 | --- | --- |
-| **8.7** | Separate Zeebe / Operate / Tasklist services. Light → `docker-compose-core.yaml`, full → `docker-compose.yaml` |
-| **8.8 / 8.9** | Consolidated `orchestration` image. Light / full / modeler files as Camunda documents |
-| **8.10** | Preview. ES not bundled; full profile gets our ES overlay |
+| **8.7** | Separate Zeebe / Operate / Tasklist. Light → `docker-compose-core.yaml`, full → `docker-compose.yaml` |
+| **8.8** | Consolidated `orchestration`; HTTP published on **host 8088** |
+| **8.9** | Consolidated `orchestration`; HTTP published on **host 8080** (current docs default) |
+| **8.10** | Preview. Same 8080 mapping as 8.9; ES not bundled; full profile gets our ES overlay |
 
 ```bash
 camunda switch 8.9 --wipe
@@ -43,24 +44,63 @@ camunda resources small
 camunda restart
 ```
 
-## Ports (quick map)
+## Ports and URLs
 
-Exact ports come from Camunda’s files; `camunda urls` prints what this lab expects.
+Ports come from Camunda’s official compose for each minor
+([camunda-distributions](https://github.com/camunda/camunda-distributions)).
+`camunda urls` prints the map for **your** active version/profile.
 
-Typical **light** on 8.8+:
+Official docs also differ by version era:
+
+- [8.7 Docker Compose](https://docs.camunda.io/docs/8.7/self-managed/setup/deploy/local/docker-compose/) — separate Operate / Tasklist ports
+- [Current Compose configuration](https://docs.camunda.io/docs/self-managed/quickstart/developer-quickstart/docker-compose/configuration.md) — Orchestration Cluster on `:8080` (matches **8.9+**; **8.8** still maps host **8088**)
+
+### 8.7 (and earlier 8.5–8.6 layout)
+
+| App | URL |
+| --- | --- |
+| Operate | http://localhost:8081 |
+| Tasklist | http://localhost:8082 |
+| Optimize (full) | http://localhost:8083 |
+| Identity (full) | http://localhost:8084 |
+| Connectors | http://localhost:8085 |
+| Zeebe HTTP gateway | http://localhost:8088 |
+| Web Modeler (full) | http://localhost:8070 |
+| Keycloak (full) | http://localhost:18080/auth/ |
+| gRPC | localhost:26500 |
+| Elasticsearch | http://localhost:9200 |
+
+No Console service in 8.7 compose.
+
+### 8.8 (orchestration on host 8088)
+
+| App | URL |
+| --- | --- |
+| Operate | http://localhost:8088/operate |
+| Tasklist | http://localhost:8088/tasklist |
+| Admin (light) | http://localhost:8088/admin |
+| REST API | http://localhost:8088/v2 |
+| Connectors | http://localhost:8086 |
+| Console (full) | http://localhost:8087 |
+| Optimize (full) | http://localhost:8083 |
+| Identity (full) | http://localhost:8084 |
+| Web Modeler (full) | http://localhost:8070 |
+| Keycloak (full) | http://localhost:18080/auth/ |
+| gRPC | localhost:26500 |
+| Elasticsearch | http://localhost:9200 |
+
+### 8.9 / 8.10 (orchestration on host 8080)
 
 | App | URL |
 | --- | --- |
 | Operate | http://localhost:8080/operate |
 | Tasklist | http://localhost:8080/tasklist |
+| Admin (light) | http://localhost:8080/admin |
+| REST API | http://localhost:8080/v2 |
+| Connectors | http://localhost:8086 |
+| Console (full, 8.9) | http://localhost:8087 |
+| Optimize / Identity / Web Modeler / Keycloak (full) | same as 8.8 table |
 | gRPC | localhost:26500 |
+| Elasticsearch | http://localhost:9200 (bundled ≤8.9; 8.10 full via our overlay; not listed for 8.10 light) |
 
-Typical **full** extras:
-
-| App | URL |
-| --- | --- |
-| Console | http://localhost:8087 |
-| Optimize | http://localhost:8083 |
-| Identity | http://localhost:8084 |
-| Web Modeler | http://localhost:8070 |
-| Keycloak | http://localhost:18080/auth/ |
+Default web UI credentials: `demo` / `demo`. Keycloak admin: `admin` / `admin`.

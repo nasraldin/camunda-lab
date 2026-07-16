@@ -26,9 +26,18 @@ Light profile is much kinder for a first try.
 
 ## Port already allocated
 
-Something else owns 8080 / 9200 / 18080 / ….
+Something else owns the ports for your minor — see [Ports and URLs](profiles.md#ports-and-urls).
+
+Common conflicts:
+
+| Era | Busy hosts |
+| --- | --- |
+| 8.7 | `8081` / `8082` / `8088` / `9200` / `18080` |
+| 8.8 | `8088` / `8086` / `9200` / `18080` |
+| 8.9+ | `8080` / `8086` / `9200` / `18080` |
 
 ```bash
+camunda urls    # what this lab expects
 camunda status
 camunda down
 # stop the other compose project or Desktop stack fighting for ports
