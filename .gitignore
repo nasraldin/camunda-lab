@@ -1,7 +1,14 @@
 /bin/
 /dist/
 *.exe
+*.test
+*.out
+coverage.out
 .DS_Store
+.idea/
+.vscode/
+*.swp
+*~
 .venv-docs/
 site/
 .worktrees/

@@ -1,0 +1,61 @@
+name: Bug report
+description: Something is broken in camunda-lab
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Please fill in what you can — `camunda doctor` output helps a lot.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: Expected vs actual
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: camunda version
+      placeholder: "camunda version / camunda about"
+    validations:
+      required: true
+  - type: dropdown
+    id: camunda_minor
+    attributes:
+      label: Camunda minor
+      options:
+        - "8.7"
+        - "8.8"
+        - "8.9"
+        - "8.10"
+        - unknown
+    validations:
+      required: true
+  - type: dropdown
+    id: profile
+    attributes:
+      label: Profile
+      options:
+        - light
+        - full
+        - modeler
+        - unknown
+  - type: input
+    id: os
+    attributes:
+      label: OS / Docker
+      placeholder: "macOS 15 + docker-lab / Ubuntu 24.04 + Docker Engine"
+  - type: textarea
+    id: doctor
+    attributes:
+      label: camunda doctor output
+      render: shell
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction steps
+      placeholder: |
+        1. camunda install --version 8.8 --profile light --yes
+        2. …
