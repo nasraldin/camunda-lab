@@ -198,7 +198,7 @@ Camunda Lab
   Platform    Apple M1 Max
   Memory      64 GB
 
-  Features    compose · profiles · version-switch · overlays · c8ctl · modeler · doctor · smoke
+  Features    compose · profiles · version-switch · overlays · elasticvue · c8ctl · modeler · doctor · smoke
 
   Repo        https://github.com/nasraldin/camunda-lab
   Docs        https://nasraldin.github.io/camunda-lab/
