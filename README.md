@@ -1,11 +1,18 @@
-# Camunda Lab
+<p align="center">
+  <img src="docs/assets/logo-camunda-black.svg" alt="Camunda" width="220">
+</p>
 
-[![CI](https://github.com/nasraldin/camunda-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/nasraldin/camunda-lab/actions/workflows/ci.yml)
-[![Docs](https://github.com/nasraldin/camunda-lab/actions/workflows/docs.yml/badge.svg)](https://github.com/nasraldin/camunda-lab/actions/workflows/docs.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Docs site](https://img.shields.io/badge/docs-GitHub%20Pages-indigo)](https://nasraldin.github.io/camunda-lab/)
+<h1 align="center">Camunda Lab</h1>
+
+<p align="center">
+  <a href="https://github.com/nasraldin/camunda-lab/actions/workflows/ci.yml"><img src="https://github.com/nasraldin/camunda-lab/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/nasraldin/camunda-lab/actions/workflows/docs.yml"><img src="https://github.com/nasraldin/camunda-lab/actions/workflows/docs.yml/badge.svg" alt="Docs"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+  <a href="https://nasraldin.github.io/camunda-lab/"><img src="https://img.shields.io/badge/docs-GitHub%20Pages-indigo" alt="Docs site"></a>
+</p>
 
 Unofficial local Camunda 8 lab. Not affiliated with Camunda GmbH.
+
 
 Camunda already ships solid Docker Compose files. What’s missing is the day-to-day glue: fetch the right zip, pick light vs full, wait until Keycloak wakes up, remember which port is Operate, switch 8.8 → 8.9 without leaving a mess. That’s what **`camunda`** does — without asking you to stand up Kubernetes.
 
