@@ -82,8 +82,8 @@ Add `versions.HasHostElasticsearch(minor, profile) bool` (name can vary) aligned
 | Profile / minor | Host ES (`:9200`) | ElasticVue overlays |
 |-----------------|-------------------|---------------------|
 | modeler (any) | no | no |
-| light 8.10 | no | no |
-| light 8.7–8.9 | yes | yes |
+| light 8.9 / 8.10 | no (official light dropped ES) | no |
+| light 8.7–8.8 | yes | yes |
 | full (any supported) | yes (8.10 via ES overlay) | yes |
 
 `overlay.ComposeOverrideFiles` returns, in order when applicable:
