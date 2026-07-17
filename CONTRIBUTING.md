@@ -13,7 +13,8 @@ Thanks for helping improve Camunda Lab. This is an unofficial community project 
 ```bash
 git clone https://github.com/nasraldin/camunda-lab.git
 cd camunda-lab
-make check          # fmt + vet + test
+make check          # fmt + tidy + vet + test
+make ui-check       # after UI source changes — rebuild dist and verify committed
 make build
 make install        # ~/.local/bin/camunda
 camunda about
@@ -50,7 +51,9 @@ Historical design notes (not on the site): [`docs/design/`](docs/design/).
 
 ## Pull requests
 
-Use the PR template. CI must be green (`fmt`, `vet`, `test`, ShellCheck, docs build when docs change).
+Use the PR template. CI must be green (`fmt`, `tidy`, `vet`, `govulncheck`, `test`, embedded UI dist check, ShellCheck, docs build when docs change).
+
+**Recommended:** enable branch protection on `main` (require `Test & build` status check, block force-push).
 
 ## Releases
 

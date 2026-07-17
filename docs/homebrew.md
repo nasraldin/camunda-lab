@@ -58,4 +58,5 @@ A token that can read but not push fails with **403** on `git push`. Fix the PAT
 | --- | --- |
 | Formula template | `Formula/camunda-lab.rb` |
 | Publish script | `scripts/publish-homebrew.sh` |
-| Workflow | `.github/workflows/homebrew.yml` |
+| Release workflow (tap publish) | `.github/workflows/release.yml` → `publish-homebrew` job |
+| Backfill workflow | `.github/workflows/homebrew.yml` (manual only) |

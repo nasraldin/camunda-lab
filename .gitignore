@@ -13,3 +13,14 @@ coverage.out
 site/
 .worktrees/
 .superpowers/
+
+# Local secrets and env (never commit)
+.env
+.env.*
+!.env.example
+ai.env
+*.pem
+
+# Node
+node_modules/
+internal/ui/web/node_modules/
