@@ -68,15 +68,19 @@ func newLintCmd() *cobra.Command {
 }
 
 func newDiffCmd() *cobra.Command {
-	var from, to, base string
+	var from, to, against, base string
 	cmd := &cobra.Command{
-		Use:   "diff [file]",
+		Use:   "diff [file] [file]",
 		Short: "Semantic BPMN diff",
-		Args:  cobra.MaximumNArgs(1),
+		Args:  cobra.MaximumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if against != "" && to == "" {
+				to = against
+			}
 			var a, b bpmn.Model
 			var err error
-			if from != "" && to != "" {
+			switch {
+			case from != "" && to != "":
 				a, err = bpmn.ParseFile(from)
 				if err != nil {
 					return err
@@ -85,7 +89,25 @@ func newDiffCmd() *cobra.Command {
 				if err != nil {
 					return err
 				}
-			} else if len(args) == 1 {
+			case len(args) == 2:
+				a, err = bpmn.ParseFile(args[0])
+				if err != nil {
+					return err
+				}
+				b, err = bpmn.ParseFile(args[1])
+				if err != nil {
+					return err
+				}
+			case len(args) == 1 && to != "":
+				a, err = bpmn.ParseFile(args[0])
+				if err != nil {
+					return err
+				}
+				b, err = bpmn.ParseFile(to)
+				if err != nil {
+					return err
+				}
+			case len(args) == 1:
 				b, err = bpmn.ParseFile(args[0])
 				if err != nil {
 					return err
@@ -101,8 +123,8 @@ func newDiffCmd() *cobra.Command {
 				if err != nil {
 					return err
 				}
-			} else {
-				return fmt.Errorf("usage: camunda diff file.bpmn | camunda diff --from a.bpmn --to b.bpmn")
+			default:
+				return fmt.Errorf("usage: camunda diff a.bpmn b.bpmn | camunda diff --from a.bpmn --to b.bpmn | camunda diff file.bpmn --against other.bpmn | camunda diff file.bpmn (--base HEAD)")
 			}
 			changes := bpmdiff.Compare(a, b)
 			fmt.Fprint(cmd.OutOrStdout(), bpmdiff.FormatText(changes))
@@ -114,6 +136,7 @@ func newDiffCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&from, "from", "", "Base BPMN file")
 	cmd.Flags().StringVar(&to, "to", "", "New BPMN file")
+	cmd.Flags().StringVar(&against, "against", "", "Alias for --to (compare positional file against this)")
 	cmd.Flags().StringVar(&base, "base", "HEAD", "Git ref for single-file diff")
 	return cmd
 }
@@ -216,6 +239,7 @@ func newTestCmd() *cobra.Command {
 	cmd := &cobra.Command{Use: "test", Short: "Test helpers"}
 	var lang string
 	var force bool
+	var outDir string
 	gen := &cobra.Command{
 		Use:   "generate file.bpmn",
 		Short: "Generate test skeletons from BPMN",
@@ -225,7 +249,10 @@ func newTestCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			paths, err := testgen.Generate(m, testgen.Options{Lang: lang, Force: force, OutDir: "tests"})
+			if outDir == "" {
+				outDir = "tests"
+			}
+			paths, err := testgen.Generate(m, testgen.Options{Lang: lang, Force: force, OutDir: outDir})
 			if err != nil {
 				return err
 			}
@@ -237,6 +264,7 @@ func newTestCmd() *cobra.Command {
 	}
 	gen.Flags().StringVar(&lang, "lang", "java", "java|js")
 	gen.Flags().BoolVar(&force, "force", false, "Overwrite existing files")
+	gen.Flags().StringVarP(&outDir, "output", "o", "tests", "Output directory for generated tests")
 	cmd.AddCommand(gen)
 	return cmd
 }
@@ -306,11 +334,12 @@ func newEnvCmd() *cobra.Command {
 }
 
 func newPlanCmd() *cobra.Command {
-	return &cobra.Command{
+	var dir string
+	cmd := &cobra.Command{
 		Use:   "plan",
 		Short: "Deployment preview (does not deploy)",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			root, err := findProjectRoot()
+			root, err := resolveProjectRoot(dir)
 			if err != nil {
 				return err
 			}
@@ -335,14 +364,17 @@ func newPlanCmd() *cobra.Command {
 			return nil
 		},
 	}
+	cmd.Flags().StringVar(&dir, "dir", "", "Project directory containing .camunda.yaml (default: walk up from cwd)")
+	return cmd
 }
 
 func newDriftCmd() *cobra.Command {
-	return &cobra.Command{
+	var dir string
+	cmd := &cobra.Command{
 		Use:   "drift",
 		Short: "Detect git/project vs cluster drift",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			root, err := findProjectRoot()
+			root, err := resolveProjectRoot(dir)
 			if err != nil {
 				return err
 			}
@@ -370,6 +402,8 @@ func newDriftCmd() *cobra.Command {
 			return nil
 		},
 	}
+	cmd.Flags().StringVar(&dir, "dir", "", "Project directory containing .camunda.yaml (default: walk up from cwd)")
+	return cmd
 }
 
 func newBackupCmd() *cobra.Command {
@@ -659,6 +693,20 @@ func resolveBPMNArgs(args []string) ([]string, error) {
 	return files, nil
 }
 
+func resolveProjectRoot(dir string) (string, error) {
+	if strings.TrimSpace(dir) != "" {
+		abs, err := filepath.Abs(dir)
+		if err != nil {
+			return "", err
+		}
+		if _, err := os.Stat(filepath.Join(abs, project.ConfigFileName)); err != nil {
+			return "", fmt.Errorf("no .camunda.yaml in %s — run: camunda init %s", abs, abs)
+		}
+		return abs, nil
+	}
+	return findProjectRoot()
+}
+
 func findProjectRoot() (string, error) {
 	dir, err := os.Getwd()
 	if err != nil {
@@ -670,7 +718,7 @@ func findProjectRoot() (string, error) {
 		}
 		parent := filepath.Dir(dir)
 		if parent == dir {
-			return "", fmt.Errorf("no .camunda.yaml found")
+			return "", fmt.Errorf("no .camunda.yaml found — run inside a project (camunda init) or pass --dir /path/to/project")
 		}
 		dir = parent
 	}

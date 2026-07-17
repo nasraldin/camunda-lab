@@ -14,16 +14,16 @@ Binary: **`camunda`**. Project / Homebrew formula: **`camunda-lab`**.
 | `ui` | Local Lab UI (http://localhost:9090) |
 | `ai` | MCP + AI Agent connector secrets |
 | `lint` | Deterministic BPMN lint |
-| `diff` | Semantic BPMN diff |
+| `diff` | Semantic BPMN diff (`--from`/`--to`, `--against`, or two files) |
 | `explain` | Offline BPMN summary |
 | `review` | Lint + optional AI review |
-| `test generate` | Test skeletons from BPMN |
+| `test generate` | Test skeletons from BPMN (`-o` output dir) |
 | `scan` | Secrets scanner |
 | `env` | Environment profiles |
-| `plan` | Deployment preview (no deploy) |
-| `drift` | Git/project vs cluster drift |
+| `plan` | Deployment preview (no deploy; needs `.camunda.yaml`, optional `--dir`) |
+| `drift` | Git/project vs cluster drift (optional `--dir`) |
 | `backup` / `restore` | Lab-oriented backup |
-| `incidents` | Incident list/retry helpers |
+| `incidents` | Incident list/retry (OIDC on full labs; auto token from lab `.env`) |
 | `trace` | Process instance timeline |
 | `k8s` | kubectl helpers for Helm releases |
 | `up` / `start` | Start |

@@ -25,6 +25,8 @@ type Client struct {
 	BaseURL    string // e.g. http://localhost:8080/v2
 	HTTPClient *http.Client
 	Token      string // optional Bearer
+	BasicUser  string
+	BasicPass  string
 }
 
 // ProcessDefinition is a deployed process summary.
@@ -125,18 +127,24 @@ func defaultHost(cfg config.Config) string {
 	return "localhost"
 }
 
-// NewFromLab builds a client for the active environment.
+// NewFromLab builds a client for the active environment (with lab OIDC when needed).
 func NewFromLab(labHome string, cfg config.Config) (*Client, error) {
 	base, err := ResolveBaseURL(labHome, cfg)
 	if err != nil {
 		return nil, err
 	}
-	return &Client{
+	c := &Client{
 		BaseURL: base,
 		HTTPClient: &http.Client{
 			Timeout: 15 * time.Second,
 		},
-	}, nil
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	if err := AttachLabAuth(ctx, c, labHome, cfg); err != nil {
+		return nil, err
+	}
+	return c, nil
 }
 
 func (c *Client) client() *http.Client {
@@ -162,9 +170,7 @@ func (c *Client) doJSON(ctx context.Context, method, path string, body any, out 
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
-	if c.Token != "" {
-		req.Header.Set("Authorization", "Bearer "+c.Token)
-	}
+	c.applyAuth(req)
 	resp, err := c.client().Do(req)
 	if err != nil {
 		return err
@@ -175,7 +181,11 @@ func (c *Client) doJSON(ctx context.Context, method, path string, body any, out 
 		return err
 	}
 	if resp.StatusCode >= 300 {
-		return fmt.Errorf("%s %s: HTTP %d: %s", method, path, resp.StatusCode, truncate(string(data), 200))
+		msg := fmt.Sprintf("%s %s: HTTP %d: %s", method, path, resp.StatusCode, truncate(string(data), 200))
+		if resp.StatusCode == http.StatusUnauthorized {
+			msg += " (full labs need OIDC — camunda fetches connectors client token from the lab .env; override with CAMUNDA_ACCESS_TOKEN)"
+		}
+		return fmt.Errorf("%s", msg)
 	}
 	if out == nil || len(data) == 0 {
 		return nil
@@ -228,9 +238,7 @@ func (c *Client) GetProcessDefinitionXML(ctx context.Context, processDefinitionK
 	if err != nil {
 		return "", err
 	}
-	if c.Token != "" {
-		req.Header.Set("Authorization", "Bearer "+c.Token)
-	}
+	c.applyAuth(req)
 	resp, err := c.client().Do(req)
 	if err != nil {
 		return "", err

@@ -94,6 +94,32 @@ These are client endpoints, not Camunda web apps:
 
 In Lab UI → **Apps → Developer endpoints**, each card explains the endpoint, links to Camunda docs, and has **Test health**.
 
+## `camunda incidents` / `plan` return HTTP 401 on full profile
+
+Full labs protect `/v2` with OIDC. The CLI now fetches a token automatically using the Compose **connectors** client from `~/.camunda-lab/versions/<ver>/.env`.
+
+Override if needed:
+
+```bash
+export CAMUNDA_ACCESS_TOKEN=…          # raw bearer
+# or
+export CAMUNDA_CLIENT_ID=connectors
+export CAMUNDA_CLIENT_SECRET=demo-connectors-secret
+export CAMUNDA_OAUTH_URL=http://localhost:18080/auth/realms/camunda-platform/protocol/openid-connect/token
+```
+
+Light labs leave the API unprotected by default — no token needed.
+
+## `camunda plan` / `drift`: no `.camunda.yaml`
+
+These commands need a project scaffold (not the camunda-lab repo root):
+
+```bash
+camunda init /tmp/my-app -y
+cd /tmp/my-app   # or: camunda plan --dir /tmp/my-app
+camunda plan
+```
+
 ## Apps ask for login again (401 on `/v2/...` stats)
 
 Camunda 8.9+ Operate/Tasklist store a CSRF header token in **tab** `sessionStorage`. A new tab keeps `camunda-session` but loses that token, so POSTs return **401** and the UI shows the login form even though you are still signed in.
