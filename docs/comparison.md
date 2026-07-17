@@ -35,9 +35,9 @@ Camunda Lab stays on Docker Compose on purpose.
 
 Use 8 Run when you want minimal. Use this lab when you want the Compose profiles Camunda publishes — including full.
 
-## Compared to `c8ctl`
+## Compared to official cluster CLIs
 
-[`c8ctl`](https://docs.camunda.io/docs/apis-tools/c8ctl/getting-started/) talks *to* a cluster: deploy BPMN, watch files, inspect instances.
+Official tools such as [`c8ctl`](https://docs.camunda.io/docs/apis-tools/c8ctl/getting-started/) talk *to* a cluster: deploy BPMN, watch files, inspect instances.
 
 Camunda Lab gets the cluster **up**. Then:
 
@@ -45,7 +45,9 @@ Camunda Lab gets the cluster **up**. Then:
 camunda tools c8ctl install
 ```
 
-…and use `c8` / `c8ctl` against the lab. We don’t try to replace it.
+…and use the official CLI against the lab. We don’t try to replace resource management.
+
+Over time Lab also grows into a **developer and platform toolkit** (project scaffold, semantic BPMN diff/lint/review, deeper doctor, env profiles, deploy *preview*, drift, incident/trace helpers, thin kubectl wrappers). Those features fill gaps official CLIs intentionally leave — analysis, diagnostics, and GitOps-style preview — while deploy/start-instance stay with official tooling. See the [roadmap](roadmap.md) and [platform toolkit vision](https://github.com/nasraldin/camunda-lab/blob/main/docs/superpowers/specs/2026-07-17-platform-toolkit-vision.md).
 
 ## Who this is for
 
@@ -53,3 +55,4 @@ camunda tools c8ctl install
 - Developers who need Operate + connectors locally without Kubernetes
 - Anyone wiring Cursor/Claude to Camunda MCP without hand-editing compose
 - Anyone who’s lost an afternoon to “which compose file was the full one again?”
+- (Upcoming) Teams who want BPMN review, secrets scan, and ops helpers next to their local lab
