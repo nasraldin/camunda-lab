@@ -56,9 +56,9 @@ func Deep(ctx context.Context, cfg config.Config, opts DeepOptions) []Section {
 	var sections []Section
 	for _, e := range urls.List(cfg) {
 		name := e.Name
-		u := urls.ProbeURL(e)
-		if strings.HasPrefix(u, "http") {
-			req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+		kind, target := urls.ProbeTarget(e)
+		if kind == "http" {
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, target, nil)
 			if err != nil {
 				sections = append(sections, Section{Name: name, Status: "fail", Detail: err.Error(), FixHint: "camunda up && camunda wait"})
 				continue
@@ -81,13 +81,7 @@ func Deep(ctx context.Context, cfg config.Config, opts DeepOptions) []Section {
 			sections = append(sections, Section{Name: name, Status: st, Detail: detail})
 			continue
 		}
-		// gRPC / host:port style
-		addr := u
-		if strings.Contains(u, "://") {
-			parts := strings.SplitN(u, "://", 2)
-			addr = parts[1]
-		}
-		if err := dial("tcp", addr); err != nil {
+		if err := dial("tcp", target); err != nil {
 			sections = append(sections, Section{Name: name, Status: "fail", Detail: err.Error(), FixHint: "camunda up"})
 		} else {
 			sections = append(sections, Section{Name: name, Status: "ok", Detail: "tcp open"})

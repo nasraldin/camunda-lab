@@ -72,6 +72,18 @@ export async function getSmoke(): Promise<{ OK: boolean; Checks: Array<{ Name: s
   return parse(await fetch("/api/v1/smoke"));
 }
 
+export type ProbeResult = {
+  name: string;
+  ok: boolean;
+  kind: string;
+  checkedURL: string;
+  detail: string;
+};
+
+export async function probeURL(name: string): Promise<ProbeResult> {
+  return parse(await fetch(`/api/v1/probe?name=${encodeURIComponent(name)}`));
+}
+
 export async function getAIStatus(): Promise<{
   enabled: boolean;
   openaiKey: string;

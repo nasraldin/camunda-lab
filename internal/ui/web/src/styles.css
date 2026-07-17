@@ -987,6 +987,79 @@ a.app-card-link:focus-visible {
   font-size: 0.82rem;
 }
 
+.grid-endpoints {
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+}
+
+.app-card-endpoint {
+  flex-direction: row;
+  align-items: flex-start;
+  min-height: 0;
+  cursor: default;
+}
+
+.app-card-endpoint .app-card-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.app-card-verify {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.app-card-verify-label {
+  font-weight: 600;
+  color: var(--text);
+  margin-right: 0.25rem;
+}
+
+.app-card-addr {
+  display: block;
+  font-size: 0.78rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 6px;
+  background: var(--surface-2, rgba(0, 0, 0, 0.04));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+}
+
+a.app-card-docs {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.app-card-probe {
+  margin: 0.15rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.app-card-probe-ok {
+  color: var(--ok, #1a7f4b);
+}
+
+.app-card-probe-fail {
+  color: var(--danger, #b42318);
+}
+
+.app-card-probe-target {
+  color: var(--muted);
+  word-break: break-all;
+}
+
+
 .app-glyph {
   display: inline-flex;
   align-items: center;

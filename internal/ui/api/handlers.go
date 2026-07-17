@@ -40,6 +40,7 @@ func Register(mux *http.ServeMux, cliVersion string) {
 	mux.HandleFunc("POST /api/v1/profile", h.setProfile)
 	mux.HandleFunc("POST /api/v1/resources", h.setResources)
 	mux.HandleFunc("GET /api/v1/urls", h.listURLs)
+	mux.HandleFunc("GET /api/v1/probe", h.probe)
 	mux.HandleFunc("GET /api/v1/sso/open", h.ssoOpen)
 	mux.HandleFunc("GET /api/v1/doctor", h.runDoctor)
 	mux.HandleFunc("GET /api/v1/smoke", h.runSmoke)
@@ -292,6 +293,28 @@ func (h *handler) listURLs(w http.ResponseWriter, r *http.Request) {
 	}
 	entries := urls.List(cfg)
 	writeJSON(w, http.StatusOK, map[string]any{"urls": entries})
+}
+
+func (h *handler) probe(w http.ResponseWriter, r *http.Request) {
+	name := strings.TrimSpace(r.URL.Query().Get("name"))
+	if name == "" {
+		writeErr(w, http.StatusBadRequest, fmt.Errorf("missing name query parameter"))
+		return
+	}
+	cfg, err := config.Load()
+	if err != nil {
+		writeErr(w, http.StatusBadRequest, err)
+		return
+	}
+	entry, err := urls.Find(cfg, name)
+	if err != nil {
+		writeErr(w, http.StatusNotFound, err)
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 8*time.Second)
+	defer cancel()
+	res := urls.ProbeEntry(ctx, entry, 5*time.Second)
+	writeJSON(w, http.StatusOK, res)
 }
 
 // ssoOpen warms Keycloak SSO cookies in the browser, then redirects to the app.

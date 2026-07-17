@@ -63,6 +63,8 @@ Use this when you want a guided install instead of `camunda install` prompts.
 
 Open Operate, Tasklist, Admin, Console, Identity, Optimize, Web Modeler, ElasticVue, and more — grouped by everyday use.
 
+**Developer endpoints** (orchestration base, REST `/v2`, gRPC, connectors, MCP) are **not** web UIs. Each card explains the endpoint, links to official Camunda docs, and has **Test health** (Lab calls the official verify path — e.g. `:9600/actuator/health`, `/v2/topology`, TCP `26500`).
+
 ![Apps](assets/screenshots/lab-ui-apps.png)
 
 ### Auto sign-in

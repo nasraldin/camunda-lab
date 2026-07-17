@@ -80,7 +80,19 @@ Connectors is a **runtime** (job workers for BPMN connector tasks), not a web co
 
 `http://localhost:8086/actuator/health` (8.8+/light; older light labs use `8085`).
 
-Lab Apps / `camunda urls` / `camunda open connectors` point at that health URL. Opening bare `/` on the connectors port is expected to fail.
+Lab Apps shows a **Developer endpoints** card (describe + docs + **Test health**). `camunda urls` / `camunda open connectors` point at that health URL. Opening bare `/` on the connectors port is expected to fail.
+
+## Orchestration / REST / gRPC are not websites
+
+These are client endpoints, not Camunda web apps:
+
+| Entry | Display address | How to verify (official) |
+| --- | --- | --- |
+| Orchestration | `http://localhost:8080` (8.9+) | `GET http://localhost:9600/actuator/health` |
+| REST API | `http://localhost:8080/v2` | `GET http://localhost:8080/v2/topology` — bare `GET /v2` is **404 by design** |
+| gRPC | `localhost:26500` | TCP open (Camunda / Zeebe client) |
+
+In Lab UI → **Apps → Developer endpoints**, each card explains the endpoint, links to Camunda docs, and has **Test health**.
 
 ## Apps ask for login again (401 on `/v2/...` stats)
 

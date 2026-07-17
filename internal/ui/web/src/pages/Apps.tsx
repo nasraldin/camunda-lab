@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { getURLs } from "../api";
+import { getURLs, probeURL } from "../api";
 import { useAutoSso } from "../autoSso";
 import { Modal } from "../components/Modal";
 import { AppGlyph, appMeta } from "../icons";
@@ -12,6 +12,63 @@ type Category = {
   title: string;
   hint: string;
   names: string[];
+};
+
+/** Non-browser endpoints: describe + docs + health test (not “open website”). */
+type EndpointGuide = {
+  summary: string;
+  verify: string;
+  docs: string;
+  docsLabel?: string;
+};
+
+const ENDPOINT_GUIDES: Record<string, EndpointGuide> = {
+  orchestration: {
+    summary:
+      "Base address for the orchestration cluster (Desktop Modeler restAddress). This is not a web UI — opening / alone is not useful.",
+    verify: "Management health: GET :9600/actuator/health",
+    docs: "https://docs.camunda.io/docs/self-managed/quickstart/developer-quickstart/docker-compose/",
+    docsLabel: "Docker Compose quickstart",
+  },
+  rest: {
+    summary:
+      "Orchestration Cluster REST API. Call paths under /v2/… — GET /v2 alone returns 404 by design (no static resource).",
+    verify: "Official smoke: GET /v2/topology",
+    docs: "https://docs.camunda.io/docs/apis-tools/orchestration-cluster-api-rest/orchestration-cluster-api-rest-overview/",
+    docsLabel: "REST API docs",
+  },
+  "zeebe-http": {
+    summary: "Zeebe / orchestration HTTP gateway address used by older labs and some clients.",
+    verify: "GET /v2/topology (when the API is available on this port)",
+    docs: "https://docs.camunda.io/docs/apis-tools/orchestration-cluster-api-rest/orchestration-cluster-api-rest-overview/",
+    docsLabel: "REST API docs",
+  },
+  connectors: {
+    summary:
+      "Connector runtime (job workers). Not a web UI — use Actuator health to verify it is up.",
+    verify: "GET /actuator/health",
+    docs: "https://docs.camunda.io/docs/components/connectors/introduction-to-connectors/",
+    docsLabel: "Connectors docs",
+  },
+  grpc: {
+    summary:
+      "Zeebe gRPC gateway for Camunda clients and workers. Not a website — connect with a gRPC client on this host:port.",
+    verify: "TCP open on the gateway port (default 26500)",
+    docs: "https://docs.camunda.io/docs/apis-tools/zeebe-api/overview/",
+    docsLabel: "Zeebe gRPC API",
+  },
+  "mcp-cluster": {
+    summary: "Model Context Protocol endpoint for cluster tooling (AI agents). Not a browser app.",
+    verify: "HTTP GET against the MCP URL",
+    docs: "https://docs.camunda.io/docs/apis-tools/camunda-api-java-client/",
+    docsLabel: "Camunda APIs & tools",
+  },
+  "mcp-processes": {
+    summary: "Model Context Protocol endpoint for process tooling (AI agents). Not a browser app.",
+    verify: "HTTP GET against the MCP URL",
+    docs: "https://docs.camunda.io/docs/apis-tools/camunda-api-java-client/",
+    docsLabel: "Camunda APIs & tools",
+  },
 };
 
 const CATEGORIES: Category[] = [
@@ -35,8 +92,8 @@ const CATEGORIES: Category[] = [
   },
   {
     id: "apis",
-    title: "Developer links",
-    hint: "APIs, connector runtime, and AI agent endpoints",
+    title: "Developer endpoints",
+    hint: "APIs and runtimes — not web UIs. Use Test health to verify; open official docs to learn how to call them.",
     names: ["orchestration", "rest", "zeebe-http", "connectors", "grpc", "mcp-cluster", "mcp-processes"],
   },
 ];
@@ -45,6 +102,10 @@ function isCredentialNote(notes?: string): boolean {
   if (!notes) return false;
   const n = notes.toLowerCase();
   return n.includes("demo/") || n.includes("admin/") || n.includes("password");
+}
+
+function isEndpointCard(name: string): boolean {
+  return name in ENDPOINT_GUIDES;
 }
 
 /** Apps that use Keycloak — open via Lab SSO warm so cookies land on localhost. */
@@ -79,6 +140,83 @@ export function keycloakLogoutURL(keycloakURL?: string): string | null {
   } catch {
     return null;
   }
+}
+
+type ProbeState = { status: "idle" | "loading" | "ok" | "fail"; detail?: string; checked?: string };
+
+function EndpointCard({ entry }: { entry: Entry }) {
+  const meta = appMeta(entry.name);
+  const guide = ENDPOINT_GUIDES[entry.name];
+  const [probe, setProbe] = useState<ProbeState>({ status: "idle" });
+
+  async function runProbe() {
+    setProbe({ status: "loading" });
+    try {
+      const r = await probeURL(entry.name);
+      setProbe({
+        status: r.ok ? "ok" : "fail",
+        detail: r.detail,
+        checked: r.checkedURL,
+      });
+    } catch (e) {
+      setProbe({
+        status: "fail",
+        detail: e instanceof Error ? e.message : String(e),
+      });
+    }
+  }
+
+  if (!guide) return null;
+
+  return (
+    <div className="card app-card app-card-endpoint">
+      <AppGlyph name={entry.name} />
+
+      <div className="app-card-copy">
+        <h3>{meta.label}</h3>
+        <p className="app-card-note">{guide.summary}</p>
+        <p className="app-card-verify">
+          <span className="app-card-verify-label">Verify</span> {guide.verify}
+        </p>
+        <code className="app-card-addr" title={entry.url}>
+          {entry.url}
+        </code>
+        <div className="app-card-actions">
+          <button type="button" className="btn-sm primary" disabled={probe.status === "loading"} onClick={() => void runProbe()}>
+            {probe.status === "loading" ? "Checking…" : "Test health"}
+          </button>
+          <button type="button" className="btn-sm" onClick={() => void navigator.clipboard.writeText(entry.url)}>
+            Copy address
+          </button>
+          <a className="btn-sm app-card-docs" href={guide.docs} target="_blank" rel="noreferrer">
+            {guide.docsLabel || "Official docs"}
+          </a>
+        </div>
+        {probe.status === "ok" && (
+          <p className="app-card-probe app-card-probe-ok" role="status">
+            Up and running — {probe.detail}
+            {probe.checked ? (
+              <>
+                {" "}
+                <span className="app-card-probe-target">({probe.checked})</span>
+              </>
+            ) : null}
+          </p>
+        )}
+        {probe.status === "fail" && (
+          <p className="app-card-probe app-card-probe-fail" role="status">
+            Not reachable — {probe.detail}
+            {probe.checked ? (
+              <>
+                {" "}
+                <span className="app-card-probe-target">({probe.checked})</span>
+              </>
+            ) : null}
+          </p>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export function AppsPage() {
@@ -167,10 +305,10 @@ export function AppsPage() {
   }
 
   const lead = !hasKeycloak
-    ? "Click a card to open that Camunda screen. Sign in once with demo/demo — Operate, Tasklist, and Admin share the same session."
+    ? "Click a card to open that Camunda screen. Sign in once with demo/demo — Operate, Tasklist, and Admin share the same session. Developer endpoints below are APIs (not websites)."
     : autoSsoActive
-      ? "Click a card to open that Camunda screen. Lab signs you into Keycloak automatically when possible."
-      : "Click a card to open that Camunda screen. Auto sign-in is off — you’ll use the app’s own login when needed.";
+      ? "Click a card to open that Camunda screen. Lab signs you into Keycloak automatically when possible. Developer endpoints below are APIs (not websites)."
+      : "Click a card to open that Camunda screen. Auto sign-in is off — you’ll use the app’s own login when needed. Developer endpoints below are APIs (not websites).";
 
   return (
     <div className="stack">
@@ -250,8 +388,11 @@ export function AppsPage() {
             <h2>{section.title}</h2>
             <p>{section.hint}</p>
           </div>
-          <div className="grid grid-apps">
+          <div className={`grid ${section.id === "apis" ? "grid-endpoints" : "grid-apps"}`}>
             {section.items.map((u) => {
+              if (isEndpointCard(u.name)) {
+                return <EndpointCard key={u.name} entry={u} />;
+              }
               const meta = appMeta(u.name);
               const http = u.url.startsWith("http");
               const body = (

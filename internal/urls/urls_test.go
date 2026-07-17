@@ -123,17 +123,27 @@ func TestMCPURLsHiddenWhenAIDisabled(t *testing.T) {
 	}
 }
 
-func TestProbeURLConnectorsUsesActuator(t *testing.T) {
-	e := urls.Entry{Name: "connectors", URL: "http://localhost:8086"}
-	if got := urls.ProbeURL(e); got != "http://localhost:8086/actuator/health" {
-		t.Fatalf("connectors probe: got %q", got)
+func TestProbeTargets(t *testing.T) {
+	cases := []struct {
+		e    urls.Entry
+		kind string
+		want string
+	}{
+		{urls.Entry{Name: "rest", URL: "http://localhost:8080/v2"}, "http", "http://localhost:8080/v2/topology"},
+		{urls.Entry{Name: "orchestration", URL: "http://localhost:8080"}, "http", "http://localhost:9600/actuator/health"},
+		{urls.Entry{Name: "orchestration", URL: "http://127.0.0.1:8080"}, "http", "http://127.0.0.1:9600/actuator/health"},
+		{urls.Entry{Name: "grpc", URL: "localhost:26500"}, "tcp", "localhost:26500"},
+		{urls.Entry{Name: "connectors", URL: "http://localhost:8086"}, "http", "http://localhost:8086/actuator/health"},
+		{urls.Entry{Name: "zeebe-http", URL: "http://localhost:8088"}, "http", "http://localhost:8088/v2/topology"},
 	}
-	already := urls.Entry{Name: "connectors", URL: "http://localhost:8086/actuator/health"}
-	if got := urls.ProbeURL(already); got != already.URL {
-		t.Fatalf("connectors probe should not double path: %q", got)
+	for _, tc := range cases {
+		kind, target := urls.ProbeTarget(tc.e)
+		if kind != tc.kind || target != tc.want {
+			t.Fatalf("%s: got (%q,%q) want (%q,%q)", tc.e.Name, kind, target, tc.kind, tc.want)
+		}
 	}
-	op := urls.Entry{Name: "operate", URL: "http://localhost:8080/operate"}
-	if got := urls.ProbeURL(op); got != op.URL {
-		t.Fatalf("operate probe should stay root: %q", got)
+	if urls.IsBrowserApp("operate") != true || urls.IsBrowserApp("rest") != false {
+		t.Fatal("IsBrowserApp mismatch")
 	}
 }
+
