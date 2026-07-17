@@ -5,9 +5,16 @@ The CLI binary is **`camunda`**. On Homebrew the formula is **`camunda-lab`**.
 ```bash
 brew tap nasraldin/tools
 brew install camunda-lab
-camunda version
-camunda about
 ```
+
+Homebrew **starts the Lab UI in the background** and prints:
+
+```text
+Lab UI is running — open in your browser:
+  http://localhost:9090
+```
+
+Open that link to install and manage Camunda from the browser (no CLI required). Prefer the terminal? Run `camunda install` as usual.
 
 Upgrade later with:
 
