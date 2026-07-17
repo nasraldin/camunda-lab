@@ -81,7 +81,7 @@ Homebrew tap for Nasr Aldin tools.
 
 ```bash
 brew tap nasraldin/tools
-brew install ducker-lab
+brew install docker-lab
 brew install camunda-lab
 ```
 EOF

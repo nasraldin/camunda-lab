@@ -1,4 +1,4 @@
-.PHONY: build test vet fmt tidy lint install check ui
+.PHONY: build test vet fmt tidy lint install check ui ui-check
 
 VERSION ?= 0.0.0-dev
 
@@ -31,7 +31,12 @@ lint:
 	@command -v golangci-lint >/dev/null 2>&1 || { echo "golangci-lint not installed — skipping (CI uses vet/fmt)"; exit 0; }
 	golangci-lint run ./...
 
-check: fmt-check vet test
+check: fmt-check tidy vet test
+
+ui-check: ui
+	@git diff --exit-code internal/ui/web/dist || { \
+		echo "internal/ui/web/dist is out of date — run: make ui && commit dist"; exit 1; \
+	}
 
 install: build
 	install -m 755 bin/camunda "$(HOME)/.local/bin/camunda"

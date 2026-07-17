@@ -37,21 +37,17 @@ jobs:
           echo "tag=${TAG}" >> "${GITHUB_OUTPUT}"
           echo "Publishing Homebrew formula for ${TAG}"
 
-      - name: Check tap token
-        id: token
+      - name: Require tap token
         env:
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
         run: |
           if [[ -z "${HOMEBREW_TAP_TOKEN:-}" ]]; then
-            echo "skip=true" >> "${GITHUB_OUTPUT}"
-            echo "::warning::HOMEBREW_TAP_TOKEN secret is not set. Skipping tap publish."
-            echo "See docs/homebrew.md for first-time setup."
-          else
-            echo "skip=false" >> "${GITHUB_OUTPUT}"
+            echo "::error::HOMEBREW_TAP_TOKEN secret is not set."
+            echo "See docs/homebrew.md for setup."
+            exit 1
           fi
 
       - name: Publish to nasraldin/homebrew-tools
-        if: steps.token.outputs.skip == 'false'
         env:
           GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           TAP_REPO: nasraldin/homebrew-tools

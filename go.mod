@@ -1,6 +1,6 @@
 module github.com/nasraldin/camunda-lab
 
-go 1.22.0
+go 1.24.4
 
 require (
 	github.com/spf13/cobra v1.10.2
