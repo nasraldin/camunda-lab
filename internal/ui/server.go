@@ -2,6 +2,7 @@ package ui
 
 import (
 	"embed"
+	"errors"
 	"fmt"
 	"io/fs"
 	"net"
@@ -11,6 +12,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/nasraldin/camunda-lab/internal/ui/api"
@@ -53,6 +55,10 @@ func Run(opts Options) error {
 		return err
 	}
 
+	if IsRunning(opts) {
+		return fmt.Errorf("lab UI already running at %s (logs: camunda ui logs -f)", BaseURL(opts))
+	}
+
 	static, err := fs.Sub(distRoot, "web/dist")
 	if err != nil {
 		return fmt.Errorf("ui assets: %w", err)
@@ -80,7 +86,23 @@ func Run(opts Options) error {
 		}()
 	}
 
-	return srv.ListenAndServe()
+	if err := srv.ListenAndServe(); err != nil {
+		if isAddrInUse(err) {
+			return fmt.Errorf("port %d already in use (another Lab UI may be running — try: camunda ui logs -f)", opts.Port)
+		}
+		return err
+	}
+	return nil
+}
+
+func isAddrInUse(err error) bool {
+	if err == nil {
+		return false
+	}
+	if errors.Is(err, syscall.EADDRINUSE) {
+		return true
+	}
+	return strings.Contains(strings.ToLower(err.Error()), "address already in use")
 }
 
 func assertLoopback(host string) error {

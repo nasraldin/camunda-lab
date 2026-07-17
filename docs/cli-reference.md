@@ -63,6 +63,9 @@ camunda ui
 camunda ui --no-open
 camunda ui --foreground
 camunda ui --stop
+camunda ui logs
+camunda ui logs -f
+camunda ui logs -n 100
 camunda ui --port 9091
 ```
 
@@ -71,8 +74,23 @@ camunda ui --port 9091
 | `--host` | Listen address (loopback only; default `localhost`) |
 | `--port` | Port (default `9090`, or `CAMUNDA_LAB_UI_PORT`) |
 | `--no-open` | Do not open a browser |
-| `--foreground`, `-f` | Run in the foreground (blocks until Ctrl+C) |
+| `--foreground` | Run in the foreground (blocks until Ctrl+C) |
 | `--stop` | Stop the background Lab UI |
+
+### ui logs
+
+```bash
+camunda ui logs
+camunda ui logs -f
+camunda ui logs -n 100
+```
+
+| Flag | Meaning |
+|------|---------|
+| `-f`, `--follow` | Follow log output (like `tail -f`) |
+| `-n`, `--lines` | Recent lines to show (default `50`; `0` = entire file) |
+
+Reads `~/.camunda-lab/logs/ui.log` from the background UI process.
 
 `camunda install` and `camunda up` start the UI in the background automatically (install also opens the browser).
 

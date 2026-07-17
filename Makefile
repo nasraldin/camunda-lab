@@ -1,6 +1,8 @@
-.PHONY: build test vet fmt tidy lint install check ui ui-check
+.PHONY: build test vet fmt tidy lint install check ui ui-check dev dev-build dev-stop dev-api dev-ui dev-restart-api install-dev
 
 VERSION ?= 0.0.0-dev
+GIT_SHA := $(shell git rev-parse --short HEAD 2>/dev/null || echo local)
+DEV_VERSION := 0.0.0-dev+$(GIT_SHA)
 
 ui:
 	cd internal/ui/web && npm ci && npm run build
@@ -40,3 +42,32 @@ ui-check: ui
 
 install: build
 	install -m 755 bin/camunda "$(HOME)/.local/bin/camunda"
+
+# Local development (Go API + Vite hot reload). See README "Development".
+dev-build:
+	go build -ldflags "-X main.version=$(DEV_VERSION)" -o bin/camunda ./cmd/camunda
+
+install-dev: dev-build
+	install -m 755 bin/camunda "$(HOME)/.local/bin/camunda"
+
+dev-stop:
+	-@./bin/camunda ui --stop 2>/dev/null || true
+
+# Rebuild and restart background API (run after changing Go code).
+dev-restart-api: dev-build dev-stop
+	@./bin/camunda ui --no-open
+	@echo "Lab API restarted at http://127.0.0.1:9090 (logs: ./bin/camunda ui logs -f)"
+
+dev-api: dev-build
+	./bin/camunda ui --foreground --no-open
+
+dev-ui:
+	cd internal/ui/web && npm run dev
+
+# One command: background API on :9090, Vite on :5173 (proxies /api).
+dev: dev-build dev-stop
+	@echo "Lab API: http://127.0.0.1:9090  (logs: bin/camunda ui logs -f)"
+	@./bin/camunda ui --no-open
+	@sleep 1
+	@echo "Vite UI: http://127.0.0.1:5173  (Ctrl+C stops Vite; run make dev-stop to stop API)"
+	@cd internal/ui/web && npm run dev
