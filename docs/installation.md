@@ -92,7 +92,7 @@ camunda ai config
 
 See [AI and MCP](ai-mcp.md).
 
-Prefer a browser? After the CLI is installed:
+Prefer a browser? **`camunda install` starts the Lab UI in the background** and opens it on first install. You can also run:
 
 ```bash
 camunda ui
