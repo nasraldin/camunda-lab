@@ -83,4 +83,20 @@ mkdir -p "$INSTALL_DIR"
 install -m 755 "$bin_path" "$INSTALL_DIR/camunda"
 echo "Installed $INSTALL_DIR/camunda ($VERSION)"
 echo "Ensure $INSTALL_DIR is on your PATH"
-echo "Try: camunda about"
+
+echo ""
+echo "Starting Lab UI in the background..."
+if "$INSTALL_DIR/camunda" ui --no-open 2>/dev/null; then
+  cat <<'EOF'
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Camunda Lab UI is running
+
+  Open in your browser: http://localhost:9090
+
+  Install and manage Camunda from the UI — no terminal required.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+EOF
+else
+  echo "Start the UI manually: camunda ui"
+fi

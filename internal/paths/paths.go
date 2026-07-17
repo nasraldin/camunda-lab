@@ -43,3 +43,4 @@ func VersionDir(v string) string { return filepath.Join(VersionsDir(), v) }
 func OverlaysDir() string        { return filepath.Join(Home(), "overlays") }
 func LogsDir() string            { return filepath.Join(Home(), "logs") }
 func ActiveFile() string         { return filepath.Join(Home(), "active.yaml") }
+func UIPidFile() string          { return filepath.Join(Home(), "ui.pid") }

@@ -20,10 +20,9 @@ Apple Silicon tip: if you don’t want Docker Desktop, use [docker-lab](https://
 ```bash
 brew tap nasraldin/tools
 brew install camunda-lab
-camunda about
 ```
 
-The formula is named `camunda-lab`; you still run `camunda`. See [Homebrew](homebrew.md).
+The formula is named `camunda-lab`; you still run `camunda`. **Homebrew starts the Lab UI automatically** and shows `http://localhost:9090` — open it to install Camunda from the browser without using the CLI. See [Homebrew](homebrew.md).
 
 ### One-liner
 
@@ -92,7 +91,7 @@ camunda ai config
 
 See [AI and MCP](ai-mcp.md).
 
-Prefer a browser? After the CLI is installed:
+Prefer a browser? **`camunda install` starts the Lab UI in the background** and opens it on first install. You can also run:
 
 ```bash
 camunda ui

@@ -60,7 +60,10 @@ Fetches the official zip into `~/.camunda-lab/versions/<minor>/`, writes config,
 
 ```bash
 camunda ui
-camunda ui --port 9090 --no-open
+camunda ui --no-open
+camunda ui --foreground
+camunda ui --stop
+camunda ui --port 9091
 ```
 
 | Flag | Meaning |
@@ -68,6 +71,10 @@ camunda ui --port 9090 --no-open
 | `--host` | Listen address (loopback only; default `localhost`) |
 | `--port` | Port (default `9090`, or `CAMUNDA_LAB_UI_PORT`) |
 | `--no-open` | Do not open a browser |
+| `--foreground`, `-f` | Run in the foreground (blocks until Ctrl+C) |
+| `--stop` | Stop the background Lab UI |
+
+`camunda install` and `camunda up` start the UI in the background automatically (install also opens the browser).
 
 Serves an embedded SPA + `/api/v1` control plane: Overview, Setup, Apps, Containers, Logs, AI/MCP, Tools, Danger. No auth — refuses non-loopback binds. Spec: [lab UI design](https://github.com/nasraldin/camunda-lab/blob/main/docs/superpowers/specs/2026-07-17-lab-ui-design.md).
 
