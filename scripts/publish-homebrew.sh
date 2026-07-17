@@ -94,7 +94,9 @@ if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
 fi
 
 if [[ -n "${GH_TOKEN:-}" ]]; then
-  git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${TAP_REPO}.git"
+  PUSH_URL="https://x-access-token:${GH_TOKEN}@github.com/${TAP_REPO}.git"
+else
+  PUSH_URL="origin"
 fi
 
 git add Formula/"${FORMULA_NAME}.rb" README.md
@@ -104,7 +106,11 @@ if git diff --cached --quiet; then
 fi
 
 git commit -m "camunda-lab ${VERSION}"
-# Disable credential helpers so the PAT in the remote URL is used (not GITHUB_TOKEN).
-git -c credential.helper= push origin HEAD
+# Push with token in URL; credential.helper= avoids Actions overriding the PAT.
+if [[ "${PUSH_URL}" == "origin" ]]; then
+  git -c credential.helper= push origin HEAD
+else
+  git -c credential.helper= push "${PUSH_URL}" HEAD:main
+fi
 echo "==> Published ${FORMULA_NAME} ${VERSION} → ${TAP_REPO}"
 echo "==> Users: brew update && brew upgrade camunda-lab"
