@@ -60,9 +60,10 @@ const SSO_APPS = new Set([
   "mcp-processes",
 ]);
 
-function appHref(u: Entry, autoSso: boolean): string {
+/** Open via Lab SSO warm only when Keycloak exists and auto sign-in is on. */
+export function appHref(u: Entry, autoSso: boolean, hasKeycloak: boolean): string {
   if (!u.url.startsWith("http")) return u.url;
-  if (!autoSso) return u.url;
+  if (!hasKeycloak || !autoSso) return u.url;
   if (!SSO_APPS.has(u.name) && !isCredentialNote(u.notes)) return u.url;
   return `/api/v1/sso/open?url=${encodeURIComponent(u.url)}`;
 }
@@ -108,6 +109,9 @@ export function AppsPage() {
   }, [urls]);
 
   const logoutURL = useMemo(() => keycloakLogoutURL(byName.get("keycloak")?.url), [byName]);
+  const hasKeycloak = Boolean(logoutURL);
+  // Light labs have no Keycloak — auto sign-in must stay off (direct links only).
+  const autoSsoActive = hasKeycloak && autoSso;
 
   const categorized = useMemo(() => {
     const used = new Set<string>();
@@ -152,6 +156,7 @@ export function AppsPage() {
   }
 
   function onAutoSsoChange(next: boolean) {
+    if (!hasKeycloak) return;
     setAutoSso(next);
     if (!next) {
       // Opt-out only skips Lab warm-up; leftover Keycloak cookies still SSO silently.
@@ -161,42 +166,50 @@ export function AppsPage() {
     }
   }
 
+  const lead = !hasKeycloak
+    ? "Click a card to open that Camunda screen. Sign in once with demo/demo — Operate, Tasklist, and Admin share the same session."
+    : autoSsoActive
+      ? "Click a card to open that Camunda screen. Lab signs you into Keycloak automatically when possible."
+      : "Click a card to open that Camunda screen. Auto sign-in is off — you’ll use the app’s own login when needed.";
+
   return (
     <div className="stack">
       <div className="page-head page-head-row">
         <div>
           <h1>Apps</h1>
-          <p className="lead">
-            {autoSso
-              ? "Click a card to open that Camunda screen. Lab signs you into Keycloak automatically when possible."
-              : "Click a card to open that Camunda screen. Auto sign-in is off — you’ll use the app’s own login when needed."}
-          </p>
+          <p className="lead">{lead}</p>
         </div>
         <div className="row page-actions">
-          <label
-            className="pref-switch"
-            title={
-              autoSso
-                ? "Lab warms Keycloak session (demo/demo) before opening apps"
-                : "Open apps directly; turning this off also signs you out of Camunda"
-            }
-          >
-            <input
-              type="checkbox"
-              role="switch"
-              checked={autoSso}
-              onChange={(e) => onAutoSsoChange(e.target.checked)}
-              aria-checked={autoSso}
-            />
-            <span className="pref-switch-track" aria-hidden="true" />
-            <span className="pref-switch-label">Auto sign-in</span>
-          </label>
-          <button type="button" onClick={() => openLogout("signout")} disabled={urls.length === 0}>
-            Sign out of Camunda
-          </button>
-          <button type="button" onClick={() => openLogout("fix")} disabled={urls.length === 0}>
-            Fix broken session
-          </button>
+          {hasKeycloak && (
+            <label
+              className="pref-switch"
+              title={
+                autoSsoActive
+                  ? "Lab warms Keycloak session (demo/demo) before opening apps"
+                  : "Open apps directly; turning this off also signs you out of Camunda"
+              }
+            >
+              <input
+                type="checkbox"
+                role="switch"
+                checked={autoSsoActive}
+                onChange={(e) => onAutoSsoChange(e.target.checked)}
+                aria-checked={autoSsoActive}
+              />
+              <span className="pref-switch-track" aria-hidden="true" />
+              <span className="pref-switch-label">Auto sign-in</span>
+            </label>
+          )}
+          {hasKeycloak && (
+            <>
+              <button type="button" onClick={() => openLogout("signout")} disabled={urls.length === 0}>
+                Sign out of Camunda
+              </button>
+              <button type="button" onClick={() => openLogout("fix")} disabled={urls.length === 0}>
+                Fix broken session
+              </button>
+            </>
+          )}
           <button type="button" onClick={() => setShowUrls(true)} disabled={urls.length === 0}>
             Show all addresses
           </button>
@@ -210,14 +223,21 @@ export function AppsPage() {
           No apps yet — install a lab from <strong>Get started</strong> first.
         </div>
       )}
-      {urls.length > 0 && autoSso && (
+      {urls.length > 0 && !hasKeycloak && (
+        <div className="banner info">
+          This light lab has no Keycloak, so Auto sign-in is off. Log in once on any Camunda app (
+          <code>demo</code> / <code>demo</code> — see <Link to="/admin">Logins</Link>), then open the others from this
+          page. Keep using <code>localhost</code> links — mixing <code>127.0.0.1</code> asks for login again.
+        </div>
+      )}
+      {urls.length > 0 && hasKeycloak && autoSsoActive && (
         <div className="banner info">
           Auto sign-in needs Lab UI on <code>http://localhost:…</code> (default). Camunda apps share Keycloak cookies on{" "}
           <code>localhost</code>. Default user: <code>demo</code> / <code>demo</code> (see <Link to="/admin">Logins</Link>
           ). Turn off Auto sign-in above if you prefer to log in yourself.
         </div>
       )}
-      {urls.length > 0 && !autoSso && (
+      {urls.length > 0 && hasKeycloak && !autoSsoActive && (
         <div className="banner info">
           Auto sign-in is off (and your Camunda session is cleared when you switch it off). Open an app to see the login
           page — credentials on <Link to="/admin">Logins</Link>.
@@ -248,7 +268,7 @@ export function AppsPage() {
                 <a
                   className="card app-card app-card-link"
                   key={u.name}
-                  href={appHref(u, autoSso)}
+                  href={appHref(u, autoSso, hasKeycloak)}
                   target="_blank"
                   rel="noreferrer"
                 >

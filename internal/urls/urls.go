@@ -3,6 +3,7 @@ package urls
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/nasraldin/camunda-lab/internal/config"
 	"github.com/nasraldin/camunda-lab/internal/versions"
@@ -174,6 +175,18 @@ func Find(cfg config.Config, name string) (Entry, error) {
 		}
 	}
 	return Entry{}, fmt.Errorf("unknown app %q", name)
+}
+
+// ProbeURL returns the URL to hit for health/smoke checks.
+// Display URLs in List stay as app roots; some services (connectors) only
+// answer health on Spring Actuator and return 500 on GET /.
+func ProbeURL(e Entry) string {
+	switch e.Name {
+	case "connectors":
+		return strings.TrimRight(e.URL, "/") + "/actuator/health"
+	default:
+		return e.URL
+	}
 }
 
 // ModelerRESTBase returns the REST base URL Desktop Modeler expects (no /v2 path).

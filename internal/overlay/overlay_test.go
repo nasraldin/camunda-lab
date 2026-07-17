@@ -68,7 +68,7 @@ func TestComposeOverrideFiles810Full(t *testing.T) {
 		t.Fatal(err)
 	}
 	bases := basenames(files)
-	want := []string{"elasticsearch-8.10.yaml", "elasticsearch-cors.yaml", "elasticvue.yaml", "http-headers.yaml"}
+	want := []string{"elasticsearch-8.10.yaml", "elasticsearch-cors.yaml", "elasticvue.yaml", "http-headers.yaml", "csrf-disabled.yaml"}
 	if len(bases) != len(want) {
 		t.Fatalf("got %v want %v", bases, want)
 	}
@@ -88,7 +88,7 @@ func TestComposeOverrideFiles89Full(t *testing.T) {
 		t.Fatal(err)
 	}
 	bases := basenames(files)
-	want := []string{"elasticsearch-cors.yaml", "elasticvue.yaml", "http-headers.yaml"}
+	want := []string{"elasticsearch-cors.yaml", "elasticvue.yaml", "http-headers.yaml", "csrf-disabled.yaml"}
 	if len(bases) != len(want) {
 		t.Fatalf("got %v want %v", bases, want)
 	}
@@ -100,22 +100,30 @@ func TestComposeOverrideFiles89Full(t *testing.T) {
 }
 
 func TestComposeOverrideFiles810LightNone(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("CAMUNDA_LAB_HOME", home)
+	paths.Reset()
 	files, err := overlay.ComposeOverrideFiles("8.10", "light", false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(files) != 0 {
-		t.Fatalf("%v", files)
+	bases := basenames(files)
+	if len(bases) != 1 || bases[0] != "csrf-disabled.yaml" {
+		t.Fatalf("%v", bases)
 	}
 }
 
 func TestComposeOverrideFiles89LightNone(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("CAMUNDA_LAB_HOME", home)
+	paths.Reset()
 	files, err := overlay.ComposeOverrideFiles("8.9", "light", false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(files) != 0 {
-		t.Fatalf("%v", files)
+	bases := basenames(files)
+	if len(bases) != 1 || bases[0] != "csrf-disabled.yaml" {
+		t.Fatalf("%v", bases)
 	}
 }
 
@@ -138,14 +146,14 @@ func TestComposeOverrideFiles89LightAI(t *testing.T) {
 		t.Fatal(err)
 	}
 	bases := basenames(files)
-	if len(bases) != 1 || bases[0] != "connectors-ai-secrets.yaml" {
+	if len(bases) != 2 || bases[0] != "csrf-disabled.yaml" || bases[1] != "connectors-ai-secrets.yaml" {
 		t.Fatalf("%v", bases)
 	}
 }
 
 func TestOverlaysInSync(t *testing.T) {
 	root := repoRoot(t)
-	names := []string{"elasticsearch-8.10.yaml", "elasticsearch-cors.yaml", "elasticvue.yaml", "http-headers.yaml", "connectors-ai-secrets.yaml"}
+	names := []string{"elasticsearch-8.10.yaml", "elasticsearch-cors.yaml", "elasticvue.yaml", "http-headers.yaml", "connectors-ai-secrets.yaml", "csrf-disabled.yaml"}
 	for _, name := range names {
 		embedPath := filepath.Join(root, "internal", "overlay", "embed", name)
 		repoPath := filepath.Join(root, "overlays", name)

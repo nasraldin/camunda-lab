@@ -122,3 +122,14 @@ func TestMCPURLsHiddenWhenAIDisabled(t *testing.T) {
 		t.Fatal("expected hidden")
 	}
 }
+
+func TestProbeURLConnectorsUsesActuator(t *testing.T) {
+	e := urls.Entry{Name: "connectors", URL: "http://localhost:8086"}
+	if got := urls.ProbeURL(e); got != "http://localhost:8086/actuator/health" {
+		t.Fatalf("connectors probe: got %q", got)
+	}
+	op := urls.Entry{Name: "operate", URL: "http://localhost:8080/operate"}
+	if got := urls.ProbeURL(op); got != op.URL {
+		t.Fatalf("operate probe should stay root: %q", got)
+	}
+}

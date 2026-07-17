@@ -1,0 +1,10 @@
+# camunda-lab — disable Camunda CSRF for local Compose labs.
+#
+# Camunda 8.9+ Operate/Tasklist keep the CSRF header token in tab sessionStorage.
+# Opening the same (or another) app in a new tab keeps camunda-session but loses
+# that token, so POSTs return 401 and the SPA forces the login form again.
+# Safe for local non-production labs only (see Camunda CSRF docs).
+services:
+  orchestration:
+    environment:
+      CAMUNDA_SECURITY_CSRF_ENABLED: "false"

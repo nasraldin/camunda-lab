@@ -74,6 +74,20 @@ camunda open elasticvue
 
 Not listed for **modeler**, **8.9+ light**, or any profile without host Elasticsearch.
 
+## Apps ask for login again (401 on `/v2/...` stats)
+
+Camunda 8.9+ Operate/Tasklist store a CSRF header token in **tab** `sessionStorage`. A new tab keeps `camunda-session` but loses that token, so POSTs return **401** and the UI shows the login form even though you are still signed in.
+
+camunda-lab disables CSRF for local Compose labs (`csrf-disabled.yaml` → `CAMUNDA_SECURITY_CSRF_ENABLED=false`). After upgrading or if you still see the bug:
+
+```bash
+camunda down && camunda up
+```
+
+Then sign in once and open Operate/Tasklist again from Apps — new tabs should stay signed in.
+
+Also keep using `http://localhost:…` (not `127.0.0.1`) so the session cookie matches.
+
 ## HTTP 400 Bad Request on Optimize / Identity / apps
 
 Full-profile SSO stores large cookies. Tomcat rejects oversized request headers with **HTTP 400**.

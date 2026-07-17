@@ -67,23 +67,31 @@ Open Operate, Tasklist, Admin, Console, Identity, Optimize, Web Modeler, Elastic
 
 ### Auto sign-in
 
+Auto sign-in is for labs that include **Keycloak** (full profile). On a **light** lab there is no Keycloak, so the switch is hidden and apps open with direct links.
+
 | Setting | Behavior |
 | --- | --- |
-| **On (default)** | Lab warms the Keycloak session as `demo` / `demo`, then opens the app so you skip the login form |
-| **Off** | Apps open directly; Lab also signs you out of Camunda so the next open shows the Keycloak login page |
+| **On (default, full lab)** | Lab warms the Keycloak session as `demo` / `demo`, then opens the app so you skip the login form |
+| **Off (full lab)** | Apps open directly; Lab also signs you out of Camunda so the next open shows the Keycloak login page |
+| **Light lab** | Auto sign-in stays off. Log in once on Operate/Tasklist/Admin (`demo` / `demo`); they share one Camunda session cookie. Lab disables Camunda CSRF locally so opening apps in new tabs does not force login again. |
 
-Preference is stored in the browser (`camunda-lab-auto-sso`).
+Preference is stored in the browser (`camunda-lab-auto-sso`) and only applies when Keycloak is present.
 
 ![Apps with auto sign-in off](assets/screenshots/lab-ui-apps-manual.png)
 
 ### Session tools
 
+Shown only when Keycloak is in the lab:
+
 - **Sign out of Camunda** — opens Keycloak logout
 - **Fix broken session** — same logout path, for login loops / mixed `localhost` vs `127.0.0.1` cookies
+
+Always available:
+
 - **Show all addresses** — copy raw URLs for Desktop Modeler, clients, or AI tools
 
 !!! note "localhost only"
-    Auto sign-in needs Lab UI on `http://localhost:…`. Mixing `127.0.0.1` for apps and Lab breaks shared cookies.
+    Use `http://localhost:…` for Lab UI and Camunda apps. Mixing `127.0.0.1` breaks shared cookies (Keycloak SSO on full labs, or the Camunda session cookie on light labs).
 
 ---
 

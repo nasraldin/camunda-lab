@@ -22,6 +22,9 @@ var elasticvueYAML []byte
 //go:embed embed/http-headers.yaml
 var httpHeadersYAML []byte
 
+//go:embed embed/csrf-disabled.yaml
+var csrfDisabledYAML []byte
+
 //go:embed embed/connectors-ai-secrets.yaml
 var connectorsAISecretsYAML []byte
 
@@ -98,6 +101,12 @@ func ComposeOverrideFiles(minor, profile string, aiEnabled bool) ([]string, erro
 	}
 	if profile == "full" {
 		if err := write("http-headers.yaml", httpHeadersYAML); err != nil {
+			return nil, err
+		}
+	}
+	// Light + full orchestration UIs: avoid new-tab CSRF 401 → fake login wall.
+	if profile == "light" || profile == "full" {
+		if err := write("csrf-disabled.yaml", csrfDisabledYAML); err != nil {
 			return nil, err
 		}
 	}
