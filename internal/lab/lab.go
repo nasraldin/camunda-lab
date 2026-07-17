@@ -151,7 +151,7 @@ func (l *Lab) Up(ctx context.Context) error {
 		return err
 	}
 	display.Step(os.Stdout, "Starting lab (%s / %s / %s)...", cfg.Version, cfg.Profile, cfg.Resources)
-	if err := l.Engine.Up(workDir, files, envFiles, cfg.ComposeProject); err != nil {
+	if err := l.startStack(ctx, workDir, files, envFiles, cfg.ComposeProject); err != nil {
 		return err
 	}
 	display.Done(os.Stdout, "Stack started.")
