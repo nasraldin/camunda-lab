@@ -155,6 +155,7 @@ git clone https://github.com/nasraldin/camunda-lab.git && cd camunda-lab
 export PATH="$(pwd)/bin:$HOME/.local/bin:$PATH"   # repo build before Homebrew
 make install-dev          # ~/.local/bin/camunda (dev build)
 make dev                  # API :9090 + Vite :5173 (hot reload UI)
+make dev-restart-api      # after Go changes — rebuild + restart API on :9090
 # or two terminals:
 make dev-api              # terminal 1 — API only
 make dev-ui               # terminal 2 — Vite at http://localhost:5173
@@ -163,6 +164,8 @@ camunda ui logs -f        # follow API logs
 ```
 
 Use **http://localhost:5173** while developing the UI (Vite proxies `/api` to the Go server on 9090). Use **http://localhost:9090** to test the embedded production build (`make ui && make dev-api`).
+
+After changing **Go** code, restart the API: `make dev-restart-api` (Vite does not reload the backend).
 
 ## License
 

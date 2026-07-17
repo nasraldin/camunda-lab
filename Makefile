@@ -1,4 +1,4 @@
-.PHONY: build test vet fmt tidy lint install check ui ui-check dev dev-build dev-stop dev-api dev-ui install-dev
+.PHONY: build test vet fmt tidy lint install check ui ui-check dev dev-build dev-stop dev-api dev-ui dev-restart-api install-dev
 
 VERSION ?= 0.0.0-dev
 GIT_SHA := $(shell git rev-parse --short HEAD 2>/dev/null || echo local)
@@ -52,6 +52,11 @@ install-dev: dev-build
 
 dev-stop:
 	-@./bin/camunda ui --stop 2>/dev/null || true
+
+# Rebuild and restart background API (run after changing Go code).
+dev-restart-api: dev-build dev-stop
+	@./bin/camunda ui --no-open
+	@echo "Lab API restarted at http://127.0.0.1:9090 (logs: ./bin/camunda ui logs -f)"
 
 dev-api: dev-build
 	./bin/camunda ui --foreground --no-open
