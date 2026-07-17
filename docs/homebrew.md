@@ -21,19 +21,19 @@ Tap repo: [`nasraldin/homebrew-tools`](https://github.com/nasraldin/homebrew-too
 
 ## For maintainers
 
-On each GitHub **Release** (tag `v*`), the **Homebrew** workflow:
+On each GitHub **Release** (tag `v*`), the **Release** workflow:
 
-1. Downloads the source tarball for that tag
-2. Computes sha256
-3. Updates `Formula/camunda-lab.rb` in `nasraldin/homebrew-tools`
-4. Pushes with `HOMEBREW_TAP_TOKEN`
+1. Runs GoReleaser (binaries + GitHub Release)
+2. Publishes `Formula/camunda-lab.rb` to `nasraldin/homebrew-tools` using `HOMEBREW_TAP_TOKEN`
 
-You can also run the workflow by hand (**Actions → Homebrew → Run workflow**) and pass a tag.
+GoReleaser creates the release via `GITHUB_TOKEN`, which **does not** trigger other workflows, so tap publish runs in the same Release workflow—not via `release: published`.
+
+Backfill an old tag manually: **Actions → Homebrew → Run workflow** and pass the tag.
 
 Local publish:
 
 ```bash
-./scripts/publish-homebrew.sh v0.4.0
+./scripts/publish-homebrew.sh v0.5.0
 ```
 
 ### Secret: `HOMEBREW_TAP_TOKEN`
