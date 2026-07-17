@@ -51,7 +51,7 @@ Historical design notes (not on the site): [`docs/design/`](docs/design/).
 
 ## Pull requests
 
-Use the PR template. CI must be green (`fmt`, `tidy`, `vet`, `govulncheck`, `test`, embedded UI dist check, ShellCheck, docs build when docs change).
+Use the PR template. CI must be green (`fmt`, `tidy`, `vet`, `test`, embedded UI dist check, ShellCheck, docs build when docs change). **Govulncheck** runs as an advisory step (logs vulnerabilities; does not block merge).
 
 **Recommended:** enable branch protection on `main` (require `Test & build` status check, block force-push).
 
