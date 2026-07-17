@@ -9,9 +9,23 @@ Binary: **`camunda`**. Project / Homebrew formula: **`camunda-lab`**.
 
 | Command | Purpose |
 | --- | --- |
+| `init` | Scaffold a Camunda application project |
 | `install` | Download zip, configure, start |
 | `ui` | Local Lab UI (http://localhost:9090) |
 | `ai` | MCP + AI Agent connector secrets |
+| `lint` | Deterministic BPMN lint |
+| `diff` | Semantic BPMN diff |
+| `explain` | Offline BPMN summary |
+| `review` | Lint + optional AI review |
+| `test generate` | Test skeletons from BPMN |
+| `scan` | Secrets scanner |
+| `env` | Environment profiles |
+| `plan` | Deployment preview (no deploy) |
+| `drift` | Git/project vs cluster drift |
+| `backup` / `restore` | Lab-oriented backup |
+| `incidents` | Incident list/retry helpers |
+| `trace` | Process instance timeline |
+| `k8s` | kubectl helpers for Helm releases |
 | `up` / `start` | Start |
 | `down` / `stop` | Stop (keep volumes) |
 | `restart` | Restart |
@@ -21,13 +35,37 @@ Binary: **`camunda`**. Project / Homebrew formula: **`camunda-lab`**.
 | `resources` | small / balanced / power |
 | `urls` / `open` | Component links |
 | `logs` | Container logs |
-| `doctor` | Diagnostics |
+| `doctor` | Diagnostics (`--deep` for component probes) |
 | `wait` / `smoke` | Health |
 | `tools` | c8ctl + Modeler helpers |
 | `nuke` | Wipe lab home |
 | `version` / `about` | Meta |
 
 Details for each command are in the sections below.
+
+---
+
+## init
+
+```bash
+camunda init
+camunda init ./order-service
+camunda init ./order-service --name orders --version 8.9 --yes
+camunda init ./order-service --force
+```
+
+| Flag | Meaning |
+|------|---------|
+| `--name` | Project name (default: directory basename) |
+| `--version` | Camunda version hint in `.camunda.yaml` (default: active lab version, else `8.9`) |
+| `--profile` | Lab profile hint (`light` \| `full` \| `modeler`) |
+| `--resources` | Lab resources hint (`small` \| `balanced` \| `power`) |
+| `--yes` / `-y` | Non-interactive |
+| `--force` | Allow scaffolding into a non-empty directory |
+
+Creates `bpmn/`, `dmn/`, `forms/`, `workers/`, `connectors/`, `scripts/`, `tests/`, `environments/`, `helm/`, stub `docker-compose.yml`, `.camunda.yaml`, and `README.md`.
+
+Does **not** start the lab or deploy processes. Use `camunda install` for a local stack; deploy with official Camunda tooling.
 
 ---
 
@@ -198,9 +236,13 @@ camunda logs -f keycloak
 ```bash
 camunda doctor
 camunda doctor --fix
+camunda doctor --deep
+camunda doctor --deep --timeout 5s
 ```
 
 Checks Docker, Compose v2, config, whether the version directory exists. Mentions optional `cosign` if you care about signed zip verify later.
+
+`--deep` also probes lab HTTP/TCP endpoints (Operate, Tasklist, orchestration, gRPC, …) and prints Healthy / Warnings / Failures.
 
 ---
 

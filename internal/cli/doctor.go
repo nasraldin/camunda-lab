@@ -15,20 +15,35 @@ import (
 )
 
 func newDoctorCmd() *cobra.Command {
-	var fix bool
+	var fix, deep bool
+	var timeout time.Duration
 	cmd := &cobra.Command{
 		Use:   "doctor",
 		Short: "Run health diagnostics",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			rep := doctor.Run(fix)
-			fmt.Fprint(cmd.OutOrStdout(), rep.Format())
-			if !rep.OK {
+			if !deep {
+				fmt.Fprint(cmd.OutOrStdout(), rep.Format())
+				if !rep.OK {
+					return fmt.Errorf("doctor found issues")
+				}
+				return nil
+			}
+			cfg, err := config.Load()
+			if err != nil {
+				return err
+			}
+			sections := doctor.Deep(cmd.Context(), cfg, doctor.DeepOptions{Timeout: timeout})
+			fmt.Fprint(cmd.OutOrStdout(), doctor.FormatDeep(rep, sections))
+			if !rep.OK || !doctor.DeepOK(sections) {
 				return fmt.Errorf("doctor found issues")
 			}
 			return nil
 		},
 	}
 	cmd.Flags().BoolVar(&fix, "fix", false, "Attempt common repairs")
+	cmd.Flags().BoolVar(&deep, "deep", false, "Probe lab component endpoints")
+	cmd.Flags().DurationVar(&timeout, "timeout", 5*time.Second, "Per-probe timeout for --deep")
 	return cmd
 }
 

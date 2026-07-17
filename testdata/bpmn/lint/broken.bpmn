@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+  id="Defs" targetNamespace="http://camunda.org/schema/1.0/bpmn">
+  <bpmn:process id="broken" name="Broken" isExecutable="true">
+    <bpmn:endEvent id="OnlyEnd" name="End" />
+    <bpmn:serviceTask id="Orphan" name="Orphan Task" />
+    <bpmn:exclusiveGateway id="GW" name="Split" />
+    <bpmn:serviceTask id="A" name="A" />
+    <bpmn:serviceTask id="B" name="B" />
+    <bpmn:sequenceFlow id="F1" sourceRef="GW" targetRef="A" />
+    <bpmn:sequenceFlow id="F2" sourceRef="GW" targetRef="B" />
+  </bpmn:process>
+</bpmn:definitions>

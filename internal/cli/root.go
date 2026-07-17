@@ -21,6 +21,7 @@ switching, doctor, and developer tool helpers. Not affiliated with Camunda GmbH.
 	}
 	root.AddCommand(newVersionCmd())
 	root.AddCommand(newAboutCmd())
+	root.AddCommand(newInitCmd())
 	root.AddCommand(newInstallCmd())
 	root.AddCommand(newUpCmd())
 	root.AddCommand(newDownCmd())
@@ -39,5 +40,19 @@ switching, doctor, and developer tool helpers. Not affiliated with Camunda GmbH.
 	root.AddCommand(newToolsCmd())
 	root.AddCommand(newAICmd())
 	root.AddCommand(newUICmd())
+	root.AddCommand(newLintCmd())
+	root.AddCommand(newDiffCmd())
+	root.AddCommand(newScanCmd())
+	root.AddCommand(newExplainCmd())
+	root.AddCommand(newReviewCmd())
+	root.AddCommand(newTestCmd())
+	root.AddCommand(newEnvCmd())
+	root.AddCommand(newPlanCmd())
+	root.AddCommand(newDriftCmd())
+	root.AddCommand(newBackupCmd())
+	root.AddCommand(newRestoreCmd())
+	root.AddCommand(newIncidentsCmd())
+	root.AddCommand(newTraceCmd())
+	root.AddCommand(newK8sCmd())
 	return root
 }
