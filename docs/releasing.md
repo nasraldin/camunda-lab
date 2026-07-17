@@ -15,10 +15,10 @@ git push origin v0.4.0
 ```
 
 5. GoReleaser creates the GitHub Release + archives + `checksums.txt` (`.github/workflows/release.yml`)
-6. Homebrew tap: workflow uses `HOMEBREW_TAP_TOKEN`, or publish locally:
+6. Same Release workflow publishes the Homebrew tap (`HOMEBREW_TAP_TOKEN`), or publish locally / via **Actions → Homebrew**:
 
 ```bash
-./scripts/publish-homebrew.sh v0.4.0
+./scripts/publish-homebrew.sh v0.5.0
 ```
 
 7. Smoke on a clean machine:

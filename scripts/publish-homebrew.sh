@@ -55,7 +55,10 @@ cleanup() { rm -rf "${WORKDIR}"; }
 trap cleanup EXIT
 
 echo "==> Cloning ${TAP_REPO}"
-gh repo clone "${TAP_REPO}" "${WORKDIR}/tap" -- --depth 1
+# Clone with curl+git so we control auth (gh clone can leave credential helpers
+# that override HOMEBREW_TAP_TOKEN and cause 403 on push in CI).
+git -c credential.helper= clone --depth 1 \
+  "https://github.com/${TAP_REPO}.git" "${WORKDIR}/tap"
 mkdir -p "${WORKDIR}/tap/Formula"
 
 TEMPLATE="${ROOT}/Formula/${FORMULA_NAME}.rb"
@@ -101,6 +104,7 @@ if git diff --cached --quiet; then
 fi
 
 git commit -m "camunda-lab ${VERSION}"
-git push origin HEAD
+# Disable credential helpers so the PAT in the remote URL is used (not GITHUB_TOKEN).
+git -c credential.helper= push origin HEAD
 echo "==> Published ${FORMULA_NAME} ${VERSION} → ${TAP_REPO}"
 echo "==> Users: brew update && brew upgrade camunda-lab"
