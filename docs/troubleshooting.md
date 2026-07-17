@@ -74,6 +74,14 @@ camunda open elasticvue
 
 Not listed for **modeler**, **8.9+ light**, or any profile without host Elasticsearch.
 
+## Connectors URL shows “No static resource”
+
+Connectors is a **runtime** (job workers for BPMN connector tasks), not a web console. Official Camunda docs verify it with Actuator:
+
+`http://localhost:8086/actuator/health` (8.8+/light; older light labs use `8085`).
+
+Lab Apps / `camunda urls` / `camunda open connectors` point at that health URL. Opening bare `/` on the connectors port is expected to fail.
+
 ## Apps ask for login again (401 on `/v2/...` stats)
 
 Camunda 8.9+ Operate/Tasklist store a CSRF header token in **tab** `sessionStorage`. A new tab keeps `camunda-session` but loses that token, so POSTs return **401** and the UI shows the login form even though you are still signed in.

@@ -22,7 +22,7 @@ func TestLight87Operate(t *testing.T) {
 	cfg := config.Config{Version: "8.7", Profile: "light", Host: "localhost"}
 	mustURL(t, cfg, "operate", "http://localhost:8081")
 	mustURL(t, cfg, "tasklist", "http://localhost:8082")
-	mustURL(t, cfg, "connectors", "http://localhost:8085")
+	mustURL(t, cfg, "connectors", "http://localhost:8085/actuator/health")
 	mustURL(t, cfg, "rest", "http://localhost:8088")
 }
 
@@ -42,7 +42,7 @@ func TestLight88Uses8088(t *testing.T) {
 	mustURL(t, cfg, "tasklist", "http://localhost:8088/tasklist")
 	mustURL(t, cfg, "admin", "http://localhost:8088/admin")
 	mustURL(t, cfg, "rest", "http://localhost:8088/v2")
-	mustURL(t, cfg, "connectors", "http://localhost:8086")
+	mustURL(t, cfg, "connectors", "http://localhost:8086/actuator/health")
 	if got := urls.ModelerRESTBase(cfg); got != "http://localhost:8088" {
 		t.Fatalf("modeler rest base: %s", got)
 	}
@@ -127,6 +127,10 @@ func TestProbeURLConnectorsUsesActuator(t *testing.T) {
 	e := urls.Entry{Name: "connectors", URL: "http://localhost:8086"}
 	if got := urls.ProbeURL(e); got != "http://localhost:8086/actuator/health" {
 		t.Fatalf("connectors probe: got %q", got)
+	}
+	already := urls.Entry{Name: "connectors", URL: "http://localhost:8086/actuator/health"}
+	if got := urls.ProbeURL(already); got != already.URL {
+		t.Fatalf("connectors probe should not double path: %q", got)
 	}
 	op := urls.Entry{Name: "operate", URL: "http://localhost:8080/operate"}
 	if got := urls.ProbeURL(op); got != op.URL {

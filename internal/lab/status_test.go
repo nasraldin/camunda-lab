@@ -32,7 +32,7 @@ func TestFormatStatus(t *testing.T) {
 		"Services   2 total, 2 running, 2 healthy",
 		"operate -> http://localhost:8080/operate",
 		"tasklist -> http://localhost:8080/tasklist",
-		"connectors -> http://localhost:8086",
+		"connectors -> http://localhost:8086/actuator/health",
 		"- connectors",
 		"ports   8086->8080/tcp",
 		"- orchestration",

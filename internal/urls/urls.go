@@ -52,7 +52,7 @@ func lightEntries(cfg config.Config, host string) []Entry {
 		entries = []Entry{
 			{Name: "operate", URL: fmt.Sprintf("http://%s:8081", host), Notes: "demo/demo"},
 			{Name: "tasklist", URL: fmt.Sprintf("http://%s:8082", host), Notes: "demo/demo"},
-			{Name: "connectors", URL: fmt.Sprintf("http://%s:8085", host)},
+			{Name: "connectors", URL: fmt.Sprintf("http://%s:8085/actuator/health", host), Notes: "Connector runtime health (not a web UI)"},
 			{Name: "zeebe-http", URL: fmt.Sprintf("http://%s:8088", host), Notes: "Zeebe gateway HTTP"},
 			{Name: "rest", URL: fmt.Sprintf("http://%s:8088", host), Notes: "Desktop Modeler restAddress"},
 			{Name: "grpc", URL: fmt.Sprintf("%s:26500", host)},
@@ -61,7 +61,7 @@ func lightEntries(cfg config.Config, host string) []Entry {
 		port := orchestrationHostPort(version)
 		entries = orchestrationUI(host, port)
 		entries = append(entries,
-			Entry{Name: "connectors", URL: fmt.Sprintf("http://%s:8086", host)},
+			Entry{Name: "connectors", URL: fmt.Sprintf("http://%s:8086/actuator/health", host), Notes: "Connector runtime health (not a web UI)"},
 			Entry{Name: "grpc", URL: fmt.Sprintf("%s:26500", host)},
 		)
 	}
@@ -81,7 +81,7 @@ func fullEntries(cfg config.Config, host string) []Entry {
 			{Name: "tasklist", URL: fmt.Sprintf("http://%s:8082", host), Notes: "demo/demo"},
 			{Name: "optimize", URL: fmt.Sprintf("http://%s:8083", host), Notes: "demo/demo"},
 			{Name: "identity", URL: fmt.Sprintf("http://%s:8084", host), Notes: "demo/demo"},
-			{Name: "connectors", URL: fmt.Sprintf("http://%s:8085", host)},
+			{Name: "connectors", URL: fmt.Sprintf("http://%s:8085/actuator/health", host), Notes: "Connector runtime health (not a web UI)"},
 			{Name: "web-modeler", URL: fmt.Sprintf("http://%s:8070", host), Notes: "demo/demo"},
 			{Name: "zeebe-http", URL: fmt.Sprintf("http://%s:8088", host), Notes: "Zeebe gateway HTTP"},
 			{Name: "rest", URL: fmt.Sprintf("http://%s:8088", host), Notes: "Desktop Modeler restAddress"},
@@ -95,7 +95,7 @@ func fullEntries(cfg config.Config, host string) []Entry {
 		entries = append(entries,
 			Entry{Name: "optimize", URL: fmt.Sprintf("http://%s:8083", host), Notes: "demo/demo"},
 			Entry{Name: "identity", URL: fmt.Sprintf("http://%s:8084", host), Notes: "demo/demo"},
-			Entry{Name: "connectors", URL: fmt.Sprintf("http://%s:8086", host)},
+			Entry{Name: "connectors", URL: fmt.Sprintf("http://%s:8086/actuator/health", host), Notes: "Connector runtime health (not a web UI)"},
 			Entry{Name: "web-modeler", URL: fmt.Sprintf("http://%s:8070", host), Notes: "demo/demo"},
 			Entry{Name: "keycloak", URL: fmt.Sprintf("http://%s:18080/auth/", host), Notes: "admin/admin"},
 			Entry{Name: "grpc", URL: fmt.Sprintf("%s:26500", host)},
@@ -178,12 +178,16 @@ func Find(cfg config.Config, name string) (Entry, error) {
 }
 
 // ProbeURL returns the URL to hit for health/smoke checks.
-// Display URLs in List stay as app roots; some services (connectors) only
-// answer health on Spring Actuator and return 500 on GET /.
+// Display URLs in List stay as app roots; connectors uses Actuator health
+// (official verify path) because GET / is not a web UI.
 func ProbeURL(e Entry) string {
 	switch e.Name {
 	case "connectors":
-		return strings.TrimRight(e.URL, "/") + "/actuator/health"
+		u := strings.TrimRight(e.URL, "/")
+		if strings.HasSuffix(u, "/actuator/health") {
+			return u
+		}
+		return u + "/actuator/health"
 	default:
 		return e.URL
 	}

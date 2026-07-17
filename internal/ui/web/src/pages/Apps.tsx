@@ -30,14 +30,14 @@ const CATEGORIES: Category[] = [
   {
     id: "data",
     title: "Data & connections",
-    hint: "Search, data browser, and connectors",
-    names: ["elasticsearch", "elasticvue", "connectors"],
+    hint: "Search and data browser",
+    names: ["elasticsearch", "elasticvue"],
   },
   {
     id: "apis",
     title: "Developer links",
-    hint: "APIs and AI agent endpoints",
-    names: ["orchestration", "rest", "zeebe-http", "grpc", "mcp-cluster", "mcp-processes"],
+    hint: "APIs, connector runtime, and AI agent endpoints",
+    names: ["orchestration", "rest", "zeebe-http", "connectors", "grpc", "mcp-cluster", "mcp-processes"],
   },
 ];
 
