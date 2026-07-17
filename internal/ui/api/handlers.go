@@ -58,6 +58,7 @@ func Register(mux *http.ServeMux, cliVersion string) {
 	mux.HandleFunc("POST /api/v1/nuke", h.nuke)
 	mux.HandleFunc("GET /api/v1/update", h.updateCheck)
 	mux.HandleFunc("POST /api/v1/update", h.updateApply)
+	registerToolkit(mux, h)
 }
 
 type handler struct {

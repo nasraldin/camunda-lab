@@ -25,7 +25,7 @@ Default bind is **`localhost`** (not `127.0.0.1`) so Keycloak SSO cookies match 
 
 | Control | Where | What it does |
 | --- | --- | --- |
-| Sidebar | Left | Jump between Home, Get started, Apps, Logins, Services, Logs, AI helpers, Extras, Reset lab |
+| Sidebar | Left | Jump between Home, Get started, Apps, BPMN, Cluster, Project, Logins, Services, Logs, AI helpers, Extras, Reset lab |
 | Light / Dark | Sidebar footer | Theme preference (saved in the browser) |
 | Version | Sidebar footer | CLI version currently serving the UI |
 | Project links | Sidebar footer | GitHub, help docs, Camunda Docs, releases |
@@ -94,6 +94,26 @@ Always available:
 
 !!! note "localhost only"
     Use `http://localhost:…` for Lab UI and Camunda apps. Mixing `127.0.0.1` breaks shared cookies (Keycloak SSO on full labs, or the Camunda session cookie on light labs).
+
+---
+
+## BPMN toolkit
+
+Sidebar **BPMN** mirrors the CLI toolkit: lint, diff, explain, review, test generate, and secrets scan.
+
+- Upload `.bpmn` files, or pass absolute paths on the machine running Lab UI
+- Scan / plan-style flows use a **project directory** (must be under your home, `/tmp`, or lab home)
+- Each action shows the equivalent `camunda …` command
+
+## Cluster
+
+Sidebar **Cluster**: incidents list/retry, process instance trace, deployment **plan** and **drift** (needs a project with `.camunda.yaml` — create via **Project → Init**).
+
+Uses the same Orchestration REST client as the CLI (OIDC on full labs).
+
+## Project
+
+Sidebar **Project**: `camunda init` scaffold, env profiles, backup/restore, and optional Kubernetes helpers (`camunda k8s` — skip on Compose-only labs).
 
 ---
 

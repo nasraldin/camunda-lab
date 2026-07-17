@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   getDoctor,
+  getDoctorDeep,
   getOverview,
   getSmoke,
   getUpdate,
@@ -290,6 +291,22 @@ export function OverviewPage() {
                 }}
               >
                 {busy === "doctor" ? "Checking…" : "Check environment"}
+              </button>
+              <button
+                type="button"
+                disabled={!!busy || !labReady}
+                onClick={async () => {
+                  setBusy("deep");
+                  try {
+                    setDoctor((await getDoctorDeep()).report);
+                  } catch (e) {
+                    setError(e instanceof ApiError ? e : new ApiError(e instanceof Error ? e.message : String(e)));
+                  } finally {
+                    setBusy("");
+                  }
+                }}
+              >
+                {busy === "deep" ? "Deep check…" : "Deep check"}
               </button>
               <button
                 type="button"

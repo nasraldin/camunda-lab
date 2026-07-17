@@ -140,3 +140,59 @@ export async function postUpdate(): Promise<UpdateResult> {
   return data;
 }
 
+export type ToolkitResult = {
+  ok: boolean;
+  output?: string;
+  error?: string;
+  hint?: string;
+  cli?: string;
+  findings?: unknown[];
+  changes?: unknown[];
+  markdown?: string;
+  paths?: string[];
+  contents?: Record<string, string>;
+  items?: unknown[];
+  timeline?: unknown;
+  plan?: unknown;
+  drift?: unknown;
+  report?: string;
+  sections?: unknown[];
+  active?: string;
+  profiles?: Array<{ name: string; kind: string }>;
+  path?: string;
+  dir?: string;
+};
+
+export async function getDoctorDeep(): Promise<{ ok: boolean; report: string }> {
+  return parse(await fetch("/api/v1/doctor/deep"));
+}
+
+export async function postForm(path: string, form: FormData): Promise<ToolkitResult> {
+  return parse(await fetch(path, { method: "POST", body: form }));
+}
+
+export async function toolkitJSON(path: string, body?: unknown, method = "POST"): Promise<ToolkitResult> {
+  const init: RequestInit = { method };
+  if (method !== "GET" && method !== "HEAD") {
+    init.headers = { "Content-Type": "application/json" };
+    init.body = body === undefined ? "{}" : JSON.stringify(body);
+  }
+  return parse(await fetch(path, init));
+}
+
+export async function getIncidents(): Promise<ToolkitResult> {
+  return parse(await fetch("/api/v1/incidents"));
+}
+
+export async function getTrace(instanceKey: string): Promise<ToolkitResult> {
+  return parse(await fetch(`/api/v1/trace/${encodeURIComponent(instanceKey)}`));
+}
+
+export async function getEnv(): Promise<ToolkitResult> {
+  return parse(await fetch("/api/v1/env"));
+}
+
+export async function getK8sStatus(): Promise<ToolkitResult> {
+  return parse(await fetch("/api/v1/k8s/status"));
+}
+

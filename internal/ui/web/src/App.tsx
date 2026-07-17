@@ -9,6 +9,9 @@ import { LogsPage } from "./pages/Logs";
 import { AIPage } from "./pages/AI";
 import { ToolsPage } from "./pages/Tools";
 import { DangerPage } from "./pages/Danger";
+import { BpmnPage } from "./pages/Bpmn";
+import { ClusterPage } from "./pages/Cluster";
+import { ProjectPage } from "./pages/Project";
 import {
   IconAI,
   IconAdmin,
@@ -28,6 +31,37 @@ import { getOverview } from "./api";
 import { PROJECT } from "./project";
 import { useTheme } from "./theme";
 
+function IconBpmn(p: { className?: string }) {
+  return (
+    <svg className={p.className} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="6" cy="12" r="2.5" stroke="currentColor" strokeWidth="1.75" />
+      <rect x="10" y="9.5" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.75" />
+      <path d="M15 12h3.5M18.5 12l-1.2-1.2M18.5 12l-1.2 1.2" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+      <path d="M8.5 12H10" stroke="currentColor" strokeWidth="1.75" />
+    </svg>
+  );
+}
+
+function IconCluster(p: { className?: string }) {
+  return (
+    <svg className={p.className} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="12" cy="6" r="2.2" stroke="currentColor" strokeWidth="1.75" />
+      <circle cx="6" cy="17" r="2.2" stroke="currentColor" strokeWidth="1.75" />
+      <circle cx="18" cy="17" r="2.2" stroke="currentColor" strokeWidth="1.75" />
+      <path d="M12 8.2v3.5M10.2 14.2 7.6 16M13.8 14.2l2.6 1.8" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconProject(p: { className?: string }) {
+  return (
+    <svg className={p.className} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path d="M4 7.5 12 4l8 3.5v9L12 20l-8-3.5v-9Z" stroke="currentColor" strokeWidth="1.75" strokeLinejoin="round" />
+      <path d="M12 10.5v9.5M4 7.5l8 3 8-3" stroke="currentColor" strokeWidth="1.75" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 const links: {
   to: string;
   label: string;
@@ -37,6 +71,9 @@ const links: {
   { to: "/", label: "Home", icon: IconOverview, end: true },
   { to: "/setup", label: "Get started", icon: IconSetup },
   { to: "/apps", label: "Apps", icon: IconApps },
+  { to: "/bpmn", label: "BPMN", icon: IconBpmn },
+  { to: "/cluster", label: "Cluster", icon: IconCluster },
+  { to: "/project", label: "Project", icon: IconProject },
   { to: "/admin", label: "Logins", icon: IconAdmin },
   { to: "/containers", label: "Services", icon: IconContainers },
   { to: "/logs", label: "Logs", icon: IconLogs },
@@ -143,6 +180,9 @@ export function App() {
           <Route path="/" element={<OverviewPage />} />
           <Route path="/setup" element={<SetupPage />} />
           <Route path="/apps" element={<AppsPage />} />
+          <Route path="/bpmn" element={<BpmnPage />} />
+          <Route path="/cluster" element={<ClusterPage />} />
+          <Route path="/project" element={<ProjectPage />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/containers" element={<ContainersPage />} />
           <Route path="/logs" element={<LogsPage />} />

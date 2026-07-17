@@ -11,17 +11,17 @@ import (
 
 // Profile is a named lab or remote environment.
 type Profile struct {
-	Name      string            `yaml:"name"`
-	Kind      string            `yaml:"kind"` // lab|remote
-	Endpoints map[string]string `yaml:"endpoints,omitempty"`
-	Auth      AuthRefs          `yaml:"auth,omitempty"`
+	Name      string            `yaml:"name" json:"name"`
+	Kind      string            `yaml:"kind" json:"kind"` // lab|remote
+	Endpoints map[string]string `yaml:"endpoints,omitempty" json:"endpoints,omitempty"`
+	Auth      AuthRefs          `yaml:"auth,omitempty" json:"auth,omitempty"`
 }
 
 // AuthRefs stores env var *names* only — never secret values.
 type AuthRefs struct {
-	ClientIDEnv     string `yaml:"clientIdEnv,omitempty"`
-	ClientSecretEnv string `yaml:"clientSecretEnv,omitempty"`
-	TokenURLEnv     string `yaml:"tokenUrlEnv,omitempty"`
+	ClientIDEnv     string `yaml:"clientIdEnv,omitempty" json:"clientIdEnv,omitempty"`
+	ClientSecretEnv string `yaml:"clientSecretEnv,omitempty" json:"clientSecretEnv,omitempty"`
+	TokenURLEnv     string `yaml:"tokenUrlEnv,omitempty" json:"tokenUrlEnv,omitempty"`
 }
 
 // Validate checks profile rules.

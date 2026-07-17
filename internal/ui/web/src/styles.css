@@ -1428,3 +1428,49 @@ a.app-card-docs {
     transition: none !important;
   }
 }
+
+.tab-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.tab-btn {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.88rem;
+}
+
+.tab-btn.active {
+  color: var(--text);
+  border-color: var(--orange-border, var(--orange));
+  background: var(--orange-soft, rgba(252, 93, 13, 0.08));
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin: 0.65rem 0;
+  font-size: 0.88rem;
+}
+
+.field input,
+.field select {
+  padding: 0.45rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface, transparent);
+  color: var(--text);
+  font: inherit;
+}
+
+.stack-sm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}

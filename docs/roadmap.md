@@ -78,7 +78,7 @@ Shipped on main: `env`, `plan`, `drift`, `backup`/`restore`, `incidents`, `trace
 | `camunda trace` | Timeline via process instance + element-instances search |
 | `camunda k8s` | Thin kubectl helpers for Camunda Helm labels |
 
-Lab UI **Console lite** (definitions, incidents, deep links) stays localhost-only and should reuse the same packages as `incidents` / `trace` — see [lab UI design](https://github.com/nasraldin/camunda-lab/blob/main/docs/superpowers/specs/2026-07-17-lab-ui-design.md) “Future — option 3”.
+**Lab UI parity (localhost):** sidebar **BPMN**, **Cluster**, and **Project** call the same packages as these CLI commands (upload or absolute project path). Not a full Camunda Console — Operate/Tasklist remain the primary ops UIs.
 
 ## Later / maybe
 
