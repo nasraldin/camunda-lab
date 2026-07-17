@@ -9,6 +9,8 @@ camunda ui              # ensure background UI + open browser
 camunda ui --no-open    # background only
 camunda ui --foreground # block in this terminal (Ctrl+C to stop)
 camunda ui --stop       # stop background UI
+camunda ui logs         # recent background log lines
+camunda ui logs -f      # follow background logs
 # http://localhost:9090  (loopback only, no auth)
 ```
 

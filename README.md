@@ -91,6 +91,8 @@ camunda ai config    # Cursor / Claude MCP JSON
 ```bash
 camunda ui              # ensure background UI + open browser
 camunda ui --foreground # run in this terminal instead
+camunda ui logs         # recent background UI log lines
+camunda ui logs -f      # follow background UI logs
 # http://localhost:9090
 ```
 
@@ -111,6 +113,7 @@ Ports differ by Camunda minor — run `camunda urls` (see [profiles](https://nas
 | `camunda wait` / `doctor` / `smoke` | Health |
 | `camunda urls` / `open` | Where the UIs live |
 | `camunda ui` | Lab UI in background (http://localhost:9090) |
+| `camunda ui logs -f` | Follow background UI logs |
 | `camunda ai enable` / `config` | MCP + AI Agent secrets (8.9+) |
 | `camunda switch 8.9 --wipe` | Another minor, clean volumes |
 | `camunda profile light\|full\|modeler` | Compose profile |
@@ -144,6 +147,22 @@ See [CONTRIBUTING.md](CONTRIBUTING.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 ## Disclaimer
 
 Local development only. Production → [Camunda Helm](https://docs.camunda.io/docs/self-managed/setup/install/).
+
+### Develop camunda-lab locally
+
+```bash
+git clone https://github.com/nasraldin/camunda-lab.git && cd camunda-lab
+export PATH="$(pwd)/bin:$HOME/.local/bin:$PATH"   # repo build before Homebrew
+make install-dev          # ~/.local/bin/camunda (dev build)
+make dev                  # API :9090 + Vite :5173 (hot reload UI)
+# or two terminals:
+make dev-api              # terminal 1 — API only
+make dev-ui               # terminal 2 — Vite at http://localhost:5173
+make dev-stop             # stop background API
+camunda ui logs -f        # follow API logs
+```
+
+Use **http://localhost:5173** while developing the UI (Vite proxies `/api` to the Go server on 9090). Use **http://localhost:9090** to test the embedded production build (`make ui && make dev-api`).
 
 ## License
 
