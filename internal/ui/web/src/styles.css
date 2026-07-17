@@ -1436,37 +1436,30 @@ a.app-card-docs {
 }
 
 .tab-btn {
-  border: 1px solid var(--border);
-  background: transparent;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
   color: var(--muted);
   padding: 0.4rem 0.75rem;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 0.88rem;
 }
 
+.tab-btn:hover {
+  background: var(--btn-hover-bg);
+  border-color: var(--btn-hover-border);
+  color: var(--ink);
+}
+
 .tab-btn.active {
-  color: var(--text);
-  border-color: var(--orange-border, var(--orange));
-  background: var(--orange-soft, rgba(252, 93, 13, 0.08));
+  color: var(--ink);
+  border-color: var(--orange-border);
+  background: var(--orange-soft);
 }
 
+/* Layout only — borders come from global input/select rules */
 .field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
   margin: 0.65rem 0;
-  font-size: 0.88rem;
-}
-
-.field input,
-.field select {
-  padding: 0.45rem 0.6rem;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: var(--surface, transparent);
-  color: var(--text);
-  font: inherit;
 }
 
 .stack-sm {
