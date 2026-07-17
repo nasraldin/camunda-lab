@@ -1,3 +1,7 @@
+import { ApiError } from "./apiError";
+
+export { ApiError };
+
 export type Overview = {
   cliVersion: string;
   labHome: string;
@@ -33,7 +37,7 @@ export type UrlEntry = { Name: string; URL: string; Notes?: string } | { name: s
 async function parse<T>(res: Response): Promise<T> {
   const data = await res.json();
   if (!res.ok) {
-    throw new Error((data as { error?: string }).error || res.statusText);
+    throw ApiError.fromPayload(data, res.statusText);
   }
   return data as T;
 }

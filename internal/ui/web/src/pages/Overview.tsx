@@ -7,9 +7,11 @@ import {
   getUpdate,
   postJSON,
   postUpdate,
+  ApiError,
   type Overview,
   type UpdateInfo,
 } from "../api";
+import { LabErrorBanner } from "../components/LabErrorBanner";
 import { PROJECT } from "../project";
 
 function pathTail(p?: string): string {
@@ -21,7 +23,8 @@ function pathTail(p?: string): string {
 export function OverviewPage() {
   const [data, setData] = useState<Overview | null>(null);
   const [update, setUpdate] = useState<UpdateInfo | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<ApiError | null>(null);
+  const [lastAction, setLastAction] = useState<{ label: string; path: string } | null>(null);
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState("");
   const [doctor, setDoctor] = useState("");
@@ -29,13 +32,13 @@ export function OverviewPage() {
   const [updateOut, setUpdateOut] = useState("");
 
   const refresh = useCallback(async () => {
-    setError("");
+    setError(null);
     try {
       const [o, u] = await Promise.all([getOverview(), getUpdate()]);
       setData(o);
       setUpdate(u);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(e instanceof ApiError ? e : new ApiError(e instanceof Error ? e.message : String(e)));
     }
   }, []);
 
@@ -44,14 +47,30 @@ export function OverviewPage() {
   }, [refresh]);
 
   async function run(label: string, path: string) {
+    setLastAction({ label, path });
     setBusy(label);
-    setError("");
+    setError(null);
     setMsg("");
     try {
       await postJSON(path);
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(e instanceof ApiError ? e : new ApiError(e instanceof Error ? e.message : String(e)));
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function recoverAndRetry() {
+    if (!lastAction) return;
+    setBusy("recover");
+    setError(null);
+    try {
+      await postJSON("/api/v1/recover");
+      await postJSON(lastAction.path);
+      await refresh();
+    } catch (e) {
+      setError(e instanceof ApiError ? e : new ApiError(e instanceof Error ? e.message : String(e)));
     } finally {
       setBusy("");
     }
@@ -59,17 +78,17 @@ export function OverviewPage() {
 
   async function applyUpdate() {
     setBusy("update");
-    setError("");
+    setError(null);
     setMsg("");
     setUpdateOut("");
     try {
       const r = await postUpdate();
       setUpdateOut(r.output || "");
-      if (!r.ok) setError(r.error || "Update failed");
+      if (!r.ok) setError(new ApiError(r.error || "Update failed"));
       else setMsg(r.restartHint || "Update finished. Close this window and open Camunda Lab again.");
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(e instanceof ApiError ? e : new ApiError(e instanceof Error ? e.message : String(e)));
     } finally {
       setBusy("");
     }
@@ -110,7 +129,13 @@ export function OverviewPage() {
         </div>
       </div>
 
-      {error && <div className="banner error">{error}</div>}
+      {error && (
+        <LabErrorBanner
+          error={error}
+          busy={busy === "recover"}
+          onRecover={error.recoverable ? () => void recoverAndRetry() : undefined}
+        />
+      )}
       {msg && <div className="banner ok">{msg}</div>}
 
       {data && !labReady && (
@@ -258,7 +283,7 @@ export function OverviewPage() {
                   try {
                     setDoctor((await getDoctor()).report);
                   } catch (e) {
-                    setError(e instanceof Error ? e.message : String(e));
+                    setError(e instanceof ApiError ? e : new ApiError(e instanceof Error ? e.message : String(e)));
                   } finally {
                     setBusy("");
                   }
@@ -275,7 +300,7 @@ export function OverviewPage() {
                     const r = await getSmoke();
                     setSmoke(r.Checks.map((c) => `${c.OK ? "✓" : "✗"} ${c.Name} ${c.Detail || c.URL}`).join("\n"));
                   } catch (e) {
-                    setError(e instanceof Error ? e.message : String(e));
+                    setError(e instanceof ApiError ? e : new ApiError(e instanceof Error ? e.message : String(e)));
                   } finally {
                     setBusy("");
                   }
