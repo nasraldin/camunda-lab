@@ -1012,7 +1012,7 @@ a.app-card-link:focus-visible {
 
 .app-card-verify-label {
   font-weight: 600;
-  color: var(--text);
+  color: var(--ink);
   margin-right: 0.25rem;
 }
 
