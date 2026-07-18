@@ -32,15 +32,15 @@ Things we’re actively building or next in line — no hard ETA:
 - Scheduled LIVE smoke in CI (nightly-ish; too heavy for every PR)
 - Optional `--write-cursor` to drop MCP JSON into the user’s Cursor config
 - Sample AI Agent BPMN deploy helper (thin wrapper around `c8ctl`)
-- **Monitoring add-on** — optional profile that wires Prometheus + Grafana with pre-provisioned dashboards for Zeebe and Elasticsearch (official dashboards + the ES exporter); opt-in like AI/ElasticVue, opened via `camunda open grafana` and a Lab UI card. Metric paths shift per minor, so dashboards are best-effort per supported version
-- **Sample-data seeder** — deploy a demo process and start a few instances so Operate/Tasklist aren’t empty on first boot (pairs with the BPMN deploy helper above)
-- **Port-conflict detection & remap** — `doctor` / install spot colliding host ports (they differ per minor) and offer to remap instead of failing
+- **Monitoring add-on** — optional profile that wires Prometheus + Grafana with pre-provisioned dashboards for Zeebe and Elasticsearch (official dashboards + the ES exporter); opt-in like AI/ElasticVue, opened via `camunda open grafana` and a Lab UI card. Metric paths shift per minor, so dashboards are best-effort per supported version _(idea: @MahmoudSaid037)_
+- **Sample-data seeder** — deploy a demo process and start a few instances so Operate/Tasklist aren’t empty on first boot (pairs with the BPMN deploy helper above) _(idea: @MahmoudSaid037)_
+- **Port-conflict detection & remap** — `doctor` / install spot colliding host ports (they differ per minor) and offer to remap instead of failing _(idea: @MahmoudSaid037)_
 
 ## Later / maybe
 
-- **Console lite (Lab UI scope 3)** — process definitions, start instance, instance/incident views, job retry, richer connector secrets, Operate deep links, plus **compare process versions** (visual `bpmn-js` diff to spot the gaps between two versions) and **promote an older version to latest** (re-deploy its XML as the new highest version — Zeebe assigns versions by deployment order, so this republishes rather than repoints) — inside the same localhost UI, using official Camunda APIs (not a full Optimize/Identity rebuild). Details in the [lab UI design](https://github.com/nasraldin/camunda-lab/blob/main/docs/superpowers/specs/2026-07-17-lab-ui-design.md) “Future — option 3” section
-- **Snapshot / restore lab state** — dump Elasticsearch volumes + deployed BPMN and restore later, for reproducible demos and safer version-switch experiments
-- **Full monitoring dashboards** — extend the Prometheus/Grafana add-on to connectors and Optimize once the core Zeebe/ES dashboards land
+- **Console lite (Lab UI scope 3)** — process definitions, start instance, instance/incident views, job retry, richer connector secrets, Operate deep links, plus **compare process versions** (visual `bpmn-js` diff to spot the gaps between two versions) and **promote an older version to latest** (re-deploy its XML as the new highest version — Zeebe assigns versions by deployment order, so this republishes rather than repoints) — inside the same localhost UI, using official Camunda APIs (not a full Optimize/Identity rebuild). Details in the [lab UI design](https://github.com/nasraldin/camunda-lab/blob/main/docs/superpowers/specs/2026-07-17-lab-ui-design.md) “Future — option 3” section _(version compare + promote idea: @MahmoudSaid037)_
+- **Snapshot / restore lab state** — dump Elasticsearch volumes + deployed BPMN and restore later, for reproducible demos and safer version-switch experiments _(idea: @MahmoudSaid037)_
+- **Full monitoring dashboards** — extend the Prometheus/Grafana add-on to connectors and Optimize once the core Zeebe/ES dashboards land _(idea: @MahmoudSaid037)_
 - Named labs (`camunda --name upgrade-test`) for side-by-side minors
 - Windows support if there’s real demand
 - Thin Kind/Helm bridge that keeps the same CLI verbs for people who outgrew Compose
