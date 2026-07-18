@@ -1,8 +1,11 @@
 package overlay
 
 import (
+	"bytes"
+	"embed"
 	_ "embed"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 
@@ -24,6 +27,17 @@ var httpHeadersYAML []byte
 
 //go:embed embed/connectors-ai-secrets.yaml
 var connectorsAISecretsYAML []byte
+
+//go:embed embed/monitoring.yaml
+var monitoringYAML []byte
+
+//go:embed embed/monitoring
+var monitoringAssets embed.FS
+
+// overlaysDirPlaceholder is replaced with the absolute overlays dir at write
+// time so Compose bind mounts resolve (Compose resolves relative mounts against
+// the project dir, not the override file's dir).
+const overlaysDirPlaceholder = "__OVERLAYS_DIR__"
 
 func ValidateResources(resources string) error {
 	switch resources {
@@ -70,7 +84,7 @@ func SyncResourcesEnv(resources string) (string, error) {
 }
 
 // ComposeOverrideFiles returns extra -f compose files (absolute paths).
-func ComposeOverrideFiles(minor, profile string, aiEnabled bool) ([]string, error) {
+func ComposeOverrideFiles(minor, profile string, aiEnabled, monitoringEnabled bool) ([]string, error) {
 	if err := os.MkdirAll(paths.OverlaysDir(), 0o755); err != nil {
 		return nil, err
 	}
@@ -106,5 +120,42 @@ func ComposeOverrideFiles(minor, profile string, aiEnabled bool) ([]string, erro
 			return nil, err
 		}
 	}
+	if monitoringEnabled {
+		if err := writeMonitoringAssets(); err != nil {
+			return nil, err
+		}
+		// Template the absolute overlays dir into bind-mount sources.
+		yaml := bytes.ReplaceAll(monitoringYAML, []byte(overlaysDirPlaceholder), []byte(paths.OverlaysDir()))
+		if err := write("monitoring.yaml", yaml); err != nil {
+			return nil, err
+		}
+	}
 	return out, nil
+}
+
+// writeMonitoringAssets extracts the embedded monitoring/ tree (prometheus
+// config, Grafana provisioning + dashboards) into ~/.camunda-lab/overlays/.
+func writeMonitoringAssets() error {
+	return fs.WalkDir(monitoringAssets, "embed/monitoring", func(p string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		// Strip the leading "embed/" so files land under overlays/monitoring/...
+		rel, err := filepath.Rel("embed", p)
+		if err != nil {
+			return err
+		}
+		dest := filepath.Join(paths.OverlaysDir(), filepath.FromSlash(rel))
+		if d.IsDir() {
+			return os.MkdirAll(dest, 0o755)
+		}
+		data, err := monitoringAssets.ReadFile(p)
+		if err != nil {
+			return err
+		}
+		if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
+			return err
+		}
+		return os.WriteFile(dest, data, 0o644)
+	})
 }

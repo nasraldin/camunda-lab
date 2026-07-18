@@ -1,0 +1,71 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "graphTooltip": 0,
+  "schemaVersion": 39,
+  "tags": ["camunda-lab", "elasticsearch"],
+  "title": "Camunda Lab — Elasticsearch",
+  "uid": "camunda-lab-elasticsearch",
+  "time": { "from": "now-1h", "to": "now" },
+  "timezone": "",
+  "templating": { "list": [] },
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Cluster health (0 green,1 yellow,2 red)",
+      "gridPos": { "h": 4, "w": 8, "x": 0, "y": 0 },
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "green", "color": "green" }, "1": { "text": "yellow", "color": "yellow" }, "2": { "text": "red", "color": "red" } } }
+          ]
+        },
+        "overrides": []
+      },
+      "targets": [
+        { "expr": "elasticsearch_cluster_health_status", "legendFormat": "status" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Nodes",
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+      "datasource": null,
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "targets": [
+        { "expr": "elasticsearch_cluster_health_number_of_nodes", "legendFormat": "nodes" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Documents",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "datasource": null,
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "targets": [
+        { "expr": "elasticsearch_indices_docs", "legendFormat": "docs" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "JVM heap used (bytes)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "datasource": null,
+      "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+      "targets": [
+        { "expr": "elasticsearch_jvm_memory_used_bytes", "legendFormat": "{{area}}" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Filesystem available (bytes)",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 12 },
+      "datasource": null,
+      "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+      "targets": [
+        { "expr": "elasticsearch_filesystem_data_available_bytes", "legendFormat": "{{node}}" }
+      ]
+    }
+  ]
+}

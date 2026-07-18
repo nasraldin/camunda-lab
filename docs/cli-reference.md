@@ -12,6 +12,7 @@ Binary: **`camunda`**. Project / Homebrew formula: **`camunda-lab`**.
 | `install` | Download zip, configure, start |
 | `ui` | Local Lab UI (http://localhost:9090) |
 | `ai` | MCP + AI Agent connector secrets |
+| `monitoring` | Prometheus + Grafana dashboards |
 | `up` / `start` | Start |
 | `down` / `stop` | Stop (keep volumes) |
 | `restart` | Restart |
@@ -92,6 +93,25 @@ camunda ai disable --wipe-secrets
 | `config` | Print Cursor/Claude MCP JSON (HTTP on light; `c8ctl mcp-proxy` on full) |
 
 Requires Camunda **8.9+** and profile **light** or **full**. See [AI and MCP](ai-mcp.md).
+
+---
+
+## monitoring
+
+```bash
+camunda monitoring enable
+camunda monitoring status
+camunda monitoring disable
+camunda open grafana
+```
+
+| Subcommand | Meaning |
+|------------|---------|
+| `enable` | Set `monitoring.enabled`, start Prometheus + Grafana with provisioned dashboards |
+| `disable` | Clear `monitoring.enabled` and remove the monitoring containers |
+| `status` | Enablement + Grafana health probe |
+
+Grafana on `http://localhost:3000` (`admin`/`admin`), Prometheus on `http://localhost:9490`. See [Monitoring](monitoring.md).
 
 ---
 

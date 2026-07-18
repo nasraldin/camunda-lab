@@ -357,7 +357,7 @@ func (l *Lab) resolve(cfg config.Config) (workDir string, files []string, envFil
 		}
 		files = append(files, p)
 	}
-	overrides, err := overlay.ComposeOverrideFiles(cfg.Version, cfg.Profile, cfg.AI.Enabled)
+	overrides, err := overlay.ComposeOverrideFiles(cfg.Version, cfg.Profile, cfg.AI.Enabled, cfg.Monitoring.Enabled)
 	if err != nil {
 		return "", nil, nil, err
 	}

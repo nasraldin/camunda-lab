@@ -39,6 +39,12 @@ const CATEGORIES: Category[] = [
     hint: "APIs and AI agent endpoints",
     names: ["orchestration", "rest", "zeebe-http", "grpc", "mcp-cluster", "mcp-processes"],
   },
+  {
+    id: "monitoring",
+    title: "Monitoring",
+    hint: "Dashboards and metrics (when enabled)",
+    names: ["grafana", "prometheus"],
+  },
 ];
 
 function isCredentialNote(notes?: string): boolean {

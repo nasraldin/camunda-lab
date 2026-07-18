@@ -122,3 +122,19 @@ func TestMCPURLsHiddenWhenAIDisabled(t *testing.T) {
 		t.Fatal("expected hidden")
 	}
 }
+
+func TestMonitoringURLsWhenEnabled(t *testing.T) {
+	cfg := config.Config{Version: "8.9", Profile: "light", Host: "localhost", Monitoring: config.MonitoringConfig{Enabled: true}}
+	mustURL(t, cfg, "grafana", "http://localhost:3000")
+	mustURL(t, cfg, "prometheus", "http://localhost:9490")
+}
+
+func TestMonitoringURLsHiddenWhenDisabled(t *testing.T) {
+	cfg := config.Config{Version: "8.9", Profile: "light", Host: "localhost"}
+	if _, err := urls.Find(cfg, "grafana"); err == nil {
+		t.Fatal("grafana should be hidden when monitoring disabled")
+	}
+	if _, err := urls.Find(cfg, "prometheus"); err == nil {
+		t.Fatal("prometheus should be hidden when monitoring disabled")
+	}
+}

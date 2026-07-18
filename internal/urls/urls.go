@@ -68,7 +68,8 @@ func lightEntries(cfg config.Config, host string) []Entry {
 		entries = append(entries, Entry{Name: "elasticsearch", URL: fmt.Sprintf("http://%s:9200", host)})
 		entries = appendElasticvue(host, entries)
 	}
-	return appendMCP(cfg, host, entries)
+	entries = appendMCP(cfg, host, entries)
+	return appendMonitoring(cfg, host, entries)
 }
 
 func fullEntries(cfg config.Config, host string) []Entry {
@@ -109,7 +110,18 @@ func fullEntries(cfg config.Config, host string) []Entry {
 	if versions.HasHostElasticsearch(version, "full") {
 		entries = appendElasticvue(host, entries)
 	}
-	return appendMCP(cfg, host, entries)
+	entries = appendMCP(cfg, host, entries)
+	return appendMonitoring(cfg, host, entries)
+}
+
+func appendMonitoring(cfg config.Config, host string, entries []Entry) []Entry {
+	if !cfg.Monitoring.Enabled {
+		return entries
+	}
+	return append(entries,
+		Entry{Name: "grafana", URL: fmt.Sprintf("http://%s:3000", host), Notes: "admin/admin — dashboards preloaded"},
+		Entry{Name: "prometheus", URL: fmt.Sprintf("http://%s:9490", host), Notes: "metrics scraper"},
+	)
 }
 
 func appendElasticvue(host string, entries []Entry) []Entry {

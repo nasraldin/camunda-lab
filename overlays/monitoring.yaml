@@ -1,0 +1,53 @@
+# camunda-lab — optional Prometheus + Grafana monitoring add-on.
+# Enabled via `camunda monitoring enable`. Scrapes Zeebe/orchestration and the
+# connectors runtime (/actuator/prometheus) plus Elasticsearch (via exporter),
+# and ships pre-provisioned Grafana dashboards. Local lab only — no auth beyond
+# Grafana admin/admin. Bind-mount sources are absolute paths templated at write
+# time (__OVERLAYS_DIR__) because Compose resolves relative mounts against the
+# project dir, not this override file's dir.
+services:
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: camunda-lab-prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=2h
+    volumes:
+      - __OVERLAYS_DIR__/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9490:9090"
+    restart: unless-stopped
+    networks:
+      - camunda-platform
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: camunda-lab-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+    volumes:
+      - __OVERLAYS_DIR__/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - __OVERLAYS_DIR__/monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - camunda-platform
+
+  # Best-effort: only reports when the lab publishes Elasticsearch on the network.
+  elasticsearch-exporter:
+    image: quay.io/prometheuscommunity/elasticsearch-exporter:v1.7.0
+    container_name: camunda-lab-es-exporter
+    command:
+      - --es.uri=http://elasticsearch:9200
+      - --es.all
+      - --es.indices
+    restart: unless-stopped
+    networks:
+      - camunda-platform

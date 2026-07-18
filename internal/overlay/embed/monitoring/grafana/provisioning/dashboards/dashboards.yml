@@ -1,0 +1,14 @@
+# camunda-lab — provision the bundled starter dashboards from disk.
+apiVersion: 1
+
+providers:
+  - name: camunda-lab
+    orgId: 1
+    folder: Camunda Lab
+    type: file
+    disableDeletion: false
+    allowUiUpdates: true
+    updateIntervalSeconds: 30
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false

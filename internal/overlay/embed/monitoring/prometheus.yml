@@ -1,0 +1,30 @@
+# camunda-lab Prometheus config — best-effort per Camunda minor. Edit freely;
+# `camunda monitoring enable` rewrites this file only if you re-run it, so a
+# local copy under ~/.camunda-lab/overlays/monitoring/ survives restarts.
+#
+# Camunda 8 exposes Spring Boot Actuator metrics on the management port 9600 at
+# /actuator/prometheus. Service names differ by minor: 8.8+ publish the
+# consolidated cluster as the `orchestration` service; 8.5–8.7 use `zeebe`.
+# Unknown targets simply show as "down" in Prometheus — harmless for a lab.
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: orchestration
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["orchestration:9600", "zeebe:9600"]
+
+  - job_name: connectors
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["connectors:8080"]
+
+  - job_name: elasticsearch
+    static_configs:
+      - targets: ["elasticsearch-exporter:9114"]

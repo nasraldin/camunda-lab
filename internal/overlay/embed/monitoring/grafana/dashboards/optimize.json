@@ -1,0 +1,33 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "graphTooltip": 0,
+  "schemaVersion": 39,
+  "tags": ["camunda-lab", "optimize"],
+  "title": "Camunda Lab — Optimize (best-effort)",
+  "uid": "camunda-lab-optimize",
+  "time": { "from": "now-1h", "to": "now" },
+  "timezone": "",
+  "templating": { "list": [] },
+  "panels": [
+    {
+      "type": "text",
+      "title": "About",
+      "gridPos": { "h": 4, "w": 24, "x": 0, "y": 0 },
+      "options": {
+        "mode": "markdown",
+        "content": "Optimize only runs in the **full** profile and does not expose Actuator metrics on every minor. This dashboard is best-effort: add an `optimize` scrape job to `prometheus.yml` and panels here if your version publishes `/actuator/prometheus`."
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "JVM heap used (bytes)",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 4 },
+      "datasource": null,
+      "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+      "targets": [
+        { "expr": "jvm_memory_used_bytes{job=\"optimize\"}", "legendFormat": "{{area}} {{id}}" }
+      ]
+    }
+  ]
+}

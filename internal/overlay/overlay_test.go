@@ -63,7 +63,7 @@ func TestComposeOverrideFiles810Full(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("CAMUNDA_LAB_HOME", home)
 	paths.Reset()
-	files, err := overlay.ComposeOverrideFiles("8.10", "full", false)
+	files, err := overlay.ComposeOverrideFiles("8.10", "full", false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -83,7 +83,7 @@ func TestComposeOverrideFiles89Full(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("CAMUNDA_LAB_HOME", home)
 	paths.Reset()
-	files, err := overlay.ComposeOverrideFiles("8.9", "full", false)
+	files, err := overlay.ComposeOverrideFiles("8.9", "full", false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -100,7 +100,7 @@ func TestComposeOverrideFiles89Full(t *testing.T) {
 }
 
 func TestComposeOverrideFiles810LightNone(t *testing.T) {
-	files, err := overlay.ComposeOverrideFiles("8.10", "light", false)
+	files, err := overlay.ComposeOverrideFiles("8.10", "light", false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -110,7 +110,7 @@ func TestComposeOverrideFiles810LightNone(t *testing.T) {
 }
 
 func TestComposeOverrideFiles89LightNone(t *testing.T) {
-	files, err := overlay.ComposeOverrideFiles("8.9", "light", false)
+	files, err := overlay.ComposeOverrideFiles("8.9", "light", false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -120,7 +120,7 @@ func TestComposeOverrideFiles89LightNone(t *testing.T) {
 }
 
 func TestComposeOverrideFilesModelerNone(t *testing.T) {
-	files, err := overlay.ComposeOverrideFiles("8.9", "modeler", false)
+	files, err := overlay.ComposeOverrideFiles("8.9", "modeler", false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -133,7 +133,7 @@ func TestComposeOverrideFiles89LightAI(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("CAMUNDA_LAB_HOME", home)
 	paths.Reset()
-	files, err := overlay.ComposeOverrideFiles("8.9", "light", true)
+	files, err := overlay.ComposeOverrideFiles("8.9", "light", true, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -143,9 +143,44 @@ func TestComposeOverrideFiles89LightAI(t *testing.T) {
 	}
 }
 
+func TestComposeOverrideFilesMonitoring(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("CAMUNDA_LAB_HOME", home)
+	paths.Reset()
+	files, err := overlay.ComposeOverrideFiles("8.9", "light", false, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bases := basenames(files)
+	if len(bases) != 1 || bases[0] != "monitoring.yaml" {
+		t.Fatalf("%v", bases)
+	}
+	// The overlay must be templated with the absolute overlays dir (no placeholder left).
+	data, err := os.ReadFile(files[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(data), "__OVERLAYS_DIR__") {
+		t.Fatalf("placeholder not replaced in %s", files[0])
+	}
+	if !strings.Contains(string(data), paths.OverlaysDir()) {
+		t.Fatalf("absolute overlays dir missing in %s", files[0])
+	}
+	// Provisioning assets must be extracted to disk for the bind mounts.
+	for _, rel := range []string{
+		"monitoring/prometheus.yml",
+		"monitoring/grafana/provisioning/datasources/prometheus.yml",
+		"monitoring/grafana/dashboards/zeebe.json",
+	} {
+		if _, err := os.Stat(filepath.Join(paths.OverlaysDir(), rel)); err != nil {
+			t.Fatalf("missing asset %s: %v", rel, err)
+		}
+	}
+}
+
 func TestOverlaysInSync(t *testing.T) {
 	root := repoRoot(t)
-	names := []string{"elasticsearch-8.10.yaml", "elasticsearch-cors.yaml", "elasticvue.yaml", "http-headers.yaml", "connectors-ai-secrets.yaml"}
+	names := []string{"elasticsearch-8.10.yaml", "elasticsearch-cors.yaml", "elasticvue.yaml", "http-headers.yaml", "connectors-ai-secrets.yaml", "monitoring.yaml"}
 	for _, name := range names {
 		embedPath := filepath.Join(root, "internal", "overlay", "embed", name)
 		repoPath := filepath.Join(root, "overlays", name)

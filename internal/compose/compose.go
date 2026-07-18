@@ -28,6 +28,7 @@ func BuildArgs(subcommand, project string, files, envFiles []string, extra ...st
 type Engine interface {
 	Up(workDir string, files, envFiles []string, project string) error
 	UpService(workDir string, files, envFiles []string, project, service string) error
+	RemoveByName(names ...string) error
 	Down(workDir string, files []string, project string, volumes bool) error
 	Ps(workDir, project string) (string, error)
 	PsJSON(workDir, project string) (string, error)
@@ -58,6 +59,20 @@ func (r *Runner) UpService(workDir string, files, envFiles []string, project, se
 	_, err := r.Exec(workDir, append([]string{"docker"}, args...))
 	if err != nil {
 		return fmt.Errorf("docker compose up %s: %w", service, err)
+	}
+	return nil
+}
+
+// RemoveByName force-removes containers by name (docker rm -f), ignoring any
+// that don't exist. Used to tear down overlay add-ons whose services are no
+// longer in the active compose file set. Containers must set container_name.
+func (r *Runner) RemoveByName(names ...string) error {
+	if len(names) == 0 {
+		return nil
+	}
+	args := append([]string{"docker", "rm", "-f"}, names...)
+	if _, err := r.Exec("", args); err != nil {
+		return fmt.Errorf("docker rm -f: %w", err)
 	}
 	return nil
 }
