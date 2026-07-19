@@ -10,11 +10,11 @@ import (
 
 // Result is a markdown explanation.
 type Result struct {
-	Business   string
-	Technical  string
-	Risks      string
-	Missing    string
-	Optimize   string
+	Business  string
+	Technical string
+	Risks     string
+	Missing   string
+	Optimize  string
 }
 
 // Offline builds a deterministic explanation from IR (+ lint risks).

@@ -61,14 +61,14 @@ type xmlProcess struct {
 }
 
 type xmlNode struct {
-	ID             string     `xml:"id,attr"`
-	Name           string     `xml:"name,attr"`
-	Default        string     `xml:"default,attr"`
-	AttachedToRef  string     `xml:"attachedToRef,attr"`
-	TimerEventDef  []xmlTimer `xml:"timerEventDefinition"`
-	ErrorEventDef  []xmlError `xml:"errorEventDefinition"`
-	MessageEventDef []xmlMsgEv `xml:"messageEventDefinition"`
-	ExtensionElements xmlExt  `xml:"extensionElements"`
+	ID                string     `xml:"id,attr"`
+	Name              string     `xml:"name,attr"`
+	Default           string     `xml:"default,attr"`
+	AttachedToRef     string     `xml:"attachedToRef,attr"`
+	TimerEventDef     []xmlTimer `xml:"timerEventDefinition"`
+	ErrorEventDef     []xmlError `xml:"errorEventDefinition"`
+	MessageEventDef   []xmlMsgEv `xml:"messageEventDefinition"`
+	ExtensionElements xmlExt     `xml:"extensionElements"`
 }
 
 type xmlTimer struct {
@@ -90,9 +90,9 @@ type xmlExt struct {
 }
 
 type xmlTaskDef struct {
-	XMLName  xml.Name
-	Type     string `xml:"type,attr"`
-	Retries  string `xml:"retries,attr"`
+	XMLName xml.Name
+	Type    string `xml:"type,attr"`
+	Retries string `xml:"retries,attr"`
 }
 
 type xmlFlow struct {
@@ -118,11 +118,11 @@ func normalize(doc xmlDoc) Model {
 	add := func(typ string, nodes []xmlNode) {
 		for _, n := range nodes {
 			el := Element{
-				ID:         n.ID,
-				Type:       typ,
-				Name:       n.Name,
+				ID:          n.ID,
+				Type:        typ,
+				Name:        n.Name,
 				DefaultFlow: n.Default,
-				AttachedTo: n.AttachedToRef,
+				AttachedTo:  n.AttachedToRef,
 			}
 			for _, t := range n.TimerEventDef {
 				el.Timer = firstNonEmpty(t.TimeDuration, t.TimeDate, t.TimeCycle)

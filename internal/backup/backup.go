@@ -24,12 +24,12 @@ type Manifest struct {
 
 // Options for Create.
 type Options struct {
-	LabHome         string
-	ProjectDir      string // optional
-	OutPath         string
-	IncludeSecrets  bool
-	LabVersion      string
-	LabProfile      string
+	LabHome        string
+	ProjectDir     string // optional
+	OutPath        string
+	IncludeSecrets bool
+	LabVersion     string
+	LabProfile     string
 }
 
 // Create writes a gzip tar backup.

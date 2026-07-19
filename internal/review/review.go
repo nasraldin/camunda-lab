@@ -16,12 +16,12 @@ type Result struct {
 
 // Options for review.
 type Options struct {
-	File        string
-	FailOn      string
-	Ignore      []string
-	AI          bool
-	AIRequired  bool
-	AIClient    Client // optional; if nil and AI, returns error unless tests inject
+	File       string
+	FailOn     string
+	Ignore     []string
+	AI         bool
+	AIRequired bool
+	AIClient   Client // optional; if nil and AI, returns error unless tests inject
 }
 
 // Client generates AI review text (injected for tests).

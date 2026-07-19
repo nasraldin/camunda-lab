@@ -860,11 +860,11 @@ func (h *handler) runBackup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
-		"ok":             true,
-		"path":           out,
-		"files":          len(m.Files),
+		"ok":              true,
+		"path":            out,
+		"files":           len(m.Files),
 		"includesSecrets": m.IncludesSecrets,
-		"cli":            "camunda backup -o " + out,
+		"cli":             "camunda backup -o " + out,
 	})
 }
 

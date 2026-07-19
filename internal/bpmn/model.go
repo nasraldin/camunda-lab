@@ -11,17 +11,17 @@ type Model struct {
 
 // Element is a flow node (task, event, gateway, …).
 type Element struct {
-	ID           string
-	Type         string // startEvent, endEvent, serviceTask, userTask, scriptTask, exclusiveGateway, parallelGateway, inclusiveGateway, intermediateCatchEvent, boundaryEvent, …
-	Name         string
-	DefaultFlow  string // exclusive gateway default
-	Timer        string // timer duration/date/cycle if present
-	RetryCount   string // zeebe:taskDefinition retries or similar
-	ErrorRef     string
-	MessageRef   string
-	JobType      string // zeebe task type
-	AttachedTo   string // boundary event
-	EventDefs    []string
+	ID          string
+	Type        string // startEvent, endEvent, serviceTask, userTask, scriptTask, exclusiveGateway, parallelGateway, inclusiveGateway, intermediateCatchEvent, boundaryEvent, …
+	Name        string
+	DefaultFlow string // exclusive gateway default
+	Timer       string // timer duration/date/cycle if present
+	RetryCount  string // zeebe:taskDefinition retries or similar
+	ErrorRef    string
+	MessageRef  string
+	JobType     string // zeebe task type
+	AttachedTo  string // boundary event
+	EventDefs   []string
 }
 
 // Flow is a sequence flow.

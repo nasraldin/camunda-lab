@@ -31,24 +31,24 @@ type Client struct {
 
 // ProcessDefinition is a deployed process summary.
 type ProcessDefinition struct {
-	Key                string
+	Key                 string
 	ProcessDefinitionID string
-	Name               string
-	Version            int
-	ResourceName       string
-	TenantID           string
+	Name                string
+	Version             int
+	ResourceName        string
+	TenantID            string
 }
 
 // Incident is a cluster incident.
 type Incident struct {
-	Key                string
-	ProcessInstanceKey string
-	ElementID          string
-	ErrorType          string
-	ErrorMessage       string
-	State              string
-	CreationTime       string
-	JobKey             string
+	Key                 string
+	ProcessInstanceKey  string
+	ElementID           string
+	ErrorType           string
+	ErrorMessage        string
+	State               string
+	CreationTime        string
+	JobKey              string
 	ProcessDefinitionID string
 }
 

@@ -22,8 +22,8 @@ func TestRejectInlineSecret(t *testing.T) {
 func TestSaveLoadRemote(t *testing.T) {
 	dir := t.TempDir()
 	p := Profile{
-		Name: "prod",
-		Kind: "remote",
+		Name:      "prod",
+		Kind:      "remote",
 		Endpoints: map[string]string{"orchestration": "https://camunda.example"},
 		Auth:      AuthRefs{ClientIDEnv: "CAMUNDA_CLIENT_ID", ClientSecretEnv: "CAMUNDA_CLIENT_SECRET"},
 	}

@@ -146,4 +146,3 @@ func TestProbeTargets(t *testing.T) {
 		t.Fatal("IsBrowserApp mismatch")
 	}
 }
-
