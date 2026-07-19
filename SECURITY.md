@@ -2,11 +2,11 @@
 
 ## Supported versions
 
-| Version | Supported |
-| --- | --- |
-| Latest release (`v*`) | Yes |
-| `main` | Best-effort |
-| Older tags | No |
+| Version               | Supported   |
+| --------------------- | ----------- |
+| Latest release (`v*`) | Yes         |
+| `main`                | Best-effort |
+| Older tags            | No          |
 
 Camunda Lab is a **local development** CLI. It downloads official Camunda Compose distributions and runs them via Docker. Treat the lab as untrusted local tooling: do not expose it to the public internet.
 

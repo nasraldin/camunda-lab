@@ -13,9 +13,9 @@ This document is the product-direction contract for roadmap and implementation p
 
 > **Camunda Lab starts as the easiest way to run and manage local Camunda environments, then evolves into a productivity toolkit for developers and platform engineers. It complements official Camunda cluster CLIs rather than replacing them.**
 
-| Horizon | Value proposition |
-| --- | --- |
-| **Today (Phase 1)** | Best local Camunda developer experience — official Compose, one CLI, Lab UI, AI/MCP glue |
+| Horizon                  | Value proposition                                                                         |
+| ------------------------ | ----------------------------------------------------------------------------------------- |
+| **Today (Phase 1)**      | Best local Camunda developer experience — official Compose, one CLI, Lab UI, AI/MCP glue  |
 | **Tomorrow (Phase 2–3)** | Developer and platform toolkit — analysis, diagnostics, GitOps-style preview, ops helpers |
 
 **Naming:** Always brand as **Camunda Lab** / command **`camunda`**. Do not brand features as `camctl`, `c8`, or other third-party CLI names. Official tools may be named only when stating complementarity boundaries.
@@ -24,24 +24,24 @@ This document is the product-direction contract for roadmap and implementation p
 
 ## Locked decisions
 
-| Topic | Choice |
-| --- | --- |
-| Product direction | **B** — lab-first, grow into toolkit |
-| Binary | `camunda` |
-| Lab home | `~/.camunda-lab` (or `CAMUNDA_LAB_HOME`) |
-| Project config | `.camunda.yaml` at repo root (new in Phase 1 `init`) |
-| Cluster resource management | Official tooling owns deploy / start instance / generic resource CRUD |
-| Our lane | Lab lifecycle, DX on project files, ops/diagnostics, env context, thin kubectl helpers |
-| Phase 2 UI | CLI-first; Lab UI surfaces are optional follow-ons |
-| Phase 3 cluster APIs | Orchestration / Operate-compatible HTTP against **active env** (lab by default) |
-| Secrets in config | Env var **names** only in yaml; never raw secrets in `.camunda.yaml` or env profiles |
-| AI | Optional; deterministic/offline path first; no paid LLM calls in CI |
+| Topic                       | Choice                                                                                 |
+| --------------------------- | -------------------------------------------------------------------------------------- |
+| Product direction           | **B** — lab-first, grow into toolkit                                                   |
+| Binary                      | `camunda`                                                                              |
+| Lab home                    | `~/.camunda-lab` (or `CAMUNDA_LAB_HOME`)                                               |
+| Project config              | `.camunda.yaml` at repo root (new in Phase 1 `init`)                                   |
+| Cluster resource management | Official tooling owns deploy / start instance / generic resource CRUD                  |
+| Our lane                    | Lab lifecycle, DX on project files, ops/diagnostics, env context, thin kubectl helpers |
+| Phase 2 UI                  | CLI-first; Lab UI surfaces are optional follow-ons                                     |
+| Phase 3 cluster APIs        | Orchestration / Operate-compatible HTTP against **active env** (lab by default)        |
+| Secrets in config           | Env var **names** only in yaml; never raw secrets in `.camunda.yaml` or env profiles   |
+| AI                          | Optional; deterministic/offline path first; no paid LLM calls in CI                    |
 
 ---
 
 ## Complementarity rules
 
-**Official cluster CLIs** talk *to* a cluster: deploy BPMN, watch files, inspect/start instances, manage jobs.
+**Official cluster CLIs** talk _to_ a cluster: deploy BPMN, watch files, inspect/start instances, manage jobs.
 
 **Camunda Lab** gets the cluster **up**, then adds:
 
@@ -72,29 +72,29 @@ Plan: [../plans/2026-07-17-project-init.md](../plans/2026-07-17-project-init.md)
 
 ### Phase 2 — High-value developer experience
 
-| Command | Role |
-| --- | --- |
-| `camunda diff` | Semantic BPMN/DMN/form diff |
-| `camunda lint` | Deterministic BPMN rules |
-| `camunda review` | Lint + optional AI review |
-| `camunda explain` | Business/technical summary |
-| `camunda test generate` | Test skeletons from BPMN |
-| `camunda scan` | Secrets / credential scan |
-| `camunda doctor --deep` | Component-level lab health |
+| Command                 | Role                        |
+| ----------------------- | --------------------------- |
+| `camunda diff`          | Semantic BPMN/DMN/form diff |
+| `camunda lint`          | Deterministic BPMN rules    |
+| `camunda review`        | Lint + optional AI review   |
+| `camunda explain`       | Business/technical summary  |
+| `camunda test generate` | Test skeletons from BPMN    |
+| `camunda scan`          | Secrets / credential scan   |
+| `camunda doctor --deep` | Component-level lab health  |
 
 Shared foundation: `internal/bpmn` IR used by lint/diff/explain/review/testgen.
 
 ### Phase 3 — Platform engineering
 
-| Command | Role |
-| --- | --- |
-| `camunda env` | Named lab / remote profiles |
-| `camunda plan` | Deployment preview (does not deploy) |
-| `camunda drift` | Git vs cluster drift |
-| `camunda backup` / `restore` | Lab-oriented snapshot MVP |
-| `camunda incidents` | Incident explorer helpers |
-| `camunda trace` | Live process instance timeline |
-| `camunda k8s` | Thin kubectl helpers for Camunda Helm labels |
+| Command                      | Role                                         |
+| ---------------------------- | -------------------------------------------- |
+| `camunda env`                | Named lab / remote profiles                  |
+| `camunda plan`               | Deployment preview (does not deploy)         |
+| `camunda drift`              | Git vs cluster drift                         |
+| `camunda backup` / `restore` | Lab-oriented snapshot MVP                    |
+| `camunda incidents`          | Incident explorer helpers                    |
+| `camunda trace`              | Live process instance timeline               |
+| `camunda k8s`                | Thin kubectl helpers for Camunda Helm labels |
 
 **Implementation order after docs:** `init` → BPMN IR → lint → diff → scan → test generate → explain/review → doctor --deep → env → plan/drift → incidents/trace → backup → k8s.
 

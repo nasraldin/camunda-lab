@@ -23,16 +23,16 @@
 
 ## File map
 
-| File | Responsibility |
-|------|----------------|
-| `internal/project/config.go` | `.camunda.yaml` structs, Load/Save/Validate |
-| `internal/project/config_test.go` | Schema + validation tests |
-| `internal/project/scaffold.go` | Create dirs, files, README template |
-| `internal/project/scaffold_test.go` | Temp-dir scaffold tests |
-| `internal/cli/init.go` | `camunda init` command |
-| `internal/cli/root.go` | Register `init` |
-| `docs/cli-reference.md` | Document `init` |
-| `docs/roadmap.md` | Mark init shipped when done (follow-up) |
+| File                                | Responsibility                              |
+| ----------------------------------- | ------------------------------------------- |
+| `internal/project/config.go`        | `.camunda.yaml` structs, Load/Save/Validate |
+| `internal/project/config_test.go`   | Schema + validation tests                   |
+| `internal/project/scaffold.go`      | Create dirs, files, README template         |
+| `internal/project/scaffold_test.go` | Temp-dir scaffold tests                     |
+| `internal/cli/init.go`              | `camunda init` command                      |
+| `internal/cli/root.go`              | Register `init`                             |
+| `docs/cli-reference.md`             | Document `init`                             |
+| `docs/roadmap.md`                   | Mark init shipped when done (follow-up)     |
 
 ---
 
@@ -60,13 +60,13 @@
 
 ```yaml
 name: my-project
-camundaVersion: "8.9"          # hint only
+camundaVersion: '8.9' # hint only
 paths:
   bpmn: bpmn
   dmn: dmn
   forms: forms
 lab:
-  profile: light               # hint for humans / future tooling
+  profile: light # hint for humans / future tooling
   resources: balanced
 ```
 
@@ -75,10 +75,12 @@ lab:
 ### Task 1: Config types + validation
 
 **Files:**
+
 - Create: `internal/project/config.go`
 - Create: `internal/project/config_test.go`
 
 **Interfaces:**
+
 - `type Config struct { Name string; CamundaVersion string; Paths Paths; Lab LabHints }`
 - `func Load(path string) (Config, error)`
 - `func (c Config) Validate() error`
@@ -93,10 +95,12 @@ lab:
 ### Task 2: Scaffold writer
 
 **Files:**
+
 - Create: `internal/project/scaffold.go`
 - Create: `internal/project/scaffold_test.go`
 
 **Interfaces:**
+
 - `type ScaffoldOpts struct { Dir string; Name string; Version string; Profile string; Resources string; Force bool }`
 - `func Scaffold(opts ScaffoldOpts) error`
 
@@ -111,6 +115,7 @@ lab:
 ### Task 3: CLI command
 
 **Files:**
+
 - Create: `internal/cli/init.go`
 - Modify: `internal/cli/root.go`
 
@@ -121,14 +126,14 @@ camunda init ./order-service --name orders --version 8.9 --yes
 camunda init ./order-service --force
 ```
 
-| Flag | Meaning |
-|------|---------|
-| `--name` | Project name (default: basename of dir) |
-| `--version` | `camundaVersion` hint (default: active lab version if config exists, else `8.9`) |
-| `--profile` | lab.profile hint |
-| `--resources` | lab.resources hint |
-| `--yes` / `-y` | Non-interactive |
-| `--force` | Allow non-empty target |
+| Flag           | Meaning                                                                          |
+| -------------- | -------------------------------------------------------------------------------- |
+| `--name`       | Project name (default: basename of dir)                                          |
+| `--version`    | `camundaVersion` hint (default: active lab version if config exists, else `8.9`) |
+| `--profile`    | lab.profile hint                                                                 |
+| `--resources`  | lab.resources hint                                                               |
+| `--yes` / `-y` | Non-interactive                                                                  |
+| `--force`      | Allow non-empty target                                                           |
 
 - [ ] **Step 1: Implement** `newInitCmd` with flags; prompt when TTY and flags missing
 - [ ] **Step 2: Register** on root

@@ -46,16 +46,16 @@ Warnings
 
 ## File map
 
-| File | Responsibility |
-|------|----------------|
-| `internal/plan/plan.go` | Build plan from local + remote inventories |
-| `internal/plan/remote.go` | List definitions API client |
-| `internal/plan/local.go` | Scan project resources + digests |
-| `internal/plan/format.go` | Text/JSON |
-| `internal/plan/plan_test.go` | Fake remote + temp project |
-| `internal/cli/plan.go` | `camunda plan` |
-| `internal/cli/root.go` | Register |
-| `docs/cli-reference.md` | Emphasize preview-only |
+| File                         | Responsibility                             |
+| ---------------------------- | ------------------------------------------ |
+| `internal/plan/plan.go`      | Build plan from local + remote inventories |
+| `internal/plan/remote.go`    | List definitions API client                |
+| `internal/plan/local.go`     | Scan project resources + digests           |
+| `internal/plan/format.go`    | Text/JSON                                  |
+| `internal/plan/plan_test.go` | Fake remote + temp project                 |
+| `internal/cli/plan.go`       | `camunda plan`                             |
+| `internal/cli/root.go`       | Register                                   |
+| `docs/cli-reference.md`      | Emphasize preview-only                     |
 
 ---
 

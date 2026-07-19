@@ -36,15 +36,15 @@
 
 ## File map
 
-| File | Responsibility |
-|------|----------------|
-| `internal/backup/backup.go` | Create archive |
-| `internal/backup/restore.go` | Restore with checks |
-| `internal/backup/manifest.go` | Manifest schema |
-| `internal/backup/backup_test.go` | Temp lab home round-trip |
-| `internal/cli/backup.go` | `backup` + `restore` commands |
-| `internal/cli/root.go` | Register |
-| `docs/cli-reference.md` | Docs + warnings |
+| File                             | Responsibility                |
+| -------------------------------- | ----------------------------- |
+| `internal/backup/backup.go`      | Create archive                |
+| `internal/backup/restore.go`     | Restore with checks           |
+| `internal/backup/manifest.go`    | Manifest schema               |
+| `internal/backup/backup_test.go` | Temp lab home round-trip      |
+| `internal/cli/backup.go`         | `backup` + `restore` commands |
+| `internal/cli/root.go`           | Register                      |
+| `docs/cli-reference.md`          | Docs + warnings               |
 
 ---
 

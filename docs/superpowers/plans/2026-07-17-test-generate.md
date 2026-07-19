@@ -24,16 +24,16 @@
 
 ## File map
 
-| File | Responsibility |
-|------|----------------|
-| `internal/testgen/generate.go` | Entry + lang switch |
-| `internal/testgen/java.go` | Camunda Process Test class template |
-| `internal/testgen/js.go` | Jest-style worker stub template |
-| `internal/testgen/templates/*.tmpl` | Embedded templates |
-| `internal/testgen/generate_test.go` | Assert files + key symbols |
-| `internal/cli/test.go` | `camunda test generate` |
-| `internal/cli/root.go` | Register `test` parent |
-| `docs/cli-reference.md` | Docs |
+| File                                | Responsibility                      |
+| ----------------------------------- | ----------------------------------- |
+| `internal/testgen/generate.go`      | Entry + lang switch                 |
+| `internal/testgen/java.go`          | Camunda Process Test class template |
+| `internal/testgen/js.go`            | Jest-style worker stub template     |
+| `internal/testgen/templates/*.tmpl` | Embedded templates                  |
+| `internal/testgen/generate_test.go` | Assert files + key symbols          |
+| `internal/cli/test.go`              | `camunda test generate`             |
+| `internal/cli/root.go`              | Register `test` parent              |
+| `docs/cli-reference.md`             | Docs                                |
 
 ---
 

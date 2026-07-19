@@ -40,15 +40,15 @@ Payment          ← INCIDENT: job timeout
 
 ## File map
 
-| File | Responsibility |
-|------|----------------|
-| `internal/trace/trace.go` | Fetch timeline → model |
-| `internal/trace/render.go` | ASCII tree |
-| `internal/trace/follow.go` | Poll loop |
-| `internal/trace/trace_test.go` | Fixtures |
-| `internal/cli/trace.go` | CLI |
-| `internal/cli/root.go` | Register |
-| `docs/cli-reference.md` | Docs |
+| File                           | Responsibility         |
+| ------------------------------ | ---------------------- |
+| `internal/trace/trace.go`      | Fetch timeline → model |
+| `internal/trace/render.go`     | ASCII tree             |
+| `internal/trace/follow.go`     | Poll loop              |
+| `internal/trace/trace_test.go` | Fixtures               |
+| `internal/cli/trace.go`        | CLI                    |
+| `internal/cli/root.go`         | Register               |
+| `docs/cli-reference.md`        | Docs                   |
 
 ---
 

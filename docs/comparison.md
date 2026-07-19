@@ -37,7 +37,7 @@ Use 8 Run when you want minimal. Use this lab when you want the Compose profiles
 
 ## Compared to official cluster CLIs
 
-Official tools such as [`c8ctl`](https://docs.camunda.io/docs/apis-tools/c8ctl/getting-started/) talk *to* a cluster: deploy BPMN, watch files, inspect instances.
+Official tools such as [`c8ctl`](https://docs.camunda.io/docs/apis-tools/c8ctl/getting-started/) talk _to_ a cluster: deploy BPMN, watch files, inspect instances.
 
 Camunda Lab gets the cluster **up**. Then:
 
@@ -47,7 +47,7 @@ camunda tools c8ctl install
 
 …and use the official CLI against the lab. We don’t try to replace resource management.
 
-Over time Lab also grows into a **developer and platform toolkit** (project scaffold, semantic BPMN diff/lint/review, deeper doctor, env profiles, deploy *preview*, drift, incident/trace helpers, thin kubectl wrappers). Those features fill gaps official CLIs intentionally leave — analysis, diagnostics, and GitOps-style preview — while deploy/start-instance stay with official tooling. See the [roadmap](roadmap.md) and [platform toolkit vision](https://github.com/nasraldin/camunda-lab/blob/main/docs/superpowers/specs/2026-07-17-platform-toolkit-vision.md).
+Over time Lab also grows into a **developer and platform toolkit** (project scaffold, semantic BPMN diff/lint/review, deeper doctor, env profiles, deploy _preview_, drift, incident/trace helpers, thin kubectl wrappers). Those features fill gaps official CLIs intentionally leave — analysis, diagnostics, and GitOps-style preview — while deploy/start-instance stay with official tooling. See the [roadmap](roadmap.md) and [platform toolkit vision](https://github.com/nasraldin/camunda-lab/blob/main/docs/superpowers/specs/2026-07-17-platform-toolkit-vision.md).
 
 ## Who this is for
 

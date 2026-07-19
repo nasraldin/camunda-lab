@@ -28,12 +28,12 @@ name: prod
 kind: remote
 endpoints:
   orchestration: https://camunda.example.com
-  operate: https://camunda.example.com/operate   # optional if consolidated
+  operate: https://camunda.example.com/operate # optional if consolidated
 auth:
   # values read from process environment at runtime
   clientIdEnv: CAMUNDA_CLIENT_ID
   clientSecretEnv: CAMUNDA_CLIENT_SECRET
-  tokenUrlEnv: CAMUNDA_TOKEN_URL   # optional
+  tokenUrlEnv: CAMUNDA_TOKEN_URL # optional
 ```
 
 Lab kind may omit endpoints and resolve via `internal/urls` + lab config.
@@ -42,16 +42,16 @@ Lab kind may omit endpoints and resolve via `internal/urls` + lab config.
 
 ## File map
 
-| File | Responsibility |
-|------|----------------|
-| `internal/env/profile.go` | Types, Load, Save, List, Validate |
-| `internal/env/active.go` | Get/Set active profile name |
-| `internal/env/resolve.go` | Resolve endpoints + auth for callers |
-| `internal/env/env_test.go` | Validation + resolve tests |
-| `internal/paths/paths.go` | `EnvsDir()` under lab home |
-| `internal/cli/env.go` | `add|list|use|show|remove` |
-| `internal/cli/root.go` | Register |
-| `docs/cli-reference.md` | Docs |
+| File                       | Responsibility                       |
+| -------------------------- | ------------------------------------ |
+| `internal/env/profile.go`  | Types, Load, Save, List, Validate    |
+| `internal/env/active.go`   | Get/Set active profile name          |
+| `internal/env/resolve.go`  | Resolve endpoints + auth for callers |
+| `internal/env/env_test.go` | Validation + resolve tests           |
+| `internal/paths/paths.go`  | `EnvsDir()` under lab home           |
+| `internal/cli/env.go`      | `add                                 | list | use | show | remove` |
+| `internal/cli/root.go`     | Register                             |
+| `docs/cli-reference.md`    | Docs                                 |
 
 ---
 

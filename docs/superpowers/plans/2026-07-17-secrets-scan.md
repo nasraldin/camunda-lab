@@ -23,29 +23,29 @@
 
 ## Detection categories (MVP)
 
-| ID | Examples |
-|----|----------|
-| `secret.client` | `client_secret`, `clientSecret`, `CLIENT_SECRET=` |
-| `secret.password` | `password:`, `PASSWORD=` |
-| `secret.token` | `webhook`, `bearer `, `api_key`, `apiKey` |
-| `secret.oauth` | `refresh_token`, long JWT-shaped strings in files |
+| ID                    | Examples                                                    |
+| --------------------- | ----------------------------------------------------------- |
+| `secret.client`       | `client_secret`, `clientSecret`, `CLIENT_SECRET=`           |
+| `secret.password`     | `password:`, `PASSWORD=`                                    |
+| `secret.token`        | `webhook`, `bearer `, `api_key`, `apiKey`                   |
+| `secret.oauth`        | `refresh_token`, long JWT-shaped strings in files           |
 | `secret.high-entropy` | Assignment-like strings with high Shannon entropy (tunable) |
 
 ---
 
 ## File map
 
-| File | Responsibility |
-|------|----------------|
-| `internal/scan/walk.go` | Directory walk + ignore |
-| `internal/scan/rules.go` | Patterns |
-| `internal/scan/scan.go` | Run + Finding type |
-| `internal/scan/report.go` | Text/JSON masked |
+| File                         | Responsibility             |
+| ---------------------------- | -------------------------- |
+| `internal/scan/walk.go`      | Directory walk + ignore    |
+| `internal/scan/rules.go`     | Patterns                   |
+| `internal/scan/scan.go`      | Run + Finding type         |
+| `internal/scan/report.go`    | Text/JSON masked           |
 | `internal/scan/scan_test.go` | Fixtures with fake secrets |
-| `testdata/scan/` | Sample dirty/clean trees |
-| `internal/cli/scan.go` | CLI |
-| `internal/cli/root.go` | Register |
-| `docs/cli-reference.md` | Docs |
+| `testdata/scan/`             | Sample dirty/clean trees   |
+| `internal/cli/scan.go`       | CLI                        |
+| `internal/cli/root.go`       | Register                   |
+| `docs/cli-reference.md`      | Docs                       |
 
 ---
 

@@ -38,14 +38,14 @@ Table columns: ID, Created, Job/Worker, Error (truncated), Process, Duration.
 
 ## File map
 
-| File | Responsibility |
-|------|----------------|
-| `internal/incidents/client.go` | List/Get/Retry |
-| `internal/incidents/format.go` | Table/JSON |
-| `internal/incidents/incidents_test.go` | Mock HTTP |
-| `internal/cli/incidents.go` | Commands |
-| `internal/cli/root.go` | Register |
-| `docs/cli-reference.md` | Docs |
+| File                                   | Responsibility |
+| -------------------------------------- | -------------- |
+| `internal/incidents/client.go`         | List/Get/Retry |
+| `internal/incidents/format.go`         | Table/JSON     |
+| `internal/incidents/incidents_test.go` | Mock HTTP      |
+| `internal/cli/incidents.go`            | Commands       |
+| `internal/cli/root.go`                 | Register       |
+| `docs/cli-reference.md`                | Docs           |
 
 ---
 

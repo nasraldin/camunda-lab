@@ -21,9 +21,13 @@
 
 ```markdown
 ## Business Summary
+
 ## Technical Summary
+
 ## Risks
+
 ## Missing Paths
+
 ## Optimization Suggestions
 ```
 
@@ -31,15 +35,15 @@
 
 ## File map
 
-| File | Responsibility |
-|------|----------------|
-| `internal/explain/explain.go` | Offline summary from IR |
-| `internal/explain/graph.go` | Simple path / dead-end heuristics |
-| `internal/explain/ai.go` | Optional enrichment |
-| `internal/explain/explain_test.go` | Fixture snapshots |
-| `internal/cli/explain.go` | CLI |
-| `internal/cli/root.go` | Register |
-| `docs/cli-reference.md` | Docs |
+| File                               | Responsibility                    |
+| ---------------------------------- | --------------------------------- |
+| `internal/explain/explain.go`      | Offline summary from IR           |
+| `internal/explain/graph.go`        | Simple path / dead-end heuristics |
+| `internal/explain/ai.go`           | Optional enrichment               |
+| `internal/explain/explain_test.go` | Fixture snapshots                 |
+| `internal/cli/explain.go`          | CLI                               |
+| `internal/cli/root.go`             | Register                          |
+| `docs/cli-reference.md`            | Docs                              |
 
 ---
 

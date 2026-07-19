@@ -1,25 +1,25 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, type ReactNode } from 'react'
 
 type Props = {
-  title: string;
-  onClose: () => void;
-  children: ReactNode;
-  wide?: boolean;
-};
+  title: string
+  onClose: () => void
+  children: ReactNode
+  wide?: boolean
+}
 
 export function Modal({ title, onClose, children, wide }: Props) {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
+      if (e.key === 'Escape') onClose()
     }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
 
   return (
     <div className="modal-backdrop" role="presentation" onClick={onClose}>
       <div
-        className={`modal${wide ? " modal-wide" : ""}`}
+        className={`modal${wide ? ' modal-wide' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
@@ -34,5 +34,5 @@ export function Modal({ title, onClose, children, wide }: Props) {
         {children}
       </div>
     </div>
-  );
+  )
 }

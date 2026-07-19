@@ -23,17 +23,17 @@
 
 ## Deep checks (MVP)
 
-| Check | Source |
-|-------|--------|
-| Docker Engine + Compose v2 | existing |
-| Lab config + version dir | existing |
-| Compose services running / health | `compose ps` |
-| Orchestration / Operate / Tasklist / Identity / Keycloak / Connectors / ES HTTP | `urls` + GET or health paths |
-| gRPC port open (TCP dial) | urls grpc entry |
-| ElasticVue if profile exposes ES | urls |
-| MCP endpoints if `ai.enabled` | smoke warn-style |
-| Disk usage of Docker volumes for project | `docker system df` / volume inspect best-effort |
-| Overlay / version consistency notes | config vs adapter |
+| Check                                                                           | Source                                          |
+| ------------------------------------------------------------------------------- | ----------------------------------------------- |
+| Docker Engine + Compose v2                                                      | existing                                        |
+| Lab config + version dir                                                        | existing                                        |
+| Compose services running / health                                               | `compose ps`                                    |
+| Orchestration / Operate / Tasklist / Identity / Keycloak / Connectors / ES HTTP | `urls` + GET or health paths                    |
+| gRPC port open (TCP dial)                                                       | urls grpc entry                                 |
+| ElasticVue if profile exposes ES                                                | urls                                            |
+| MCP endpoints if `ai.enabled`                                                   | smoke warn-style                                |
+| Disk usage of Docker volumes for project                                        | `docker system df` / volume inspect best-effort |
+| Overlay / version consistency notes                                             | config vs adapter                               |
 
 Helm version / Ingress / License — **skip** for Compose lab (document as N/A); relevant later under `k8s`.
 
@@ -41,15 +41,15 @@ Helm version / Ingress / License — **skip** for Compose lab (document as N/A);
 
 ## File map
 
-| File | Responsibility |
-|------|----------------|
-| `internal/doctor/doctor.go` | Extend Report; call Deep when flag set |
-| `internal/doctor/deep.go` | Deep probes |
-| `internal/doctor/deep_test.go` | Mock HTTP / fake compose where possible |
-| `internal/cli/doctor.go` | `--deep`, `--timeout`, `--json` |
-| `internal/smoke/smoke.go` | Reuse helpers if useful (avoid duplication) |
-| `docs/cli-reference.md` | Docs |
-| `docs/troubleshooting.md` | Point to doctor --deep |
+| File                           | Responsibility                              |
+| ------------------------------ | ------------------------------------------- |
+| `internal/doctor/doctor.go`    | Extend Report; call Deep when flag set      |
+| `internal/doctor/deep.go`      | Deep probes                                 |
+| `internal/doctor/deep_test.go` | Mock HTTP / fake compose where possible     |
+| `internal/cli/doctor.go`       | `--deep`, `--timeout`, `--json`             |
+| `internal/smoke/smoke.go`      | Reuse helpers if useful (avoid duplication) |
+| `docs/cli-reference.md`        | Docs                                        |
+| `docs/troubleshooting.md`      | Point to doctor --deep                      |
 
 ---
 

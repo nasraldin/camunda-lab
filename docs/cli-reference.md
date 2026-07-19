@@ -3,43 +3,43 @@
 Binary: **`camunda`**. Project / Homebrew formula: **`camunda-lab`**.
 
 !!! tip "How to read this"
-    `$` lines are what you type. Output is abbreviated and will differ on your machine.
+`$` lines are what you type. Output is abbreviated and will differ on your machine.
 
 ## Command map
 
-| Command | Purpose |
-| --- | --- |
-| `init` | Scaffold a Camunda application project |
-| `install` | Download zip, configure, start |
-| `ui` | Local Lab UI (http://localhost:9090) |
-| `ai` | MCP + AI Agent connector secrets |
-| `lint` | Deterministic BPMN lint |
-| `diff` | Semantic BPMN diff (`--from`/`--to`, `--against`, or two files) |
-| `explain` | Offline BPMN summary |
-| `review` | Lint + optional AI review |
-| `test generate` | Test skeletons from BPMN (`-o` output dir) |
-| `scan` | Secrets scanner |
-| `env` | Environment profiles |
-| `plan` | Deployment preview (no deploy; needs `.camunda.yaml`, optional `--dir`) |
-| `drift` | Git/project vs cluster drift (optional `--dir`) |
-| `backup` / `restore` | Lab-oriented backup |
-| `incidents` | Incident list/retry (OIDC on full labs; auto token from lab `.env`) |
-| `trace` | Process instance timeline |
-| `k8s` | kubectl helpers for Helm releases |
-| `up` / `start` | Start |
-| `down` / `stop` | Stop (keep volumes) |
-| `restart` | Restart |
-| `status` | Config + compose ps |
-| `switch` | Change minor |
-| `profile` | light / full / modeler |
-| `resources` | small / balanced / power |
-| `urls` / `open` | Component links |
-| `logs` | Container logs |
-| `doctor` | Diagnostics (`--deep` for component probes) |
-| `wait` / `smoke` | Health |
-| `tools` | c8ctl + Modeler helpers |
-| `nuke` | Wipe lab home |
-| `version` / `about` | Meta |
+| Command              | Purpose                                                                 |
+| -------------------- | ----------------------------------------------------------------------- |
+| `init`               | Scaffold a Camunda application project                                  |
+| `install`            | Download zip, configure, start                                          |
+| `ui`                 | Local Lab UI (http://localhost:9090)                                    |
+| `ai`                 | MCP + AI Agent connector secrets                                        |
+| `lint`               | Deterministic BPMN lint                                                 |
+| `diff`               | Semantic BPMN diff (`--from`/`--to`, `--against`, or two files)         |
+| `explain`            | Offline BPMN summary                                                    |
+| `review`             | Lint + optional AI review                                               |
+| `test generate`      | Test skeletons from BPMN (`-o` output dir)                              |
+| `scan`               | Secrets scanner                                                         |
+| `env`                | Environment profiles                                                    |
+| `plan`               | Deployment preview (no deploy; needs `.camunda.yaml`, optional `--dir`) |
+| `drift`              | Git/project vs cluster drift (optional `--dir`)                         |
+| `backup` / `restore` | Lab-oriented backup                                                     |
+| `incidents`          | Incident list/retry (OIDC on full labs; auto token from lab `.env`)     |
+| `trace`              | Process instance timeline                                               |
+| `k8s`                | kubectl helpers for Helm releases                                       |
+| `up` / `start`       | Start                                                                   |
+| `down` / `stop`      | Stop (keep volumes)                                                     |
+| `restart`            | Restart                                                                 |
+| `status`             | Config + compose ps                                                     |
+| `switch`             | Change minor                                                            |
+| `profile`            | light / full / modeler                                                  |
+| `resources`          | small / balanced / power                                                |
+| `urls` / `open`      | Component links                                                         |
+| `logs`               | Container logs                                                          |
+| `doctor`             | Diagnostics (`--deep` for component probes)                             |
+| `wait` / `smoke`     | Health                                                                  |
+| `tools`              | c8ctl + Modeler helpers                                                 |
+| `nuke`               | Wipe lab home                                                           |
+| `version` / `about`  | Meta                                                                    |
 
 Details for each command are in the sections below.
 
@@ -54,14 +54,14 @@ camunda init ./order-service --name orders --version 8.9 --yes
 camunda init ./order-service --force
 ```
 
-| Flag | Meaning |
-|------|---------|
-| `--name` | Project name (default: directory basename) |
-| `--version` | Camunda version hint in `.camunda.yaml` (default: active lab version, else `8.9`) |
-| `--profile` | Lab profile hint (`light` \| `full` \| `modeler`) |
-| `--resources` | Lab resources hint (`small` \| `balanced` \| `power`) |
-| `--yes` / `-y` | Non-interactive |
-| `--force` | Allow scaffolding into a non-empty directory |
+| Flag           | Meaning                                                                           |
+| -------------- | --------------------------------------------------------------------------------- |
+| `--name`       | Project name (default: directory basename)                                        |
+| `--version`    | Camunda version hint in `.camunda.yaml` (default: active lab version, else `8.9`) |
+| `--profile`    | Lab profile hint (`light` \| `full` \| `modeler`)                                 |
+| `--resources`  | Lab resources hint (`small` \| `balanced` \| `power`)                             |
+| `--yes` / `-y` | Non-interactive                                                                   |
+| `--force`      | Allow scaffolding into a non-empty directory                                      |
 
 Creates `bpmn/`, `dmn/`, `forms/`, `workers/`, `connectors/`, `scripts/`, `tests/`, `environments/`, `helm/`, stub `docker-compose.yml`, `.camunda.yaml`, and `README.md`.
 
@@ -77,16 +77,16 @@ camunda install --version 8.8 --profile light --resources small --yes
 camunda install --version 8.9 --profile light --yes --ai --openai-key "$OPENAI_API_KEY"
 ```
 
-| Flag | Meaning |
-|------|---------|
-| `--version` | Minor (`8.7`…`8.10`) |
-| `--profile` | `light` \| `full` \| `modeler` |
-| `--resources` | `small` \| `balanced` \| `power` |
-| `--yes` / `-y` | Non-interactive |
-| `--ai` | Enable MCP + AI Agent secrets (8.9+ light/full) |
-| `--openai-key` | `SECRET_OPENAI_API_KEY` |
-| `--anthropic-key` | `SECRET_ANTHROPIC_API_KEY` |
-| `--openai-base-url` | Optional OpenAI-compatible base URL |
+| Flag                | Meaning                                         |
+| ------------------- | ----------------------------------------------- |
+| `--version`         | Minor (`8.7`…`8.10`)                            |
+| `--profile`         | `light` \| `full` \| `modeler`                  |
+| `--resources`       | `small` \| `balanced` \| `power`                |
+| `--yes` / `-y`      | Non-interactive                                 |
+| `--ai`              | Enable MCP + AI Agent secrets (8.9+ light/full) |
+| `--openai-key`      | `SECRET_OPENAI_API_KEY`                         |
+| `--anthropic-key`   | `SECRET_ANTHROPIC_API_KEY`                      |
+| `--openai-base-url` | Optional OpenAI-compatible base URL             |
 
 See [AI and MCP](ai-mcp.md).
 
@@ -107,13 +107,13 @@ camunda ui logs -n 100
 camunda ui --port 9091
 ```
 
-| Flag | Meaning |
-|------|---------|
-| `--host` | Listen address (loopback only; default `localhost`) |
-| `--port` | Port (default `9090`, or `CAMUNDA_LAB_UI_PORT`) |
-| `--no-open` | Do not open a browser |
-| `--foreground` | Run in the foreground (blocks until Ctrl+C) |
-| `--stop` | Stop the background Lab UI |
+| Flag           | Meaning                                             |
+| -------------- | --------------------------------------------------- |
+| `--host`       | Listen address (loopback only; default `localhost`) |
+| `--port`       | Port (default `9090`, or `CAMUNDA_LAB_UI_PORT`)     |
+| `--no-open`    | Do not open a browser                               |
+| `--foreground` | Run in the foreground (blocks until Ctrl+C)         |
+| `--stop`       | Stop the background Lab UI                          |
 
 ### ui logs
 
@@ -123,10 +123,10 @@ camunda ui logs -f
 camunda ui logs -n 100
 ```
 
-| Flag | Meaning |
-|------|---------|
-| `-f`, `--follow` | Follow log output (like `tail -f`) |
-| `-n`, `--lines` | Recent lines to show (default `50`; `0` = entire file) |
+| Flag             | Meaning                                                |
+| ---------------- | ------------------------------------------------------ |
+| `-f`, `--follow` | Follow log output (like `tail -f`)                     |
+| `-n`, `--lines`  | Recent lines to show (default `50`; `0` = entire file) |
 
 Reads `~/.camunda-lab/logs/ui.log` from the background UI process.
 
@@ -146,13 +146,13 @@ camunda ai disable
 camunda ai disable --wipe-secrets
 ```
 
-| Subcommand | Meaning |
-|------------|---------|
-| `enable` | Write `~/.camunda-lab/ai.env`, set `ai.enabled`, recreate connectors, print MCP client JSON |
-| `disable` | Clear `ai.enabled` and recreate connectors |
-| `disable --wipe-secrets` | Also delete `ai.env` |
-| `status` | Masked secrets + MCP HTTP probe |
-| `config` | Print Cursor/Claude MCP JSON (HTTP on light; `c8ctl mcp-proxy` on full) |
+| Subcommand               | Meaning                                                                                     |
+| ------------------------ | ------------------------------------------------------------------------------------------- |
+| `enable`                 | Write `~/.camunda-lab/ai.env`, set `ai.enabled`, recreate connectors, print MCP client JSON |
+| `disable`                | Clear `ai.enabled` and recreate connectors                                                  |
+| `disable --wipe-secrets` | Also delete `ai.env`                                                                        |
+| `status`                 | Masked secrets + MCP HTTP probe                                                             |
+| `config`                 | Print Cursor/Claude MCP JSON (HTTP on light; `c8ctl mcp-proxy` on full)                     |
 
 Requires Camunda **8.9+** and profile **light** or **full**. See [AI and MCP](ai-mcp.md).
 

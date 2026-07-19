@@ -25,15 +25,15 @@
 
 ## File map
 
-| File | Responsibility |
-|------|----------------|
-| `internal/review/review.go` | Orchestrate lint + optional AI |
-| `internal/review/prompt.go` | Build prompt from IR + findings |
-| `internal/review/client.go` | HTTP client for chat completions |
-| `internal/review/review_test.go` | Offline path + mocked AI |
-| `internal/cli/review.go` | `camunda review` |
-| `internal/cli/root.go` | Register |
-| `docs/cli-reference.md` | Docs |
+| File                             | Responsibility                   |
+| -------------------------------- | -------------------------------- |
+| `internal/review/review.go`      | Orchestrate lint + optional AI   |
+| `internal/review/prompt.go`      | Build prompt from IR + findings  |
+| `internal/review/client.go`      | HTTP client for chat completions |
+| `internal/review/review_test.go` | Offline path + mocked AI         |
+| `internal/cli/review.go`         | `camunda review`                 |
+| `internal/cli/root.go`           | Register                         |
+| `docs/cli-reference.md`          | Docs                             |
 
 ---
 

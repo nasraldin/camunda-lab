@@ -102,10 +102,10 @@ Guide: [Lab UI](lab-ui.md).
 
 Login defaults from Camunda’s compose files:
 
-| Who | User | Password |
-| --- | --- | --- |
-| Operate / Tasklist / apps | `demo` | `demo` |
-| Keycloak (full profile) | `admin` | `admin` |
+| Who                       | User    | Password |
+| ------------------------- | ------- | -------- |
+| Operate / Tasklist / apps | `demo`  | `demo`   |
+| Keycloak (full profile)   | `admin` | `admin`  |
 
 ## Where state lives
 

@@ -9,10 +9,10 @@ Current release: **[v0.6.0](https://github.com/nasraldin/camunda-lab/releases/ta
 ![Lab UI Home](assets/screenshots/lab-ui-home.png)
 
 !!! tip "Lab UI"
-    Run `camunda ui` for the browser control panel — install, open apps (optional auto sign-in), services, logs, AI helpers. Full walkthrough: [Lab UI](lab-ui.md).
+Run `camunda ui` for the browser control panel — install, open apps (optional auto sign-in), services, logs, AI helpers. Full walkthrough: [Lab UI](lab-ui.md).
 
 !!! warning "Unofficial"
-    Community project. Not affiliated with Camunda GmbH. Fine for local tryouts — not production. For production, use [Camunda’s Helm charts](https://docs.camunda.io/docs/self-managed/setup/install/).
+Community project. Not affiliated with Camunda GmbH. Fine for local tryouts — not production. For production, use [Camunda’s Helm charts](https://docs.camunda.io/docs/self-managed/setup/install/).
 
 ## Install the CLI
 
@@ -80,31 +80,31 @@ Default app login from Camunda’s compose files: **demo** / **demo**.
 
 ## Why this exists
 
-| | Official zip | Helm on Kind | Camunda Lab |
-| --- | --- | --- | --- |
-| Real Camunda stack | Yes | Yes | Yes (same zips) |
-| Need local Kubernetes | No | Yes | No |
-| Change 8.8 → 8.9 | Manual | Chart dance | `camunda switch` |
-| “Where’s Operate?” | Dig the README | Port-forward | `camunda urls` |
-| Doctor / smoke | You write it | You write it | Built in |
-| Browser control panel | DIY | DIY | `camunda ui` |
-| MCP + AI Agent secrets | DIY | DIY | `camunda ai` |
+|                        | Official zip   | Helm on Kind | Camunda Lab      |
+| ---------------------- | -------------- | ------------ | ---------------- |
+| Real Camunda stack     | Yes            | Yes          | Yes (same zips)  |
+| Need local Kubernetes  | No             | Yes          | No               |
+| Change 8.8 → 8.9       | Manual         | Chart dance  | `camunda switch` |
+| “Where’s Operate?”     | Dig the README | Port-forward | `camunda urls`   |
+| Doctor / smoke         | You write it   | You write it | Built in         |
+| Browser control panel  | DIY            | DIY          | `camunda ui`     |
+| MCP + AI Agent secrets | DIY            | DIY          | `camunda ai`     |
 
 More detail: [Why Camunda Lab](comparison.md).
 
 ## Commands you’ll use most
 
-| Command | What it does |
-| --- | --- |
-| `camunda install` | Download the zip, configure, start |
-| `camunda wait` | Block until the stack looks healthy |
-| `camunda urls` / `open` | Ports without guessing |
-| `camunda ui` | Local control panel in the browser |
-| `camunda ai enable` / `config` | MCP endpoints + AI Agent secrets |
-| `camunda switch 8.9 --wipe` | Another minor, clean volumes |
-| `camunda doctor` | Docker, compose, config sanity |
-| `camunda tools c8ctl install` | Camunda’s `c8ctl` for deploy/debug |
-| `camunda nuke` | Delete `~/.camunda-lab` and volumes |
+| Command                        | What it does                        |
+| ------------------------------ | ----------------------------------- |
+| `camunda install`              | Download the zip, configure, start  |
+| `camunda wait`                 | Block until the stack looks healthy |
+| `camunda urls` / `open`        | Ports without guessing              |
+| `camunda ui`                   | Local control panel in the browser  |
+| `camunda ai enable` / `config` | MCP endpoints + AI Agent secrets    |
+| `camunda switch 8.9 --wipe`    | Another minor, clean volumes        |
+| `camunda doctor`               | Docker, compose, config sanity      |
+| `camunda tools c8ctl install`  | Camunda’s `c8ctl` for deploy/debug  |
+| `camunda nuke`                 | Delete `~/.camunda-lab` and volumes |
 
 ## Where to go next
 

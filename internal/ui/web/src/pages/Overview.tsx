@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useCallback, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import {
   getDoctor,
   getDoctorDeep,
@@ -11,102 +11,102 @@ import {
   ApiError,
   type Overview,
   type UpdateInfo,
-} from "../api";
-import { LabErrorBanner } from "../components/LabErrorBanner";
-import { PROJECT } from "../project";
+} from '../api'
+import { LabErrorBanner } from '../components/LabErrorBanner'
+import { PROJECT } from '../project'
 
 function pathTail(p?: string): string {
-  if (!p) return "";
-  const parts = p.split(/[/\\]/);
-  return parts.slice(-3).join("/");
+  if (!p) return ''
+  const parts = p.split(/[/\\]/)
+  return parts.slice(-3).join('/')
 }
 
 export function OverviewPage() {
-  const [data, setData] = useState<Overview | null>(null);
-  const [update, setUpdate] = useState<UpdateInfo | null>(null);
-  const [error, setError] = useState<ApiError | null>(null);
-  const [lastAction, setLastAction] = useState<{ label: string; path: string } | null>(null);
-  const [msg, setMsg] = useState("");
-  const [busy, setBusy] = useState("");
-  const [doctor, setDoctor] = useState("");
-  const [smoke, setSmoke] = useState("");
-  const [updateOut, setUpdateOut] = useState("");
+  const [data, setData] = useState<Overview | null>(null)
+  const [update, setUpdate] = useState<UpdateInfo | null>(null)
+  const [error, setError] = useState<ApiError | null>(null)
+  const [lastAction, setLastAction] = useState<{ label: string; path: string } | null>(null)
+  const [msg, setMsg] = useState('')
+  const [busy, setBusy] = useState('')
+  const [doctor, setDoctor] = useState('')
+  const [smoke, setSmoke] = useState('')
+  const [updateOut, setUpdateOut] = useState('')
 
   const refresh = useCallback(async () => {
-    setError(null);
+    setError(null)
     try {
-      const [o, u] = await Promise.all([getOverview(), getUpdate()]);
-      setData(o);
-      setUpdate(u);
+      const [o, u] = await Promise.all([getOverview(), getUpdate()])
+      setData(o)
+      setUpdate(u)
     } catch (e) {
-      setError(e instanceof ApiError ? e : new ApiError(e instanceof Error ? e.message : String(e)));
+      setError(e instanceof ApiError ? e : new ApiError(e instanceof Error ? e.message : String(e)))
     }
-  }, []);
+  }, [])
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    void refresh()
+  }, [refresh])
 
   async function run(label: string, path: string) {
-    setLastAction({ label, path });
-    setBusy(label);
-    setError(null);
-    setMsg("");
+    setLastAction({ label, path })
+    setBusy(label)
+    setError(null)
+    setMsg('')
     try {
-      await postJSON(path);
-      await refresh();
+      await postJSON(path)
+      await refresh()
     } catch (e) {
-      setError(e instanceof ApiError ? e : new ApiError(e instanceof Error ? e.message : String(e)));
+      setError(e instanceof ApiError ? e : new ApiError(e instanceof Error ? e.message : String(e)))
     } finally {
-      setBusy("");
+      setBusy('')
     }
   }
 
   async function recoverAndRetry() {
-    if (!lastAction) return;
-    setBusy("recover");
-    setError(null);
+    if (!lastAction) return
+    setBusy('recover')
+    setError(null)
     try {
-      await postJSON("/api/v1/recover");
-      await postJSON(lastAction.path);
-      await refresh();
+      await postJSON('/api/v1/recover')
+      await postJSON(lastAction.path)
+      await refresh()
     } catch (e) {
-      setError(e instanceof ApiError ? e : new ApiError(e instanceof Error ? e.message : String(e)));
+      setError(e instanceof ApiError ? e : new ApiError(e instanceof Error ? e.message : String(e)))
     } finally {
-      setBusy("");
+      setBusy('')
     }
   }
 
   async function applyUpdate() {
-    setBusy("update");
-    setError(null);
-    setMsg("");
-    setUpdateOut("");
+    setBusy('update')
+    setError(null)
+    setMsg('')
+    setUpdateOut('')
     try {
-      const r = await postUpdate();
-      setUpdateOut(r.output || "");
-      if (!r.ok) setError(new ApiError(r.error || "Update failed"));
-      else setMsg(r.restartHint || "Update finished. Close this window and open Camunda Lab again.");
-      await refresh();
+      const r = await postUpdate()
+      setUpdateOut(r.output || '')
+      if (!r.ok) setError(new ApiError(r.error || 'Update failed'))
+      else setMsg(r.restartHint || 'Update finished. Close this window and open Camunda Lab again.')
+      await refresh()
     } catch (e) {
-      setError(e instanceof ApiError ? e : new ApiError(e instanceof Error ? e.message : String(e)));
+      setError(e instanceof ApiError ? e : new ApiError(e instanceof Error ? e.message : String(e)))
     } finally {
-      setBusy("");
+      setBusy('')
     }
   }
 
   if (!data && !error) {
-    return <p className="lead">Loading…</p>;
+    return <p className="lead">Loading…</p>
   }
 
-  const labReady = Boolean(data?.configured);
+  const labReady = Boolean(data?.configured)
   const channelLabel =
-    update?.channel === "homebrew"
-      ? "Installed with Homebrew"
-      : update?.channel === "release"
-        ? "Installed from a release"
-        : "Development build";
-  const cliVer = String(data?.cliVersion || "").replace(/^v/, "");
+    update?.channel === 'homebrew'
+      ? 'Installed with Homebrew'
+      : update?.channel === 'release'
+        ? 'Installed from a release'
+        : 'Development build'
+  const cliVer = String(data?.cliVersion || '').replace(/^v/, '')
 
   return (
     <div className="stack overview">
@@ -114,7 +114,8 @@ export function OverviewPage() {
         <div>
           <h1>Home</h1>
           <p className="lead">
-            Your local Camunda practice environment. Start it here, then open the apps when everything is ready.
+            Your local Camunda practice environment. Start it here, then open the apps when
+            everything is ready.
           </p>
         </div>
         <div className="row page-actions">
@@ -133,7 +134,7 @@ export function OverviewPage() {
       {error && (
         <LabErrorBanner
           error={error}
-          busy={busy === "recover"}
+          busy={busy === 'recover'}
           onRecover={error.recoverable ? () => void recoverAndRetry() : undefined}
         />
       )}
@@ -141,7 +142,8 @@ export function OverviewPage() {
 
       {data && !labReady && (
         <div className="banner info">
-          Nothing is installed yet. Go to <Link to="/setup">Get started</Link> to set up Camunda, or read the{" "}
+          Nothing is installed yet. Go to <Link to="/setup">Get started</Link> to set up Camunda, or
+          read the{' '}
           <a href={PROJECT.docs} target="_blank" rel="noreferrer">
             help docs
           </a>
@@ -155,11 +157,11 @@ export function OverviewPage() {
             <div className="metric" role="listitem">
               <div className="metric-label">Your lab</div>
               <div className="metric-value">
-                {labReady ? `${data.config.version} · ${data.config.profile}` : "—"}
+                {labReady ? `${data.config.version} · ${data.config.profile}` : '—'}
               </div>
               <div className="metric-meta">
-                {labReady ? `${data.config.resources} size` : "not set up yet"}
-                {data.config.aiEnabled ? " · AI helpers on" : ""}
+                {labReady ? `${data.config.resources} size` : 'not set up yet'}
+                {data.config.aiEnabled ? ' · AI helpers on' : ''}
               </div>
             </div>
             <div className="metric" role="listitem">
@@ -167,18 +169,18 @@ export function OverviewPage() {
               <div className="metric-value">
                 {labReady
                   ? data.containersError
-                    ? "Error"
+                    ? 'Error'
                     : `${data.running ?? 0} / ${data.total ?? 0}`
-                  : "—"}
+                  : '—'}
               </div>
-              <div className="metric-meta">{labReady ? "running now" : "set up a lab first"}</div>
+              <div className="metric-meta">{labReady ? 'running now' : 'set up a lab first'}</div>
             </div>
             <div className="metric" role="listitem">
               <div className="metric-label">App version</div>
               <div className="metric-value">v{cliVer}</div>
               <div className="metric-meta">
                 {update?.latest ? `newest ${update.latest}` : channelLabel}
-                {update?.updateAvailable ? " · update ready" : ""}
+                {update?.updateAvailable ? ' · update ready' : ''}
               </div>
             </div>
           </div>
@@ -187,25 +189,42 @@ export function OverviewPage() {
             <section className="card panel">
               <header className="panel-head">
                 <h2>Start & stop</h2>
-                {labReady ? <span className="pill ok">Ready</span> : <span className="pill warn">Needs setup</span>}
+                {labReady ? (
+                  <span className="pill ok">Ready</span>
+                ) : (
+                  <span className="pill warn">Needs setup</span>
+                )}
               </header>
               <p className="hint">
                 {labReady
                   ? data.containersError ||
                     `${data.running ?? 0} services running · saved under ${data.labHome}`
-                  : "Use Get started to install Camunda on this computer."}
+                  : 'Use Get started to install Camunda on this computer.'}
               </p>
               <div className="panel-actions">
                 {labReady ? (
                   <>
-                    <button type="button" className="primary" disabled={!!busy} onClick={() => void run("up", "/api/v1/up")}>
-                      {busy === "up" ? "Starting…" : "Start lab"}
+                    <button
+                      type="button"
+                      className="primary"
+                      disabled={!!busy}
+                      onClick={() => void run('up', '/api/v1/up')}
+                    >
+                      {busy === 'up' ? 'Starting…' : 'Start lab'}
                     </button>
-                    <button type="button" disabled={!!busy} onClick={() => void run("down", "/api/v1/down")}>
-                      {busy === "down" ? "Stopping…" : "Stop lab"}
+                    <button
+                      type="button"
+                      disabled={!!busy}
+                      onClick={() => void run('down', '/api/v1/down')}
+                    >
+                      {busy === 'down' ? 'Stopping…' : 'Stop lab'}
                     </button>
-                    <button type="button" disabled={!!busy} onClick={() => void run("restart", "/api/v1/restart")}>
-                      {busy === "restart" ? "Restarting…" : "Restart lab"}
+                    <button
+                      type="button"
+                      disabled={!!busy}
+                      onClick={() => void run('restart', '/api/v1/restart')}
+                    >
+                      {busy === 'restart' ? 'Restarting…' : 'Restart lab'}
                     </button>
                     <Link className="btn" to="/apps">
                       Open apps
@@ -234,20 +253,20 @@ export function OverviewPage() {
                 </div>
                 <div>
                   <span className="metric-label">Newest release</span>
-                  <strong>{update?.latest || "—"}</strong>
+                  <strong>{update?.latest || '—'}</strong>
                 </div>
               </div>
               <p className="hint path-hint" title={update?.executable}>
-                {update?.channel === "dev"
-                  ? "This is a development build. Install a published release to enable one-click updates."
+                {update?.channel === 'dev'
+                  ? 'This is a development build. Install a published release to enable one-click updates.'
                   : update?.updateAvailable
-                    ? `Version ${update.latest} is available${update.publishedAt ? ` (${new Date(update.publishedAt).toLocaleDateString()})` : ""}.`
+                    ? `Version ${update.latest} is available${update.publishedAt ? ` (${new Date(update.publishedAt).toLocaleDateString()})` : ''}.`
                     : update?.latest
-                      ? "You already have the newest release."
+                      ? 'You already have the newest release.'
                       : update?.error
                         ? `Could not check for updates: ${update.error}`
-                        : "Checking for updates…"}
-                {update?.executable ? ` · ${pathTail(update.executable)}` : ""}
+                        : 'Checking for updates…'}
+                {update?.executable ? ` · ${pathTail(update.executable)}` : ''}
               </p>
               <div className="panel-actions">
                 <button
@@ -256,13 +275,18 @@ export function OverviewPage() {
                   disabled={!!busy || !update?.updateAvailable}
                   onClick={() => void applyUpdate()}
                 >
-                  {busy === "update"
-                    ? "Updating…"
-                    : update?.channel === "homebrew"
-                      ? "Update with Homebrew"
-                      : "Update now"}
+                  {busy === 'update'
+                    ? 'Updating…'
+                    : update?.channel === 'homebrew'
+                      ? 'Update with Homebrew'
+                      : 'Update now'}
                 </button>
-                <a className="btn" href={update?.releaseURL || PROJECT.releases} target="_blank" rel="noreferrer">
+                <a
+                  className="btn"
+                  href={update?.releaseURL || PROJECT.releases}
+                  target="_blank"
+                  rel="noreferrer"
+                >
                   What’s new
                 </a>
               </div>
@@ -280,50 +304,66 @@ export function OverviewPage() {
                 type="button"
                 disabled={!!busy || !labReady}
                 onClick={async () => {
-                  setBusy("doctor");
+                  setBusy('doctor')
                   try {
-                    setDoctor((await getDoctor()).report);
+                    setDoctor((await getDoctor()).report)
                   } catch (e) {
-                    setError(e instanceof ApiError ? e : new ApiError(e instanceof Error ? e.message : String(e)));
+                    setError(
+                      e instanceof ApiError
+                        ? e
+                        : new ApiError(e instanceof Error ? e.message : String(e)),
+                    )
                   } finally {
-                    setBusy("");
+                    setBusy('')
                   }
                 }}
               >
-                {busy === "doctor" ? "Checking…" : "Check environment"}
+                {busy === 'doctor' ? 'Checking…' : 'Check environment'}
               </button>
               <button
                 type="button"
                 disabled={!!busy || !labReady}
                 onClick={async () => {
-                  setBusy("deep");
+                  setBusy('deep')
                   try {
-                    setDoctor((await getDoctorDeep()).report);
+                    setDoctor((await getDoctorDeep()).report)
                   } catch (e) {
-                    setError(e instanceof ApiError ? e : new ApiError(e instanceof Error ? e.message : String(e)));
+                    setError(
+                      e instanceof ApiError
+                        ? e
+                        : new ApiError(e instanceof Error ? e.message : String(e)),
+                    )
                   } finally {
-                    setBusy("");
+                    setBusy('')
                   }
                 }}
               >
-                {busy === "deep" ? "Deep check…" : "Deep check"}
+                {busy === 'deep' ? 'Deep check…' : 'Deep check'}
               </button>
               <button
                 type="button"
                 disabled={!!busy || !labReady}
                 onClick={async () => {
-                  setBusy("smoke");
+                  setBusy('smoke')
                   try {
-                    const r = await getSmoke();
-                    setSmoke(r.Checks.map((c) => `${c.OK ? "✓" : "✗"} ${c.Name} ${c.Detail || c.URL}`).join("\n"));
+                    const r = await getSmoke()
+                    setSmoke(
+                      r.Checks.map(
+                        (c) => `${c.OK ? '✓' : '✗'} ${c.Name} ${c.Detail || c.URL}`,
+                      ).join('\n'),
+                    )
                   } catch (e) {
-                    setError(e instanceof ApiError ? e : new ApiError(e instanceof Error ? e.message : String(e)));
+                    setError(
+                      e instanceof ApiError
+                        ? e
+                        : new ApiError(e instanceof Error ? e.message : String(e)),
+                    )
                   } finally {
-                    setBusy("");
+                    setBusy('')
                   }
                 }}
               >
-                {busy === "smoke" ? "Testing…" : "Test apps"}
+                {busy === 'smoke' ? 'Testing…' : 'Test apps'}
               </button>
             </div>
             {doctor && <pre className="code">{doctor}</pre>}
@@ -362,5 +402,5 @@ export function OverviewPage() {
         </>
       )}
     </div>
-  );
+  )
 }

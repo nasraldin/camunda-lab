@@ -26,18 +26,18 @@ We extract the zip and leave Camunda’s OIDC / Keycloak wiring alone. If Camund
 
 ## What we add
 
-| Piece | Role |
-| --- | --- |
-| Version adapters | Map `light` / `full` / `modeler` → the right compose file per minor |
-| `resources.env` | Heap hints + `KEYCLOAK_HOST=keycloak` for container→Keycloak on full |
-| `elasticsearch-8.10.yaml` | Sidecar ES when full profile on 8.10 needs it |
-| `elasticsearch-cors.yaml` + `elasticvue.yaml` | CORS + ElasticVue when host ES is published |
-| `http-headers.yaml` | Larger Tomcat header limit so full-profile SSO cookies don’t 400 |
-| `connectors-ai-secrets.yaml` + `ai.env` | Opt-in AI Agent `SECRET_*` (`camunda ai`) |
-| MCP URLs / `camunda ai config` | Surface `/mcp/cluster` (+ `/mcp/processes` on 8.10+); client JSON |
-| Lab UI (`camunda ui`) | Embedded local SPA on loopback; same lab packages via `/api/v1` |
-| doctor / wait / smoke | Docker sanity and “are the UIs answering?” |
-| tools helpers | Point `c8ctl` / Desktop Modeler at this lab |
+| Piece                                         | Role                                                                 |
+| --------------------------------------------- | -------------------------------------------------------------------- |
+| Version adapters                              | Map `light` / `full` / `modeler` → the right compose file per minor  |
+| `resources.env`                               | Heap hints + `KEYCLOAK_HOST=keycloak` for container→Keycloak on full |
+| `elasticsearch-8.10.yaml`                     | Sidecar ES when full profile on 8.10 needs it                        |
+| `elasticsearch-cors.yaml` + `elasticvue.yaml` | CORS + ElasticVue when host ES is published                          |
+| `http-headers.yaml`                           | Larger Tomcat header limit so full-profile SSO cookies don’t 400     |
+| `connectors-ai-secrets.yaml` + `ai.env`       | Opt-in AI Agent `SECRET_*` (`camunda ai`)                            |
+| MCP URLs / `camunda ai config`                | Surface `/mcp/cluster` (+ `/mcp/processes` on 8.10+); client JSON    |
+| Lab UI (`camunda ui`)                         | Embedded local SPA on loopback; same lab packages via `/api/v1`      |
+| doctor / wait / smoke                         | Docker sanity and “are the UIs answering?”                           |
+| tools helpers                                 | Point `c8ctl` / Desktop Modeler at this lab                          |
 
 ## Compose project name
 

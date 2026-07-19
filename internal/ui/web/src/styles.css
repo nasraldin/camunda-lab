@@ -31,8 +31,8 @@
   --radius: 12px;
   --radius-sm: 8px;
   --nav-w: 248px;
-  --font: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
-  --mono: "IBM Plex Mono", ui-monospace, monospace;
+  --font: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, monospace;
   --focus: 0 0 0 3px rgba(252, 93, 13, 0.28);
   --page-bg:
     radial-gradient(900px 420px at 0% 0%, rgba(252, 93, 13, 0.07), transparent 55%),
@@ -42,7 +42,7 @@
   --code-border: #242b35;
 }
 
-html[data-theme="dark"] {
+html[data-theme='dark'] {
   --orange: #ff7a38;
   --orange-deep: #ff9a62;
   --orange-soft: #3a2418;
@@ -72,7 +72,8 @@ html[data-theme="dark"] {
   --info-bg: #1a2433;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 12px 28px rgba(0, 0, 0, 0.35);
   --focus: 0 0 0 3px rgba(255, 122, 56, 0.35);
-  --page-bg: radial-gradient(900px 420px at 0% 0%, rgba(252, 93, 13, 0.12), transparent 55%), #0f1218;
+  --page-bg:
+    radial-gradient(900px 420px at 0% 0%, rgba(252, 93, 13, 0.12), transparent 55%), #0f1218;
   --code-bg: #0b0e13;
   --code-fg: #d7dee8;
   --code-border: #2a3140;
@@ -150,7 +151,7 @@ a:hover {
   margin-inline: auto;
 }
 
-html[data-theme="dark"] .brand img {
+html[data-theme='dark'] .brand img {
   filter: invert(1) brightness(1.05);
 }
 
@@ -173,7 +174,9 @@ html[data-theme="dark"] .brand img {
   text-decoration: none;
   font-size: 0.92rem;
   font-weight: 500;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
 }
 
 .nav-link:hover {
@@ -265,7 +268,10 @@ html[data-theme="dark"] .brand img {
   border-radius: var(--radius-sm);
   color: var(--ink-soft);
   border: 1px solid transparent;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .nav-foot-links a:hover {
@@ -486,7 +492,6 @@ html[data-theme="dark"] .brand img {
   }
 }
 
-
 .grid {
   display: grid;
   gap: 1rem;
@@ -593,7 +598,10 @@ button,
   font-weight: 550;
   cursor: pointer;
   text-decoration: none;
-  transition: border-color 0.15s ease, background 0.15s ease, transform 0.05s ease;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    transform 0.05s ease;
 }
 
 button:hover:not(:disabled),
@@ -862,7 +870,9 @@ mark.log-hit {
   cursor: pointer;
   -webkit-user-select: none;
   user-select: none;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
 }
 
 .pref-switch:hover {
@@ -892,11 +902,13 @@ mark.log-hit {
   border-radius: 999px;
   background: var(--surface-3);
   border: 1px solid var(--line-strong);
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .pref-switch-track::after {
-  content: "";
+  content: '';
   position: absolute;
   top: 1px;
   left: 1px;
@@ -947,7 +959,10 @@ mark.log-hit {
   min-height: 88px;
   text-decoration: none;
   color: inherit;
-  transition: border-color 0.15s ease, background 0.15s ease, transform 0.12s ease;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    transform 0.12s ease;
 }
 
 a.app-card-link {
@@ -1058,7 +1073,6 @@ a.app-card-docs {
   color: var(--muted);
   word-break: break-all;
 }
-
 
 .app-glyph {
   display: inline-flex;

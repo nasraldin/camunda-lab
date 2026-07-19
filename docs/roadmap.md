@@ -52,15 +52,15 @@ Things we’re actively building or next in line — no hard ETA:
 
 Shipped on main (MVP): `lint`, `diff`, `explain`, `review`, `test generate`, `scan`, `doctor --deep`.
 
-| Command | Intent |
-| --- | --- |
-| `camunda diff` | Semantic BPMN diff (not raw XML) |
-| `camunda lint` | Deterministic BPMN rules (eslint-style) |
-| `camunda review` | Lint + optional AI review (`--ai`) |
-| `camunda explain` | Business + technical process summary |
-| `camunda test generate` | Test skeletons from BPMN |
-| `camunda scan` | Secrets / hardcoded credential scan |
-| `camunda doctor --deep` | Component health beyond Docker/config |
+| Command                 | Intent                                  |
+| ----------------------- | --------------------------------------- |
+| `camunda diff`          | Semantic BPMN diff (not raw XML)        |
+| `camunda lint`          | Deterministic BPMN rules (eslint-style) |
+| `camunda review`        | Lint + optional AI review (`--ai`)      |
+| `camunda explain`       | Business + technical process summary    |
+| `camunda test generate` | Test skeletons from BPMN                |
+| `camunda scan`          | Secrets / hardcoded credential scan     |
+| `camunda doctor --deep` | Component health beyond Docker/config   |
 
 ## Phase 3 — Platform engineering
 
@@ -68,15 +68,15 @@ Shipped on main: `env`, `plan`, `drift`, `backup`/`restore`, `incidents`, `trace
 
 `plan` / `drift` / `incidents` / `trace` call the active env’s **Orchestration Cluster REST API** (`/v2`) — lab URLs by default (`camunda urls` → `rest`). Remote profiles use `endpoints.orchestration`.
 
-| Command | Intent |
-| --- | --- |
-| `camunda env` | Named lab / remote environment profiles |
-| `camunda plan` | Deployment preview vs cluster definitions (does not deploy) |
-| `camunda drift` | Local project XML digest vs deployed definition XML |
-| `camunda backup` / `restore` | Lab-oriented snapshot MVP |
-| `camunda incidents` | List/resolve via `POST /v2/incidents/search` + `/resolution` |
-| `camunda trace` | Timeline via process instance + element-instances search |
-| `camunda k8s` | Thin kubectl helpers for Camunda Helm labels |
+| Command                      | Intent                                                       |
+| ---------------------------- | ------------------------------------------------------------ |
+| `camunda env`                | Named lab / remote environment profiles                      |
+| `camunda plan`               | Deployment preview vs cluster definitions (does not deploy)  |
+| `camunda drift`              | Local project XML digest vs deployed definition XML          |
+| `camunda backup` / `restore` | Lab-oriented snapshot MVP                                    |
+| `camunda incidents`          | List/resolve via `POST /v2/incidents/search` + `/resolution` |
+| `camunda trace`              | Timeline via process instance + element-instances search     |
+| `camunda k8s`                | Thin kubectl helpers for Camunda Helm labels                 |
 
 **Lab UI parity (localhost):** sidebar **BPMN**, **Cluster**, and **Project** call the same packages as these CLI commands (upload or absolute project path). Not a full Camunda Console — Operate/Tasklist remain the primary ops UIs.
 

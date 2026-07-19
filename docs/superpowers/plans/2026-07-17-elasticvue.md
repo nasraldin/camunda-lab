@@ -23,33 +23,35 @@
 
 ## File map
 
-| File | Responsibility |
-|------|----------------|
-| `internal/versions/adapter.go` | `HasHostElasticsearch(minor, profile bool)` |
-| `internal/versions/adapter_test.go` | Table tests for that helper |
-| `overlays/elasticsearch-cors.yaml` | CORS env on `elasticsearch` |
-| `overlays/elasticvue.yaml` | ElasticVue service on `:9800` |
-| `overlays/elasticsearch-8.10.yaml` | Add CORS env to our 8.10 sidecar ES |
-| `internal/overlay/embed/*.yaml` | Embedded copies of the three overlays |
-| `internal/overlay/overlay.go` | Sync + return override files |
-| `internal/overlay/overlay_test.go` | Selection + parity tests |
-| `internal/urls/urls.go` | Add `elasticvue` entry when host ES exists |
-| `internal/urls/urls_test.go` | Presence/absence tests |
-| `internal/lab/lab.go` | Include `elasticvue` in status Apps wanted list |
-| `internal/cli/switch.go` | Include `elasticvue` in Web apps URL section |
-| `internal/smoke/smoke.go` | Keep elasticvue optional (not in `smokeRequired`) |
-| `docs/profiles.md`, `docs/cli-reference.md`, `README.md` | Document URL / behavior |
-| `docs/superpowers/specs/2026-07-17-elasticvue-design.md` | Spec (already written) |
+| File                                                     | Responsibility                                    |
+| -------------------------------------------------------- | ------------------------------------------------- |
+| `internal/versions/adapter.go`                           | `HasHostElasticsearch(minor, profile bool)`       |
+| `internal/versions/adapter_test.go`                      | Table tests for that helper                       |
+| `overlays/elasticsearch-cors.yaml`                       | CORS env on `elasticsearch`                       |
+| `overlays/elasticvue.yaml`                               | ElasticVue service on `:9800`                     |
+| `overlays/elasticsearch-8.10.yaml`                       | Add CORS env to our 8.10 sidecar ES               |
+| `internal/overlay/embed/*.yaml`                          | Embedded copies of the three overlays             |
+| `internal/overlay/overlay.go`                            | Sync + return override files                      |
+| `internal/overlay/overlay_test.go`                       | Selection + parity tests                          |
+| `internal/urls/urls.go`                                  | Add `elasticvue` entry when host ES exists        |
+| `internal/urls/urls_test.go`                             | Presence/absence tests                            |
+| `internal/lab/lab.go`                                    | Include `elasticvue` in status Apps wanted list   |
+| `internal/cli/switch.go`                                 | Include `elasticvue` in Web apps URL section      |
+| `internal/smoke/smoke.go`                                | Keep elasticvue optional (not in `smokeRequired`) |
+| `docs/profiles.md`, `docs/cli-reference.md`, `README.md` | Document URL / behavior                           |
+| `docs/superpowers/specs/2026-07-17-elasticvue-design.md` | Spec (already written)                            |
 
 ---
 
 ### Task 1: `HasHostElasticsearch`
 
 **Files:**
+
 - Modify: `internal/versions/adapter.go`
 - Modify: `internal/versions/adapter_test.go`
 
 **Interfaces:**
+
 - Consumes: existing `ValidateMinor` / profile conventions
 - Produces: `func HasHostElasticsearch(minor, profile string) bool`
 
@@ -120,6 +122,7 @@ Expected: PASS
 ### Task 2: Overlay YAMLs (CORS + ElasticVue + 8.10 CORS)
 
 **Files:**
+
 - Create: `overlays/elasticsearch-cors.yaml`
 - Create: `overlays/elasticvue.yaml`
 - Create: `internal/overlay/embed/elasticsearch-cors.yaml`
@@ -128,6 +131,7 @@ Expected: PASS
 - Modify: `internal/overlay/embed/elasticsearch-8.10.yaml` (keep byte-identical to repo overlay)
 
 **Interfaces:**
+
 - Consumes: Compose project network name `camunda-platform` (already used by 8.10 ES overlay)
 - Produces: three overlay files on disk + embeds
 
@@ -153,7 +157,7 @@ services:
     image: cars10/elasticvue:1.15.0
     container_name: camunda-lab-elasticvue
     ports:
-      - "9800:8080"
+      - '9800:8080'
     environment:
       ELASTICVUE_CLUSTERS: '[{"name":"camunda-lab","uri":"http://localhost:9200"}]'
     restart: unless-stopped
@@ -166,9 +170,9 @@ services:
 Append these env entries to the existing `environment:` list (keep discovery/security/JAVA/cluster.name):
 
 ```yaml
-      - http.cors.enabled=true
-      - http.cors.allow-origin=/.*/
-      - http.cors.allow-headers=X-Requested-With,Content-Type,Content-Length,Authorization
+- http.cors.enabled=true
+- http.cors.allow-origin=/.*/
+- http.cors.allow-headers=X-Requested-With,Content-Type,Content-Length,Authorization
 ```
 
 - [ ] **Step 4: Copy all three overlays into `internal/overlay/embed/`**
@@ -184,10 +188,12 @@ cp overlays/elasticsearch-8.10.yaml internal/overlay/embed/
 ### Task 3: Wire `ComposeOverrideFiles`
 
 **Files:**
+
 - Modify: `internal/overlay/overlay.go`
 - Modify: `internal/overlay/overlay_test.go`
 
 **Interfaces:**
+
 - Consumes: `versions.HasHostElasticsearch`, `versions.NeedsElasticsearchOverlay`
 - Produces: ordered absolute paths: optional `elasticsearch-8.10.yaml`, then `elasticsearch-cors.yaml`, then `elasticvue.yaml`
 
@@ -325,6 +331,7 @@ Expected: PASS
 ### Task 4: URLs + status + CLI web apps
 
 **Files:**
+
 - Modify: `internal/urls/urls.go`
 - Modify: `internal/urls/urls_test.go`
 - Modify: `internal/lab/lab.go` (`summarizeURLs` wanted list)
@@ -332,6 +339,7 @@ Expected: PASS
 - Modify: `internal/smoke/smoke.go` — confirm `elasticvue` is **not** in `smokeRequired` (no code change if already optional by default)
 
 **Interfaces:**
+
 - Consumes: `versions.HasHostElasticsearch` **or** mirror the same rules inline in `urls` (prefer calling `versions.HasHostElasticsearch` from `urls` to avoid drift)
 - Produces: `elasticvue` → `http://<host>:9800`
 
@@ -396,6 +404,7 @@ Expected: PASS
 ### Task 5: Docs
 
 **Files:**
+
 - Modify: `docs/profiles.md` — add ElasticVue row (`http://localhost:9800`) where ES is listed
 - Modify: `docs/cli-reference.md` — note `open elasticvue`, port 9800
 - Modify: `README.md` — one bullet under features/URLs
@@ -434,6 +443,7 @@ camunda open elasticvue
 ```
 
 Expected:
+
 - `elasticvue -> http://localhost:9800` in urls
 - Browser shows cluster `camunda-lab` without manual add
 - Cluster connects to indices (Operate/Zeebe data may appear after traffic)
@@ -446,16 +456,16 @@ Document-only or quick thought: 8.10 light / modeler must not start elasticvue c
 
 ## Spec coverage check
 
-| Spec requirement | Task |
-|------------------|------|
-| Auto when host ES | 1, 3 |
-| Port 9800 + ELASTICVUE_CLUSTERS | 2 |
-| CORS on ES | 2, 3 |
-| 8.10 sidecar CORS | 2 |
-| urls / status / open | 4 |
-| smoke optional | 4 (confirm) |
-| Docs | 5 |
-| Success criteria LIVE | 6 |
+| Spec requirement                | Task        |
+| ------------------------------- | ----------- |
+| Auto when host ES               | 1, 3        |
+| Port 9800 + ELASTICVUE_CLUSTERS | 2           |
+| CORS on ES                      | 2, 3        |
+| 8.10 sidecar CORS               | 2           |
+| urls / status / open            | 4           |
+| smoke optional                  | 4 (confirm) |
+| Docs                            | 5           |
+| Success criteria LIVE           | 6           |
 
 ## Placeholder / consistency scan
 

@@ -30,11 +30,11 @@ Something else owns the ports for your minor — see [Ports and URLs](profiles.m
 
 Common conflicts:
 
-| Era | Busy hosts |
-| --- | --- |
-| 8.7 | `8081` / `8082` / `8088` / `9200` / `18080` |
-| 8.8 | `8088` / `8086` / `9200` / `18080` |
-| 8.9+ | `8080` / `8086` / `9200` / `18080` |
+| Era  | Busy hosts                                  |
+| ---- | ------------------------------------------- |
+| 8.7  | `8081` / `8082` / `8088` / `9200` / `18080` |
+| 8.8  | `8088` / `8086` / `9200` / `18080`          |
+| 8.9+ | `8080` / `8086` / `9200` / `18080`          |
 
 ```bash
 camunda urls    # what this lab expects
@@ -86,11 +86,11 @@ Lab Apps shows a **Developer endpoints** card (describe + docs + **Test health**
 
 These are client endpoints, not Camunda web apps:
 
-| Entry | Display address | How to verify (official) |
-| --- | --- | --- |
-| Orchestration | `http://localhost:8080` (8.9+) | `GET http://localhost:9600/actuator/health` |
-| REST API | `http://localhost:8080/v2` | `GET http://localhost:8080/v2/topology` — bare `GET /v2` is **404 by design** |
-| gRPC | `localhost:26500` | TCP open (Camunda / Zeebe client) |
+| Entry         | Display address                | How to verify (official)                                                      |
+| ------------- | ------------------------------ | ----------------------------------------------------------------------------- |
+| Orchestration | `http://localhost:8080` (8.9+) | `GET http://localhost:9600/actuator/health`                                   |
+| REST API      | `http://localhost:8080/v2`     | `GET http://localhost:8080/v2/topology` — bare `GET /v2` is **404 by design** |
+| gRPC          | `localhost:26500`              | TCP open (Camunda / Zeebe client)                                             |
 
 In Lab UI → **Apps → Developer endpoints**, each card explains the endpoint, links to Camunda docs, and has **Test health**.
 

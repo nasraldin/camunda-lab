@@ -1,16 +1,16 @@
-const KEY = "camunda-lab-project-dir";
+const KEY = 'camunda-lab-project-dir'
 
 export function getProjectDir(): string {
   try {
-    return localStorage.getItem(KEY) || "";
+    return localStorage.getItem(KEY) || ''
   } catch {
-    return "";
+    return ''
   }
 }
 
 export function setProjectDir(dir: string): void {
   try {
-    localStorage.setItem(KEY, dir);
+    localStorage.setItem(KEY, dir)
   } catch {
     /* ignore */
   }
