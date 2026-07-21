@@ -36,7 +36,11 @@ func newInstallCmd() *cobra.Command {
 				}
 				opts.AISecrets = s
 			}
-			return lab.New().Install(cmd.Context(), opts)
+			if err := lab.New().Install(cmd.Context(), opts); err != nil {
+				return err
+			}
+			ensureUIBackground(true)
+			return nil
 		},
 	}
 	cmd.Flags().StringVar(&version, "version", "", "Camunda minor (8.7|8.8|8.9|8.10)")
@@ -56,7 +60,11 @@ func newUpCmd() *cobra.Command {
 		Aliases: []string{"start"},
 		Short:   "Start the active lab",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return lab.New().Up(cmd.Context())
+			if err := lab.New().Up(cmd.Context()); err != nil {
+				return err
+			}
+			ensureUIBackground(false)
+			return nil
 		},
 	}
 }
@@ -81,7 +89,11 @@ func newRestartCmd() *cobra.Command {
 			if err := l.Down(cmd.Context(), false); err != nil {
 				return err
 			}
-			return l.Up(cmd.Context())
+			if err := l.Up(cmd.Context()); err != nil {
+				return err
+			}
+			ensureUIBackground(false)
+			return nil
 		},
 	}
 }

@@ -4,21 +4,21 @@ Maintainer checklist for cutting a release.
 
 ## Checklist
 
-1. `make check` is green on `main`
+1. `make check` and `make ui-check` are green on `main`
 2. Docs still match the release (especially [roadmap](roadmap.md) and install paths)
-3. Keep `Formula/camunda-lab.rb` in sync after the tag (or let `scripts/publish-homebrew.sh` update the tap)
+3. `Formula/camunda-lab.rb` template is current (tap is updated automatically on tag)
 4. Tag and push:
 
 ```bash
-git tag -a v0.4.0 -m "v0.4.0"
-git push origin v0.4.0
+git tag -a v0.6.0 -m "v0.6.0"
+git push origin v0.6.0
 ```
 
-5. GoReleaser creates the GitHub Release + archives + `checksums.txt` (`.github/workflows/release.yml`)
-6. Homebrew tap: workflow uses `HOMEBREW_TAP_TOKEN`, or publish locally:
+5. **Release** workflow runs GoReleaser (binaries + `checksums.txt`) and publishes the Homebrew tap
+6. If tap publish failed, backfill manually or via **Actions → Homebrew → Run workflow**:
 
 ```bash
-./scripts/publish-homebrew.sh v0.4.0
+./scripts/publish-homebrew.sh v0.6.0
 ```
 
 7. Smoke on a clean machine:
@@ -46,5 +46,11 @@ SemVer tags: `vMAJOR.MINOR.PATCH`.
 | --- | --- |
 | GitHub Release | tag `v*` → GoReleaser |
 | `install.sh` | downloads release tarball + verifies `checksums.txt` |
-| Homebrew | `nasraldin/tools` formula `camunda-lab` |
+| Homebrew | `nasraldin/tools` formula `camunda-lab` (auto-published on tag) |
 | Docs site | MkDocs → GitHub Pages on `main` |
+
+## Repo hygiene (maintainers)
+
+- Protect `main`: require CI (`Test & build`) and PR reviews before merge
+- `HOMEBREW_TAP_TOKEN` must be set — release **fails** if missing (tap would stay stale)
+- Commit `internal/ui/web/dist` whenever UI source changes (`make ui-check` in CI)

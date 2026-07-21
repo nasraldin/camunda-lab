@@ -39,9 +39,17 @@ func newSwitchCmd() *cobra.Command {
 				if err := lab.New().Switch(cmd.Context(), minor, wipe); err != nil {
 					return err
 				}
-				return lab.New().EnableAI(cmd.Context(), s)
+				if err := lab.New().EnableAI(cmd.Context(), s); err != nil {
+					return err
+				}
+				ensureUIBackground(false)
+				return nil
 			}
-			return lab.New().Switch(cmd.Context(), minor, wipe)
+			if err := lab.New().Switch(cmd.Context(), minor, wipe); err != nil {
+				return err
+			}
+			ensureUIBackground(false)
+			return nil
 		},
 	}
 	cmd.Flags().BoolVar(&wipe, "wipe", false, "Remove volumes before switching")
@@ -58,7 +66,11 @@ func newProfileCmd() *cobra.Command {
 		Short: "Set compose profile (light|full|modeler)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return lab.New().SetProfile(cmd.Context(), args[0])
+			if err := lab.New().SetProfile(cmd.Context(), args[0]); err != nil {
+				return err
+			}
+			ensureUIBackground(false)
+			return nil
 		},
 	}
 }

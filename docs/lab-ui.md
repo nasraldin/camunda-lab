@@ -2,8 +2,15 @@
 
 The embedded **Camunda Lab Console** is a local browser control panel for the same workflows as the CLI — install, open apps, tail logs, AI helpers, and reset — without living in the terminal.
 
+`camunda install` (and `camunda up`) **start the UI in the background** automatically and open your browser on first install. You can also manage it manually:
+
 ```bash
-camunda ui
+camunda ui              # ensure background UI + open browser
+camunda ui --no-open    # background only
+camunda ui --foreground # block in this terminal (Ctrl+C to stop)
+camunda ui --stop       # stop background UI
+camunda ui logs         # recent background log lines
+camunda ui logs -f      # follow background logs
 # http://localhost:9090  (loopback only, no auth)
 ```
 

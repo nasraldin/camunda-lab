@@ -55,7 +55,10 @@ cleanup() { rm -rf "${WORKDIR}"; }
 trap cleanup EXIT
 
 echo "==> Cloning ${TAP_REPO}"
-gh repo clone "${TAP_REPO}" "${WORKDIR}/tap" -- --depth 1
+# Clone with curl+git so we control auth (gh clone can leave credential helpers
+# that override HOMEBREW_TAP_TOKEN and cause 403 on push in CI).
+git -c credential.helper= clone --depth 1 \
+  "https://github.com/${TAP_REPO}.git" "${WORKDIR}/tap"
 mkdir -p "${WORKDIR}/tap/Formula"
 
 TEMPLATE="${ROOT}/Formula/${FORMULA_NAME}.rb"
@@ -78,7 +81,7 @@ Homebrew tap for Nasr Aldin tools.
 
 ```bash
 brew tap nasraldin/tools
-brew install ducker-lab
+brew install docker-lab
 brew install camunda-lab
 ```
 EOF
@@ -91,7 +94,9 @@ if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
 fi
 
 if [[ -n "${GH_TOKEN:-}" ]]; then
-  git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${TAP_REPO}.git"
+  PUSH_URL="https://x-access-token:${GH_TOKEN}@github.com/${TAP_REPO}.git"
+else
+  PUSH_URL="origin"
 fi
 
 git add Formula/"${FORMULA_NAME}.rb" README.md
@@ -101,6 +106,11 @@ if git diff --cached --quiet; then
 fi
 
 git commit -m "camunda-lab ${VERSION}"
-git push origin HEAD
+# Push with token in URL; credential.helper= avoids Actions overriding the PAT.
+if [[ "${PUSH_URL}" == "origin" ]]; then
+  git -c credential.helper= push origin HEAD
+else
+  git -c credential.helper= push "${PUSH_URL}" HEAD:main
+fi
 echo "==> Published ${FORMULA_NAME} ${VERSION} → ${TAP_REPO}"
 echo "==> Users: brew update && brew upgrade camunda-lab"

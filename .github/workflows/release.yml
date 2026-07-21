@@ -4,12 +4,18 @@ on:
   push:
     tags: ["v*"]
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -22,7 +28,7 @@ jobs:
           go-version-file: go.mod
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: "22"
           cache: npm
@@ -31,6 +37,9 @@ jobs:
       - name: Build UI
         run: make ui
 
+      - name: Verify embedded UI dist is committed
+        run: git diff --exit-code internal/ui/web/dist
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v7
         with:
@@ -38,3 +47,34 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # GoReleaser publishes the GitHub Release via GITHUB_TOKEN, which does not
+  # trigger other workflows (release: published). Publish the Homebrew tap here.
+  publish-homebrew:
+    name: Publish Homebrew formula
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Require tap token
+        env:
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          if [[ -z "${HOMEBREW_TAP_TOKEN:-}" ]]; then
+            echo "::error::HOMEBREW_TAP_TOKEN secret is not set. Homebrew tap would not be updated."
+            echo "See docs/homebrew.md for setup."
+            exit 1
+          fi
+
+      - name: Publish to nasraldin/homebrew-tools
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          TAP_REPO: nasraldin/homebrew-tools
+        run: |
+          set -euo pipefail
+          chmod +x scripts/publish-homebrew.sh
+          ./scripts/publish-homebrew.sh "${GITHUB_REF_NAME}"

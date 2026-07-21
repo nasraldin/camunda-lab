@@ -31,8 +31,19 @@ sha256_file() {
   fi
 }
 
+resolve_latest_version() {
+  local api="https://api.github.com/repos/${REPO}/releases/latest"
+  if command -v jq >/dev/null 2>&1; then
+    curl -fsSL "$api" | jq -r .tag_name
+  elif command -v python3 >/dev/null 2>&1; then
+    curl -fsSL "$api" | python3 -c "import sys,json; print(json.load(sys.stdin)['tag_name'])"
+  else
+    curl -fsSL "$api" | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p' | head -1
+  fi
+}
+
 if [[ "$VERSION" == "latest" ]]; then
-  VERSION="$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p' | head -1)"
+  VERSION="$(resolve_latest_version)"
 fi
 if [[ -z "$VERSION" ]]; then
   echo "No GitHub release found yet — build from source: make build && make install" >&2
@@ -83,4 +94,20 @@ mkdir -p "$INSTALL_DIR"
 install -m 755 "$bin_path" "$INSTALL_DIR/camunda"
 echo "Installed $INSTALL_DIR/camunda ($VERSION)"
 echo "Ensure $INSTALL_DIR is on your PATH"
-echo "Try: camunda about"
+
+echo ""
+echo "Starting Lab UI in the background..."
+if "$INSTALL_DIR/camunda" ui --no-open 2>/dev/null; then
+  cat <<'EOF'
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Camunda Lab UI is running
+
+  Open in your browser: http://localhost:9090
+
+  Install and manage Camunda from the UI — no terminal required.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+EOF
+else
+  echo "Start the UI manually: camunda ui"
+fi

@@ -17,6 +17,7 @@ import (
 	"github.com/nasraldin/camunda-lab/internal/config"
 	"github.com/nasraldin/camunda-lab/internal/doctor"
 	"github.com/nasraldin/camunda-lab/internal/lab"
+	"github.com/nasraldin/camunda-lab/internal/laberrors"
 	"github.com/nasraldin/camunda-lab/internal/paths"
 	"github.com/nasraldin/camunda-lab/internal/smoke"
 	"github.com/nasraldin/camunda-lab/internal/tools"
@@ -31,6 +32,7 @@ func Register(mux *http.ServeMux, cliVersion string) {
 	h := &handler{cliVersion: cliVersion, lab: lab.New()}
 	mux.HandleFunc("GET /api/v1/overview", h.overview)
 	mux.HandleFunc("POST /api/v1/install", h.install)
+	mux.HandleFunc("POST /api/v1/recover", h.recover)
 	mux.HandleFunc("POST /api/v1/up", h.up)
 	mux.HandleFunc("POST /api/v1/down", h.down)
 	mux.HandleFunc("POST /api/v1/restart", h.restart)
@@ -72,7 +74,29 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 }
 
 func writeErr(w http.ResponseWriter, status int, err error) {
-	writeJSON(w, status, map[string]string{"error": err.Error()})
+	err = laberrors.Wrap(err)
+	payload := map[string]any{"error": err.Error()}
+	if u, ok := laberrors.AsUser(err); ok {
+		payload["error"] = u.Message
+		if u.Hint != "" {
+			payload["hint"] = u.Hint
+		}
+		if u.Code != "" {
+			payload["code"] = u.Code
+		}
+		if u.Recoverable {
+			payload["recoverable"] = true
+		}
+	}
+	writeJSON(w, status, payload)
+}
+
+func (h *handler) recover(w http.ResponseWriter, r *http.Request) {
+	if err := h.lab.Recover(r.Context()); err != nil {
+		writeErr(w, http.StatusBadRequest, laberrors.Wrap(err))
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 }
 
 func decodeJSON(r *http.Request, dst any) error {

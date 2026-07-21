@@ -13,8 +13,8 @@
 class CamundaLab < Formula
   desc "Unofficial local Camunda 8 Docker lab CLI"
   homepage "https://github.com/nasraldin/camunda-lab"
-  url "https://github.com/nasraldin/camunda-lab/archive/refs/tags/v0.4.0.tar.gz"
-  sha256 "0df1bc69adc9e43685154f9937d72bb4813f97b724f9b06b4b946998f35e23d0"
+  url "https://github.com/nasraldin/camunda-lab/archive/refs/tags/v0.6.0.tar.gz"
+  sha256 "deeb63ff68b1668f33d894a6405f939aec8558fe2cf7e791959ec9f7ecbba6a1"
   license "MIT"
 
   depends_on "go" => :build
@@ -25,19 +25,34 @@ class CamundaLab < Formula
     system "go", "build", *std_go_args(ldflags: ldflags, output: bin/"camunda"), "./cmd/camunda"
   end
 
+  def post_install
+    # Start Lab UI in the background so browser-only users can install from Setup.
+    system bin/"camunda", "ui", "--no-open", out: File::NULL, err: File::NULL
+  end
+
   def caveats
     <<~EOS
       The CLI is `camunda` (formula name is camunda-lab).
 
       You need Docker Compose v2 (`docker compose version`).
 
-      After install:
+      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      Lab UI is running — open in your browser:
+
+        http://localhost:9090
+
+      Install and manage Camunda from the UI (no terminal required).
+      Use the "Get started" page to install your first lab.
+      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+      Prefer the CLI?
 
         camunda install --version 8.9 --profile light --yes
         camunda wait
         camunda urls
-        camunda ui   # http://localhost:9090
 
+      Stop the UI: camunda ui --stop
+      UI logs: camunda ui logs -f
       Docs: https://nasraldin.github.io/camunda-lab/
     EOS
   end

@@ -151,12 +151,12 @@ func (l *Lab) Up(ctx context.Context) error {
 		return err
 	}
 	display.Step(os.Stdout, "Starting lab (%s / %s / %s)...", cfg.Version, cfg.Profile, cfg.Resources)
-	if err := l.Engine.Up(workDir, files, envFiles, cfg.ComposeProject); err != nil {
+	if err := l.startStack(ctx, workDir, files, envFiles, cfg.ComposeProject); err != nil {
 		return err
 	}
 	display.Done(os.Stdout, "Stack started.")
 	fmt.Println("Next: camunda wait && camunda urls")
-	fmt.Println("Lab UI: http://localhost:9090  (camunda ui)")
+	fmt.Println("Lab UI: http://localhost:9090  (auto-started in background)")
 	return nil
 }
 

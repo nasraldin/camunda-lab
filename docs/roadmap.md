@@ -2,26 +2,28 @@
 
 This is an honest status page — not a delivery calendar. Dates slip; features land when they’re solid.
 
-**Current release:** [v0.5.0](https://github.com/nasraldin/camunda-lab/releases/tag/v0.5.0)  
+**Current release:** [v0.6.0](https://github.com/nasraldin/camunda-lab/releases/tag/v0.6.0)  
 **Docs site:** [nasraldin.github.io/camunda-lab](https://nasraldin.github.io/camunda-lab/)
 
-## What’s in v0.5.0
+## What’s in v0.6.0
 
-### Lab UI
+### Lab UI polish
 
-- **`camunda ui`** — embedded Camunda Lab Console on `http://localhost:9090` (loopback only, no auth)
-- Home: start/stop/restart, doctor, smoke, CLI update check
-- Get started: install / switch version, profile, resources, optional AI
-- Apps: grouped cards, **Auto sign-in** (Keycloak warm as `demo`/`demo`, opt-out remembered in the browser)
-- Sign out / Fix broken session for stuck SSO cookies
-- Logins, Services (filter/search/restart), Logs (filter/highlight), AI helpers, Extras, Reset lab
-- Light / dark theme
-- Guide + screenshots: [Lab UI](lab-ui.md)
+- **Auto-start** — `camunda install`, `up`, `restart`, `switch`, and `profile` start the UI in the background; Homebrew `post_install` does too
+- **Friendly Docker errors** — leftover container name conflicts show plain language + **Clean up and try again** in the UI
+- **`camunda ui logs`** / **`camunda ui logs -f`** — tail background UI logs (`~/.camunda-lab/logs/ui.log`)
+- **Local dev** — `make dev`, `make dev-restart-api`, Vite hot reload on `:5173`
 
-### From v0.4.0 (still included)
+### Maintainer / install
 
-- Camunda Compose **8.7–8.10**, profiles light / full / modeler, resource presets
-- ElasticVue, AI Agent + MCP helpers, `c8ctl` / Modeler tools
+- Homebrew tap publishes automatically on every GitHub Release (no more stale formula)
+- CI hardening: concurrency, `make tidy`, embedded UI dist check, govulncheck advisory, Go 1.24.4
+
+### From v0.5.0 (still included)
+
+- **`camunda ui`** — embedded Camunda Lab Console on `http://localhost:9090`
+- Home, Get started, Apps (auto sign-in), Services, Logs, AI helpers, Reset lab
+- Camunda Compose **8.7–8.10**, profiles, ElasticVue, AI Agent + MCP, `c8ctl` / Modeler tools
 - GitHub Releases, `install.sh`, Homebrew (`camunda-lab`)
 
 ## Landed on `main` (next release)

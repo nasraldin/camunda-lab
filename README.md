@@ -7,7 +7,7 @@
 <p align="center">
   <a href="https://github.com/nasraldin/camunda-lab/actions/workflows/ci.yml"><img src="https://github.com/nasraldin/camunda-lab/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/nasraldin/camunda-lab/actions/workflows/docs.yml"><img src="https://github.com/nasraldin/camunda-lab/actions/workflows/docs.yml/badge.svg" alt="Docs"></a>
-  <a href="https://github.com/nasraldin/camunda-lab/releases/tag/v0.5.0"><img src="https://img.shields.io/badge/release-v0.5.0-blue" alt="v0.5.0"></a>
+  <a href="https://github.com/nasraldin/camunda-lab/releases/tag/v0.6.0"><img src="https://img.shields.io/badge/release-v0.6.0-blue" alt="v0.6.0"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
   <a href="https://nasraldin.github.io/camunda-lab/"><img src="https://img.shields.io/badge/docs-GitHub%20Pages-indigo" alt="Docs site"></a>
 </p>
@@ -16,7 +16,7 @@ Unofficial local Camunda 8 lab. Not affiliated with Camunda GmbH.
 
 Camunda already ships solid Docker Compose files. What’s missing is the day-to-day glue: fetch the right zip, pick light vs full, wait until Keycloak is up, remember which port is Operate, switch 8.8 → 8.9 without leaving a mess. That’s what **`camunda`** does — no Kubernetes required.
 
-**Docs:** [https://nasraldin.github.io/camunda-lab/](https://nasraldin.github.io/camunda-lab/) · **Latest:** [v0.5.0](https://github.com/nasraldin/camunda-lab/releases/tag/v0.5.0)
+**Docs:** [https://nasraldin.github.io/camunda-lab/](https://nasraldin.github.io/camunda-lab/) · **Latest:** [v0.6.0](https://github.com/nasraldin/camunda-lab/releases/tag/v0.6.0)
 
 <p align="center">
   <img src="docs/assets/screenshots/lab-ui-home.png" alt="Camunda Lab UI — Home" width="920">
@@ -86,10 +86,13 @@ camunda ai config    # Cursor / Claude MCP JSON
 # camunda install --version 8.9 --profile light --yes --ai --openai-key "$OPENAI_API_KEY"
 ```
 
-**Lab UI** (embedded control panel, no auth, localhost only):
+**Lab UI** (embedded control panel, no auth, localhost only — **starts automatically** on `camunda install` / `camunda up`):
 
 ```bash
-camunda ui
+camunda ui              # ensure background UI + open browser
+camunda ui --foreground # run in this terminal instead
+camunda ui logs         # recent background UI log lines
+camunda ui logs -f      # follow background UI logs
 # http://localhost:9090
 ```
 
@@ -109,7 +112,8 @@ Ports differ by Camunda minor — run `camunda urls` (see [profiles](https://nas
 | `camunda about` | Project + runtime info |
 | `camunda wait` / `doctor` / `smoke` | Health |
 | `camunda urls` / `open` | Where the UIs live |
-| `camunda ui` | Local Lab UI (http://localhost:9090) |
+| `camunda ui` | Lab UI in background (http://localhost:9090) |
+| `camunda ui logs -f` | Follow background UI logs |
 | `camunda ai enable` / `config` | MCP + AI Agent secrets (8.9+) |
 | `camunda monitoring enable` | Prometheus + Grafana dashboards |
 | `camunda switch 8.9 --wipe` | Another minor, clean volumes |
@@ -145,6 +149,25 @@ See [CONTRIBUTING.md](CONTRIBUTING.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 ## Disclaimer
 
 Local development only. Production → [Camunda Helm](https://docs.camunda.io/docs/self-managed/setup/install/).
+
+### Develop camunda-lab locally
+
+```bash
+git clone https://github.com/nasraldin/camunda-lab.git && cd camunda-lab
+export PATH="$(pwd)/bin:$HOME/.local/bin:$PATH"   # repo build before Homebrew
+make install-dev          # ~/.local/bin/camunda (dev build)
+make dev                  # API :9090 + Vite :5173 (hot reload UI)
+make dev-restart-api      # after Go changes — rebuild + restart API on :9090
+# or two terminals:
+make dev-api              # terminal 1 — API only
+make dev-ui               # terminal 2 — Vite at http://localhost:5173
+make dev-stop             # stop background API
+camunda ui logs -f        # follow API logs
+```
+
+Use **http://localhost:5173** while developing the UI (Vite proxies `/api` to the Go server on 9090). Use **http://localhost:9090** to test the embedded production build (`make ui && make dev-api`).
+
+After changing **Go** code, restart the API: `make dev-restart-api` (Vite does not reload the backend).
 
 ## License
 

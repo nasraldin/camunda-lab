@@ -1,12 +1,12 @@
 name: Homebrew
 
+# Manual / backfill only. Normal releases publish the tap from release.yml
+# (GoReleaser uses GITHUB_TOKEN, which does not trigger release:published).
 on:
-  release:
-    types: [published]
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release tag to publish (e.g. v0.1.0). Defaults to latest release."
+        description: "Release tag to publish (e.g. v0.5.0). Defaults to latest release."
         required: false
         type: string
 
@@ -30,8 +30,6 @@ jobs:
           set -euo pipefail
           if [[ -n "${INPUT_TAG:-}" ]]; then
             TAG="${INPUT_TAG}"
-          elif [[ "${GITHUB_EVENT_NAME}" == "release" ]]; then
-            TAG="${GITHUB_REF_NAME}"
           else
             TAG="$(gh release view --json tagName -q .tagName)"
           fi
@@ -39,21 +37,17 @@ jobs:
           echo "tag=${TAG}" >> "${GITHUB_OUTPUT}"
           echo "Publishing Homebrew formula for ${TAG}"
 
-      - name: Check tap token
-        id: token
+      - name: Require tap token
         env:
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
         run: |
           if [[ -z "${HOMEBREW_TAP_TOKEN:-}" ]]; then
-            echo "skip=true" >> "${GITHUB_OUTPUT}"
-            echo "::warning::HOMEBREW_TAP_TOKEN secret is not set. Skipping tap publish."
-            echo "See docs/homebrew.md for first-time setup."
-          else
-            echo "skip=false" >> "${GITHUB_OUTPUT}"
+            echo "::error::HOMEBREW_TAP_TOKEN secret is not set."
+            echo "See docs/homebrew.md for setup."
+            exit 1
           fi
 
       - name: Publish to nasraldin/homebrew-tools
-        if: steps.token.outputs.skip == 'false'
         env:
           GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           TAP_REPO: nasraldin/homebrew-tools

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { getOverview, postJSON } from "../api";
+import { getOverview, postJSON, ApiError } from "../api";
+import { LabErrorBanner } from "../components/LabErrorBanner";
 
 function nextVersion(supported: string[], current: string): string {
   const i = supported.indexOf(current);
@@ -21,7 +22,8 @@ export function SetupPage() {
   const [openaiBase, setOpenaiBase] = useState("");
   const [busy, setBusy] = useState("");
   const [msg, setMsg] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState<ApiError | null>(null);
+  const [lastOp, setLastOp] = useState<"install" | "switch" | null>(null);
   const [configured, setConfigured] = useState(false);
 
   useEffect(() => {
@@ -43,9 +45,23 @@ export function SetupPage() {
     [configured, currentVersion, version],
   );
 
+  async function recoverAndRetry(action: () => Promise<void>) {
+    setBusy("recover");
+    setError(null);
+    try {
+      await postJSON("/api/v1/recover");
+      await action();
+    } catch (e) {
+      setError(e instanceof ApiError ? e : new ApiError(e instanceof Error ? e.message : String(e)));
+    } finally {
+      setBusy("");
+    }
+  }
+
   async function install() {
+    setLastOp("install");
     setBusy("install");
-    setError("");
+    setError(null);
     setMsg("");
     try {
       await postJSON("/api/v1/install", {
@@ -62,15 +78,16 @@ export function SetupPage() {
       setCurrentVersion(version);
       setVersion(nextVersion(versions, version));
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(e instanceof ApiError ? e : new ApiError(e instanceof Error ? e.message : String(e)));
     } finally {
       setBusy("");
     }
   }
 
   async function switchVersion() {
+    setLastOp("switch");
     setBusy("switch");
-    setError("");
+    setError(null);
     setMsg("");
     try {
       await postJSON("/api/v1/switch", {
@@ -85,7 +102,7 @@ export function SetupPage() {
       setCurrentVersion(version);
       setVersion(nextVersion(versions, version));
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(e instanceof ApiError ? e : new ApiError(e instanceof Error ? e.message : String(e)));
     } finally {
       setBusy("");
     }
@@ -93,12 +110,12 @@ export function SetupPage() {
 
   async function applyProfile() {
     setBusy("profile");
-    setError("");
+    setError(null);
     try {
       await postJSON("/api/v1/profile", { profile });
       setMsg(`Lab size set to ${profile}.`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(e instanceof ApiError ? e : new ApiError(e instanceof Error ? e.message : String(e)));
     } finally {
       setBusy("");
     }
@@ -106,12 +123,12 @@ export function SetupPage() {
 
   async function applyResources() {
     setBusy("resources");
-    setError("");
+    setError(null);
     try {
       await postJSON("/api/v1/resources", { resources });
       setMsg(`Resource size set to ${resources}. Restart the lab to apply memory settings.`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(e instanceof ApiError ? e : new ApiError(e instanceof Error ? e.message : String(e)));
     } finally {
       setBusy("");
     }
@@ -126,7 +143,20 @@ export function SetupPage() {
           time.
         </p>
       </div>
-      {error && <div className="banner error">{error}</div>}
+      {error && (
+        <LabErrorBanner
+          error={error}
+          busy={busy === "recover"}
+          onRecover={
+            error.recoverable && lastOp
+              ? () =>
+                  void recoverAndRetry(() =>
+                    lastOp === "switch" ? switchVersion() : install(),
+                  )
+              : undefined
+          }
+        />
+      )}
       {msg && <div className="banner ok">{msg}</div>}
       <div className="card stack">
         <label className="field">
