@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getOverview, postJSON, ApiError } from '../api'
+import {
+  ConfirmActionModal,
+  type ConfirmAction,
+} from '../components/ConfirmActionModal'
 import { LabErrorBanner } from '../components/LabErrorBanner'
 
 function nextVersion(supported: string[], current: string): string {
@@ -25,6 +29,7 @@ export function SetupPage() {
   const [error, setError] = useState<ApiError | null>(null)
   const [lastOp, setLastOp] = useState<'install' | 'switch' | null>(null)
   const [configured, setConfigured] = useState(false)
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null)
 
   useEffect(() => {
     void getOverview().then((o) => {
@@ -246,7 +251,18 @@ export function SetupPage() {
         </label>
         <button
           disabled={!!busy || !configured || sameAsCurrent}
-          onClick={() => void switchVersion()}
+          onClick={() => {
+            if (!wipe) {
+              void switchVersion()
+              return
+            }
+            setConfirmAction({
+              title: 'Clear data and switch version',
+              message: `Move to Camunda ${version} and permanently clear the current lab data.`,
+              confirmLabel: 'Clear data and switch',
+              run: switchVersion,
+            })
+          }}
         >
           {busy === 'switch'
             ? 'Changing…'
@@ -255,6 +271,9 @@ export function SetupPage() {
               : `Move to ${version}`}
         </button>
       </div>
+      {confirmAction && (
+        <ConfirmActionModal action={confirmAction} onClose={() => setConfirmAction(null)} />
+      )}
     </div>
   )
 }

@@ -39,15 +39,37 @@ type Options struct {
 	FailOn string // low|medium|high — default medium
 }
 
+// Issue records an input that could not be inspected.
+type Issue struct {
+	Path string
+	Err  error
+}
+
+// Result includes findings and honest scan accounting.
+type Result struct {
+	Findings []Finding
+	Issues   []Issue
+}
+
 // Walk scans a directory tree.
 func Walk(opts Options) ([]Finding, error) {
+	result, err := WalkWithReport(opts)
+	return result.Findings, err
+}
+
+// WalkWithReport scans a tree and reports recoverable per-path failures.
+func WalkWithReport(opts Options) (Result, error) {
 	root := opts.Root
 	if root == "" {
 		root = "."
 	}
-	var out []Finding
+	var result Result
 	err := filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
+			if path == root {
+				return err
+			}
+			result.Issues = append(result.Issues, Issue{Path: path, Err: err})
 			return nil
 		}
 		if d.IsDir() {
@@ -63,12 +85,13 @@ func Walk(opts Options) ([]Finding, error) {
 		}
 		fs, err := scanFile(path)
 		if err != nil {
+			result.Issues = append(result.Issues, Issue{Path: path, Err: err})
 			return nil
 		}
-		out = append(out, fs...)
+		result.Findings = append(result.Findings, fs...)
 		return nil
 	})
-	return out, err
+	return result, err
 }
 
 func scanFile(path string) ([]Finding, error) {

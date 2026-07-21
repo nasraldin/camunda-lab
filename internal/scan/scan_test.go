@@ -51,3 +51,18 @@ func TestWalkClean(t *testing.T) {
 		t.Fatalf("unexpected %#v", fs)
 	}
 }
+
+func TestWalkWithReportAccountsForUnreadableFiles(t *testing.T) {
+	dir := t.TempDir()
+	broken := filepath.Join(dir, "secret.env")
+	if err := os.Symlink(filepath.Join(dir, "missing-target"), broken); err != nil {
+		t.Fatal(err)
+	}
+	result, err := WalkWithReport(Options{Root: dir})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Findings) != 0 || len(result.Issues) != 1 || result.Issues[0].Path != broken {
+		t.Fatalf("result = %+v", result)
+	}
+}

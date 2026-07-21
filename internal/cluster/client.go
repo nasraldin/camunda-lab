@@ -84,26 +84,23 @@ type searchBody struct {
 
 // ResolveBaseURL picks Orchestration /v2 URL for the active env (lab or remote).
 func ResolveBaseURL(labHome string, cfg config.Config) (string, error) {
-	active := env.GetActive(labHome)
+	active, err := env.GetActive(labHome)
+	if err != nil {
+		return "", err
+	}
 	if active != "" && active != "lab" {
-		ps, err := env.ListProfiles(filepath.Join(labHome, "envs"))
+		p, err := env.LoadNamedProfile(filepath.Join(labHome, "envs"), active)
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("active env %q not found (camunda env use lab): %w", active, err)
 		}
-		for _, p := range ps {
-			if p.Name != active {
-				continue
-			}
-			u := strings.TrimRight(p.Endpoints["orchestration"], "/")
-			if u == "" {
-				return "", fmt.Errorf("profile %q missing endpoints.orchestration", active)
-			}
-			if !strings.HasSuffix(u, "/v2") {
-				u += "/v2"
-			}
-			return u, nil
+		u := strings.TrimRight(p.Endpoints["orchestration"], "/")
+		if u == "" {
+			return "", fmt.Errorf("profile %q missing endpoints.orchestration", active)
 		}
-		return "", fmt.Errorf("active env %q not found (camunda env use lab)", active)
+		if !strings.HasSuffix(u, "/v2") {
+			u += "/v2"
+		}
+		return u, nil
 	}
 	for _, e := range urls.List(cfg) {
 		if e.Name == "rest" && strings.HasPrefix(e.URL, "http") {

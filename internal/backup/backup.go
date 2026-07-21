@@ -5,22 +5,11 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 )
-
-// Manifest describes a backup archive.
-type Manifest struct {
-	Version         int               `json:"version"`
-	CreatedAt       string            `json:"createdAt"`
-	Lab             map[string]string `json:"lab"`
-	IncludesSecrets bool              `json:"includesSecrets"`
-	Files           []string          `json:"files"`
-	AISecretKeys    []string          `json:"aiSecretKeys,omitempty"`
-}
 
 // Options for Create.
 type Options struct {
@@ -30,6 +19,11 @@ type Options struct {
 	IncludeSecrets bool
 	LabVersion     string
 	LabProfile     string
+}
+
+type backupFile struct {
+	name string
+	data []byte
 }
 
 // Create writes a gzip tar backup.
@@ -44,33 +38,17 @@ func Create(opts Options) (Manifest, error) {
 		IncludesSecrets: opts.IncludeSecrets,
 	}
 
-	f, err := os.Create(opts.OutPath)
-	if err != nil {
-		return Manifest{}, err
-	}
-	defer f.Close()
-	gz := gzip.NewWriter(f)
-	defer gz.Close()
-	tw := tar.NewWriter(gz)
-	defer tw.Close()
-
-	addFile := func(name string, data []byte) error {
-		hdr := &tar.Header{Name: name, Mode: 0o600, Size: int64(len(data)), ModTime: time.Now()}
-		if err := tw.WriteHeader(hdr); err != nil {
-			return err
-		}
-		_, err := tw.Write(data)
-		if err == nil {
-			m.Files = append(m.Files, name)
-		}
-		return err
+	var files []backupFile
+	addFile := func(name string, data []byte) {
+		files = append(files, backupFile{name: name, data: data})
+		m.Files = append(m.Files, name)
 	}
 
 	cfgPath := filepath.Join(opts.LabHome, "config.yaml")
 	if data, err := os.ReadFile(cfgPath); err == nil {
-		if err := addFile("config.yaml", data); err != nil {
-			return Manifest{}, err
-		}
+		addFile("config.yaml", data)
+	} else if !os.IsNotExist(err) {
+		return Manifest{}, fmt.Errorf("read lab configuration: %w", err)
 	}
 
 	aiPath := filepath.Join(opts.LabHome, "ai.env")
@@ -78,32 +56,57 @@ func Create(opts Options) (Manifest, error) {
 		keys := secretKeyNames(string(data))
 		m.AISecretKeys = keys
 		if opts.IncludeSecrets {
-			if err := addFile("ai.env", data); err != nil {
-				return Manifest{}, err
-			}
+			addFile("ai.env", data)
 		} else {
-			meta, _ := json.Marshal(map[string]any{"keys": keys, "note": "values omitted"})
-			if err := addFile("ai.keys.json", meta); err != nil {
+			meta, err := json.Marshal(map[string]any{"keys": keys, "note": "values omitted"})
+			if err != nil {
 				return Manifest{}, err
 			}
+			addFile("ai.keys.json", meta)
 		}
+	} else if !os.IsNotExist(err) {
+		return Manifest{}, fmt.Errorf("read AI environment: %w", err)
 	}
 
 	if opts.ProjectDir != "" {
 		for _, sub := range []string{"bpmn", "dmn", "forms"} {
 			dir := filepath.Join(opts.ProjectDir, sub)
-			_ = filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
-				if err != nil || d.IsDir() {
+			if _, err := os.Stat(dir); err != nil {
+				if os.IsNotExist(err) {
+					continue
+				}
+				return Manifest{}, fmt.Errorf("inspect project resources: %w", err)
+			}
+			if err := filepath.WalkDir(dir, func(path string, d os.DirEntry, walkErr error) error {
+				if walkErr != nil {
+					return walkErr
+				}
+				if d.Type()&os.ModeSymlink != 0 {
+					return fmt.Errorf("project symlinks are not supported")
+				}
+				if d.IsDir() {
 					return nil
 				}
-				rel, _ := filepath.Rel(opts.ProjectDir, path)
+				info, err := d.Info()
+				if err != nil {
+					return err
+				}
+				if !info.Mode().IsRegular() {
+					return fmt.Errorf("unsupported project file type")
+				}
+				rel, err := filepath.Rel(opts.ProjectDir, path)
+				if err != nil {
+					return err
+				}
 				data, err := os.ReadFile(path)
 				if err != nil {
-					return nil
+					return err
 				}
-				_ = addFile(filepath.ToSlash(filepath.Join("project", rel)), data)
+				addFile(filepath.ToSlash(filepath.Join("project", rel)), data)
 				return nil
-			})
+			}); err != nil {
+				return Manifest{}, fmt.Errorf("read project resources: %w", err)
+			}
 		}
 	}
 
@@ -111,64 +114,68 @@ func Create(opts Options) (Manifest, error) {
 	if err != nil {
 		return Manifest{}, err
 	}
-	if err := addFile("manifest.json", manData); err != nil {
+	if err := writeBackupArchive(opts.OutPath, files, manData); err != nil {
 		return Manifest{}, err
 	}
 	return m, nil
 }
 
-// Restore extracts archive into labHome (and optional projectDir).
-func Restore(archive, labHome, projectDir string) (Manifest, error) {
-	f, err := os.Open(archive)
+func writeBackupArchive(outPath string, files []backupFile, manifest []byte) (returnErr error) {
+	parent := filepath.Dir(outPath)
+	temp, err := os.CreateTemp(parent, ".camunda-lab-backup-*")
 	if err != nil {
-		return Manifest{}, err
+		return err
 	}
-	defer f.Close()
-	gz, err := gzip.NewReader(f)
-	if err != nil {
-		return Manifest{}, err
+	tempPath := temp.Name()
+	defer func() {
+		_ = temp.Close()
+		if returnErr != nil {
+			_ = os.Remove(tempPath)
+		}
+	}()
+	if err := temp.Chmod(0o600); err != nil {
+		return err
 	}
-	defer gz.Close()
-	tr := tar.NewReader(gz)
-	var man Manifest
-	for {
-		hdr, err := tr.Next()
-		if err == io.EOF {
-			break
+
+	gz := gzip.NewWriter(temp)
+	tw := tar.NewWriter(gz)
+	writeFile := func(file backupFile) error {
+		header := &tar.Header{
+			Name: file.name, Mode: 0o600, Size: int64(len(file.data)),
+			ModTime: time.Now(), Typeflag: tar.TypeReg,
 		}
-		if err != nil {
-			return Manifest{}, err
+		if err := tw.WriteHeader(header); err != nil {
+			return err
 		}
-		data, err := io.ReadAll(tr)
-		if err != nil {
-			return Manifest{}, err
+		if _, err := tw.Write(file.data); err != nil {
+			return err
 		}
-		switch {
-		case hdr.Name == "manifest.json":
-			_ = json.Unmarshal(data, &man)
-		case hdr.Name == "config.yaml":
-			if err := os.MkdirAll(labHome, 0o755); err != nil {
-				return Manifest{}, err
-			}
-			if err := os.WriteFile(filepath.Join(labHome, "config.yaml"), data, 0o644); err != nil {
-				return Manifest{}, err
-			}
-		case hdr.Name == "ai.env":
-			if err := os.WriteFile(filepath.Join(labHome, "ai.env"), data, 0o600); err != nil {
-				return Manifest{}, err
-			}
-		case strings.HasPrefix(hdr.Name, "project/") && projectDir != "":
-			rel := strings.TrimPrefix(hdr.Name, "project/")
-			dest := filepath.Join(projectDir, rel)
-			if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
-				return Manifest{}, err
-			}
-			if err := os.WriteFile(dest, data, 0o644); err != nil {
-				return Manifest{}, err
-			}
+		return nil
+	}
+	for _, file := range files {
+		if err := writeFile(file); err != nil {
+			return err
 		}
 	}
-	return man, nil
+	if err := writeFile(backupFile{name: "manifest.json", data: manifest}); err != nil {
+		return err
+	}
+	if err := tw.Close(); err != nil {
+		return err
+	}
+	if err := gz.Close(); err != nil {
+		return err
+	}
+	if err := temp.Sync(); err != nil {
+		return err
+	}
+	if err := temp.Close(); err != nil {
+		return err
+	}
+	if err := os.Rename(tempPath, outPath); err != nil {
+		return err
+	}
+	return nil
 }
 
 func secretKeyNames(envFile string) []string {

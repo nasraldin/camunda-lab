@@ -26,8 +26,8 @@ type AuthRefs struct {
 
 // Validate checks profile rules.
 func (p Profile) Validate() error {
-	if strings.TrimSpace(p.Name) == "" {
-		return fmt.Errorf("name is required")
+	if err := ValidateName(p.Name); err != nil {
+		return err
 	}
 	if p.Kind != "lab" && p.Kind != "remote" {
 		return fmt.Errorf("kind must be lab or remote")
@@ -56,18 +56,34 @@ func SaveProfile(dir string, p Profile) error {
 	if err := p.Validate(); err != nil {
 		return err
 	}
+	path, err := ProfilePath(dir, p.Name)
+	if err != nil {
+		return err
+	}
 	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return err
+	}
+	if info, err := os.Lstat(path); err == nil && info.Mode()&os.ModeSymlink != 0 {
+		return fmt.Errorf("refusing profile symlink %q", p.Name)
+	} else if err != nil && !os.IsNotExist(err) {
 		return err
 	}
 	data, err := yaml.Marshal(p)
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(filepath.Join(dir, p.Name+".yaml"), data, 0o644)
+	return os.WriteFile(path, data, 0o644)
 }
 
 // LoadProfile reads one profile.
 func LoadProfile(path string) (Profile, error) {
+	info, err := os.Lstat(path)
+	if err != nil {
+		return Profile{}, err
+	}
+	if info.Mode()&os.ModeSymlink != 0 {
+		return Profile{}, fmt.Errorf("refusing profile symlink")
+	}
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return Profile{}, err
@@ -83,6 +99,30 @@ func LoadProfile(path string) (Profile, error) {
 	}
 	if err := p.Validate(); err != nil {
 		return Profile{}, err
+	}
+	filename := filepath.Base(path)
+	if !strings.HasSuffix(filename, ".yaml") {
+		return Profile{}, fmt.Errorf("profile filename must end in .yaml")
+	}
+	expectedName := strings.TrimSuffix(filename, ".yaml")
+	if p.Name != expectedName {
+		return Profile{}, fmt.Errorf("profile name %q does not match filename %q", p.Name, expectedName)
+	}
+	return p, nil
+}
+
+// LoadNamedProfile reads a validated profile and verifies its embedded name.
+func LoadNamedProfile(dir, name string) (Profile, error) {
+	path, err := ProfilePath(dir, name)
+	if err != nil {
+		return Profile{}, err
+	}
+	p, err := LoadProfile(path)
+	if err != nil {
+		return Profile{}, err
+	}
+	if p.Name != name {
+		return Profile{}, fmt.Errorf("profile name %q does not match filename %q", p.Name, name)
 	}
 	return p, nil
 }
@@ -101,37 +141,14 @@ func ListProfiles(dir string) ([]Profile, error) {
 		if e.IsDir() || !strings.HasSuffix(e.Name(), ".yaml") {
 			continue
 		}
-		p, err := LoadProfile(filepath.Join(dir, e.Name()))
+		name := strings.TrimSuffix(e.Name(), ".yaml")
+		p, err := LoadNamedProfile(dir, name)
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", e.Name(), err)
 		}
 		out = append(out, p)
 	}
 	return out, nil
-}
-
-// ActiveFile stores the active profile name.
-func ActiveFile(labHome string) string {
-	return filepath.Join(labHome, "active-env")
-}
-
-func SetActive(labHome, name string) error {
-	if err := os.MkdirAll(labHome, 0o755); err != nil {
-		return err
-	}
-	return os.WriteFile(ActiveFile(labHome), []byte(name+"\n"), 0o644)
-}
-
-func GetActive(labHome string) string {
-	data, err := os.ReadFile(ActiveFile(labHome))
-	if err != nil {
-		return "lab"
-	}
-	name := strings.TrimSpace(string(data))
-	if name == "" {
-		return "lab"
-	}
-	return name
 }
 
 // DefaultLab returns the implicit lab profile.

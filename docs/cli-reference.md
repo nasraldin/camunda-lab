@@ -132,7 +132,9 @@ Reads `~/.camunda-lab/logs/ui.log` from the background UI process.
 
 `camunda install` and `camunda up` start the UI in the background automatically (install also opens the browser).
 
-Serves an embedded SPA + `/api/v1` control plane: Overview, Setup, Apps, Containers, Logs, AI/MCP, Tools, Danger. No auth — refuses non-loopback binds. Spec: [lab UI design](https://github.com/nasraldin/camunda-lab/blob/main/docs/superpowers/specs/2026-07-17-lab-ui-design.md).
+Serves an embedded SPA + `/api/v1` control plane: Overview, Setup, Apps, Containers, Logs, AI/MCP, Tools, Danger. There is no authentication, so the server refuses non-loopback binds. It also rejects requests whose HTTP `Host` is not the literal `localhost`, `127.0.0.1`, or `[::1]` (with an optional numeric port). `GET`, `HEAD`, and `OPTIONS` are read-only; every other method must have an `Origin` exactly equal to `http://<Host>` and the process CSRF token in `X-Camunda-Lab-CSRF`. The browser fetches that token from `GET /api/v1/session`; the token is a same-origin request defense, not authentication.
+
+This Lab API protection is separate from the `csrf-disabled.yaml` Compose overlay. That overlay sets `CAMUNDA_SECURITY_CSRF_ENABLED=false` for local Camunda application UIs to avoid new-tab session failures; it does not disable the Lab API's Host, Origin, or token checks. Spec: [lab UI design](https://github.com/nasraldin/camunda-lab/blob/main/docs/superpowers/specs/2026-07-17-lab-ui-design.md).
 
 ---
 
@@ -268,6 +270,49 @@ camunda tools modeler profile
 
 `c8ctl install` runs `npm install -g @camunda8/cli` when npm is available.  
 `modeler profile` writes a Desktop Modeler connection profile named `camunda-lab`.
+
+---
+
+## backup / restore
+
+```bash
+camunda backup
+camunda backup -o ./lab-backup.tar.gz
+camunda backup -o ./lab-backup-with-secrets.tar.gz --include-secrets
+
+camunda restore ./lab-backup.tar.gz
+camunda restore ./lab-backup.tar.gz --project /absolute/path/to/project
+camunda restore ./lab-backup.tar.gz --yes
+camunda restore ./lab-backup.tar.gz --yes --force
+```
+
+### What a backup contains
+
+- `manifest.json`, including format version, creation time, lab version/profile, the exact payload list, and whether secrets are present.
+- Lab `config.yaml`, when it exists.
+- AI secret **key names only** in `ai.keys.json` by default. Secret values are excluded.
+- `ai.env` values only with the explicit `--include-secrets` opt-in.
+- From the detected current Camunda project, regular files below `bpmn/`, `dmn/`, and `forms/`. Project symlinks and other special files are rejected.
+
+Backups do **not** contain Docker volumes, databases, container images, downloaded Camunda version directories, logs, generated tests, workers, connectors, scripts, Helm files, arbitrary project files, or environment profiles. This is a lab configuration and model-resource backup, not a complete running-system or data backup.
+
+The archive is created through a temporary file and published with permission `0600`. Treat an archive made with `--include-secrets` as a secret.
+
+### Restore contract
+
+Without `--yes` / `-y`, restore requires the exact, case-sensitive text `RESTORE`. `--yes` skips only that prompt; it does not relax archive validation.
+
+The CLI checks the configured Compose project and refuses restore if any container is running. Stop it with `camunda down`. `--force` bypasses only this running-lab check; it does not bypass path, manifest, type, size, destination, or transactional safety checks.
+
+`--project DIR` selects the destination for archived `project/...` resources. Without it, the CLI uses the current project root when one can be detected. If there is no project destination, project entries are validated but skipped; lab `config.yaml` and optional `ai.env` still restore.
+
+Restore accepts only a gzip tar archive with a version-1 manifest whose file list exactly matches its payload. It rejects absolute/traversing/backslash paths, duplicate entries or destinations, links and special files, unsupported destinations, and symbolic links or incompatible file types in destination paths. Default decompressed limits are:
+
+- at most 10,000 archive entries;
+- at most 64 MiB per entry;
+- at most 512 MiB total.
+
+The complete archive is validated before destination mutation, then extracted into `0700` staging directories and committed with rollback on failure. Restored directories are created as `0700`; `ai.env` is `0600`; other restored files are `0644`. Restore replaces files named by the archive but does not delete unrelated existing files, restore Docker volumes/databases, or start/restart the lab.
 
 ---
 

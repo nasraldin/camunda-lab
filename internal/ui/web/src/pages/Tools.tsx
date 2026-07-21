@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getC8ctlStatus, postJSON } from '../api'
+import { getC8ctlStatus, postForm, postJSON } from '../api'
 
 export function ToolsPage() {
   const [c8, setC8] = useState<{ installed: boolean; path: string } | null>(null)
@@ -99,9 +99,7 @@ export function ToolsPage() {
             try {
               const fd = new FormData()
               fd.append('file', file)
-              const res = await fetch('/api/v1/tools/deploy', { method: 'POST', body: fd })
-              const data = await res.json()
-              if (!res.ok) throw new Error(data.error || res.statusText)
+              const data = await postForm('/api/v1/tools/deploy', fd)
               setDeployOut(data.output || 'ok')
               setMsg('Process uploaded.')
             } catch (err) {

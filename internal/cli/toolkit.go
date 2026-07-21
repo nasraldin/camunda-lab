@@ -1,8 +1,11 @@
 package cli
 
 import (
+	"bufio"
+	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -19,6 +22,7 @@ import (
 	"github.com/nasraldin/camunda-lab/internal/explain"
 	"github.com/nasraldin/camunda-lab/internal/incidents"
 	"github.com/nasraldin/camunda-lab/internal/k8s"
+	"github.com/nasraldin/camunda-lab/internal/lab"
 	"github.com/nasraldin/camunda-lab/internal/lint"
 	"github.com/nasraldin/camunda-lab/internal/paths"
 	"github.com/nasraldin/camunda-lab/internal/plan"
@@ -275,7 +279,10 @@ func newEnvCmd() *cobra.Command {
 		Use:   "list",
 		Short: "List profiles",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			active := env.GetActive(paths.Home())
+			active, err := env.GetActive(paths.Home())
+			if err != nil {
+				return err
+			}
 			fmt.Fprintf(cmd.OutOrStdout(), "active: %s\n", active)
 			fmt.Fprintln(cmd.OutOrStdout(), "lab (implicit)")
 			ps, err := env.ListProfiles(filepath.Join(paths.Home(), "envs"))
@@ -293,14 +300,18 @@ func newEnvCmd() *cobra.Command {
 		Short: "Set active profile",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return env.SetActive(paths.Home(), args[0])
+			return env.SetActive(paths.Home(), filepath.Join(paths.Home(), "envs"), args[0])
 		},
 	})
 	cmd.AddCommand(&cobra.Command{
 		Use:   "show",
 		Short: "Show active profile name",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Fprintln(cmd.OutOrStdout(), env.GetActive(paths.Home()))
+			active, err := env.GetActive(paths.Home())
+			if err != nil {
+				return err
+			}
+			fmt.Fprintln(cmd.OutOrStdout(), active)
 			return nil
 		},
 	})
@@ -327,7 +338,7 @@ func newEnvCmd() *cobra.Command {
 		Short: "Remove a profile",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return os.Remove(filepath.Join(paths.Home(), "envs", args[0]+".yaml"))
+			return env.RemoveProfile(paths.Home(), filepath.Join(paths.Home(), "envs"), args[0])
 		},
 	})
 	return cmd
@@ -359,7 +370,11 @@ func newPlanCmd() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("cluster inventory (is the lab up?): %w", err)
 			}
-			p := plan.Build(env.GetActive(paths.Home()), local, remote)
+			active, err := env.GetActive(paths.Home())
+			if err != nil {
+				return err
+			}
+			p := plan.Build(active, local, remote)
 			fmt.Fprint(cmd.OutOrStdout(), plan.FormatText(p))
 			return nil
 		},
@@ -394,7 +409,11 @@ func newDriftCmd() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("cluster inventory (is the lab up?): %w", err)
 			}
-			r := drift.Compare(env.GetActive(paths.Home()), local, remote)
+			active, err := env.GetActive(paths.Home())
+			if err != nil {
+				return err
+			}
+			r := drift.Compare(active, local, remote)
 			fmt.Fprint(cmd.OutOrStdout(), drift.FormatText(r))
 			if drift.HasDrift(r) {
 				return fmt.Errorf("drift detected")
@@ -439,21 +458,48 @@ func newBackupCmd() *cobra.Command {
 }
 
 func newRestoreCmd() *cobra.Command {
+	return newRestoreCmdWith(backup.Restore, lab.New())
+}
+
+type restoreFunc func(context.Context, backup.RestoreOptions) (backup.Manifest, error)
+
+func newRestoreCmdWith(restore restoreFunc, runningLab backup.RunningChecker) *cobra.Command {
 	var yes bool
+	var force bool
+	var projectDir string
 	cmd := &cobra.Command{
 		Use:   "restore archive.tar.gz",
 		Short: "Restore a lab backup archive",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if !yes {
-				return fmt.Errorf("refusing restore without --yes")
+				fmt.Fprint(cmd.OutOrStdout(), "Type RESTORE to confirm: ")
+				line, err := bufio.NewReader(cmd.InOrStdin()).ReadString('\n')
+				if err != nil && err != io.EOF {
+					return fmt.Errorf("read restore confirmation: %w", err)
+				}
+				line = strings.TrimSuffix(strings.TrimSuffix(line, "\n"), "\r")
+				if line != "RESTORE" {
+					return fmt.Errorf("restore confirmation must be exactly RESTORE")
+				}
 			}
-			proj, _ := findProjectRoot()
-			_, err := backup.Restore(args[0], paths.Home(), proj)
+			project := projectDir
+			if project == "" {
+				project, _ = findProjectRoot()
+			}
+			_, err := restore(cmd.Context(), backup.RestoreOptions{
+				ArchivePath: args[0],
+				LabHome:     paths.Home(),
+				ProjectDir:  project,
+				Force:       force,
+				Lab:         runningLab,
+			})
 			return err
 		},
 	}
 	cmd.Flags().BoolVarP(&yes, "yes", "y", false, "Confirm restore")
+	cmd.Flags().BoolVar(&force, "force", false, "Restore even if the lab is running")
+	cmd.Flags().StringVar(&projectDir, "project", "", "Project directory to restore")
 	return cmd
 }
 

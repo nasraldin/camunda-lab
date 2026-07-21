@@ -11,7 +11,16 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/api': 'http://127.0.0.1:9090',
+      '/api': {
+        target: 'http://127.0.0.1:9090',
+        changeOrigin: true,
+        configure(proxy) {
+          proxy.on('proxyReq', (proxyRequest) => {
+            proxyRequest.setHeader('host', '127.0.0.1:9090')
+            proxyRequest.setHeader('origin', 'http://127.0.0.1:9090')
+          })
+        },
+      },
     },
   },
 })

@@ -13,6 +13,10 @@ import {
   type UpdateInfo,
 } from '../api'
 import { LabErrorBanner } from '../components/LabErrorBanner'
+import {
+  ConfirmActionModal,
+  type ConfirmAction,
+} from '../components/ConfirmActionModal'
 import { PROJECT } from '../project'
 
 function pathTail(p?: string): string {
@@ -31,6 +35,7 @@ export function OverviewPage() {
   const [doctor, setDoctor] = useState('')
   const [smoke, setSmoke] = useState('')
   const [updateOut, setUpdateOut] = useState('')
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null)
 
   const refresh = useCallback(async () => {
     setError(null)
@@ -215,14 +220,33 @@ export function OverviewPage() {
                     <button
                       type="button"
                       disabled={!!busy}
-                      onClick={() => void run('down', '/api/v1/down')}
+                      onClick={() =>
+                        setConfirmAction({
+                          title: 'Stop lab',
+                          message: 'Stop every running lab service. In-progress local work will pause.',
+                          confirmLabel: 'Stop lab',
+                          run: async () => {
+                            await run('down', '/api/v1/down')
+                          },
+                        })
+                      }
                     >
                       {busy === 'down' ? 'Stopping…' : 'Stop lab'}
                     </button>
                     <button
                       type="button"
                       disabled={!!busy}
-                      onClick={() => void run('restart', '/api/v1/restart')}
+                      onClick={() =>
+                        setConfirmAction({
+                          title: 'Restart lab',
+                          message:
+                            'Restart every lab service. The local Camunda applications will be temporarily unavailable.',
+                          confirmLabel: 'Restart lab',
+                          run: async () => {
+                            await run('restart', '/api/v1/restart')
+                          },
+                        })
+                      }
                     >
                       {busy === 'restart' ? 'Restarting…' : 'Restart lab'}
                     </button>
@@ -399,6 +423,9 @@ export function OverviewPage() {
               {PROJECT.author}
             </a>
           </div>
+          {confirmAction && (
+            <ConfirmActionModal action={confirmAction} onClose={() => setConfirmAction(null)} />
+          )}
         </>
       )}
     </div>

@@ -39,7 +39,10 @@ func AttachLabAuth(ctx context.Context, c *Client, labHome string, cfg config.Co
 		c.Token = t
 		return nil
 	}
-	active := env.GetActive(labHome)
+	active, err := env.GetActive(labHome)
+	if err != nil {
+		return err
+	}
 	if active != "" && active != "lab" {
 		tok, err := tokenFromRemoteProfile(ctx, labHome, active)
 		if err != nil {
@@ -95,21 +98,9 @@ func FetchLabOIDCToken(ctx context.Context, cfg config.Config) (string, error) {
 }
 
 func tokenFromRemoteProfile(ctx context.Context, labHome, name string) (string, error) {
-	ps, err := env.ListProfiles(filepath.Join(labHome, "envs"))
+	p, err := env.LoadNamedProfile(filepath.Join(labHome, "envs"), name)
 	if err != nil {
 		return "", err
-	}
-	var p env.Profile
-	found := false
-	for _, x := range ps {
-		if x.Name == name {
-			p = x
-			found = true
-			break
-		}
-	}
-	if !found {
-		return "", fmt.Errorf("env profile %q not found", name)
 	}
 	id := os.Getenv(p.Auth.ClientIDEnv)
 	secret := os.Getenv(p.Auth.ClientSecretEnv)

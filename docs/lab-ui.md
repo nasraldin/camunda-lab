@@ -32,6 +32,19 @@ Default bind is **`localhost`** (not `127.0.0.1`) so Keycloak SSO cookies match 
 
 No authentication — only bind loopback addresses.
 
+### Lab API request boundary
+
+The local server enforces more than its loopback bind:
+
+- The request `Host` must literally be `localhost`, `127.0.0.1`, or `[::1]`, optionally followed by a numeric port. This blocks DNS-rebinding and malformed-host requests.
+- `GET`, `HEAD`, and `OPTIONS` need no CSRF header.
+- Every mutation must have an `Origin` exactly equal to `http://` plus that request `Host`, including its port.
+- Every mutation must also send the per-process token from `GET /api/v1/session` in `X-Camunda-Lab-CSRF`. The SPA adds it to JSON, form, multipart, and `DELETE` requests and refetches it once after an invalid-token response.
+
+The token is a same-origin request defense, **not authentication**. Do not expose or proxy the Lab UI beyond loopback.
+
+This boundary belongs to the **Lab API**. It is distinct from the Camunda Compose `csrf-disabled.yaml` overlay described under [Auto sign-in](#auto-sign-in): that local-only overlay disables application CSRF in Operate/Tasklist-style Camunda UIs to preserve new-tab sessions. It does not weaken the Lab API Host, Origin, or token checks.
+
 ---
 
 ## Home
@@ -114,6 +127,18 @@ Uses the same Orchestration REST client as the CLI (OIDC on full labs).
 ## Project
 
 Sidebar **Project**: `camunda init` scaffold, env profiles, backup/restore, and optional Kubernetes helpers (`camunda k8s` — skip on Compose-only labs).
+
+### Backup and restore boundaries
+
+Browser backup writes a gzip tar archive to a temporary path unless an API caller supplies an allowed absolute output path. It includes lab `config.yaml`, AI key-name metadata without values, and regular files under the selected project's `bpmn/`, `dmn/`, and `forms/`. The browser does not expose the CLI's `--include-secrets` opt-in, so it does not put `ai.env` values into its backup. Docker volumes, databases, images, downloaded versions, logs, and other project directories are not backed up.
+
+Browser restore requires selecting an archive and then typing exact `RESTORE` in the confirmation dialog. The selected project directory is the destination for `project/...` entries; if it is blank, those entries are validated but not written. The upload is capped by the API at 50 MiB compressed, and the shared restore engine additionally enforces the decompressed limits documented in [CLI backup / restore](cli-reference.md#backup--restore). It validates the complete manifest and payload, rejects unsafe paths and file types, stages privately, and rolls back a failed commit. It replaces archived files but does not remove unrelated files or restore Docker data.
+
+Unlike CLI restore, the browser endpoint does **not** expose `--force` and currently does not run the CLI's running-lab preflight. Stop the lab before browser restore. The archive safety checks still apply, but the confirmation dialog is not a substitute for stopping services that may be using the files.
+
+### Browser confirmation gates
+
+The browser opens an explicit confirmation dialog before incident retry, environment removal, Kubernetes restart/scale, service restart, lab stop/restart, and destructive version switch. Restore additionally requires typed `RESTORE`. Reset lab retains typed `DELETE` and adds a second explicit modal confirmation. These are browser interaction gates; direct API mutations are separately protected by the Lab API Origin/CSRF boundary and, where implemented, server-side confirmation fields. They do not turn backup/restore into a full data backup or make an operation reversible.
 
 ---
 

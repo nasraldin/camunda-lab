@@ -3,6 +3,7 @@ package project
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -15,6 +16,12 @@ type Paths struct {
 	BPMN  string `yaml:"bpmn"`
 	DMN   string `yaml:"dmn"`
 	Forms string `yaml:"forms"`
+	Tests string `yaml:"tests"`
+}
+
+// LintConfig configures deterministic project lint behavior.
+type LintConfig struct {
+	Ignore []string `yaml:"ignore,omitempty"`
 }
 
 // LabHints are optional hints for humans / future tooling (not lab home config).
@@ -25,10 +32,11 @@ type LabHints struct {
 
 // Config is the project-local .camunda.yaml schema (v1).
 type Config struct {
-	Name           string   `yaml:"name"`
-	CamundaVersion string   `yaml:"camundaVersion"`
-	Paths          Paths    `yaml:"paths"`
-	Lab            LabHints `yaml:"lab,omitempty"`
+	Name           string     `yaml:"name"`
+	CamundaVersion string     `yaml:"camundaVersion"`
+	Paths          Paths      `yaml:"paths"`
+	Lint           LintConfig `yaml:"lint,omitempty"`
+	Lab            LabHints   `yaml:"lab,omitempty"`
 }
 
 // Defaults returns a Config with standard path defaults filled in.
@@ -43,6 +51,7 @@ func Defaults(name, version string) Config {
 			BPMN:  "bpmn",
 			DMN:   "dmn",
 			Forms: "forms",
+			Tests: "tests",
 		},
 		Lab: LabHints{
 			Profile:   "light",
@@ -66,6 +75,9 @@ func (c *Config) ApplyDefaults() {
 	if c.Paths.Forms == "" {
 		c.Paths.Forms = d.Paths.Forms
 	}
+	if c.Paths.Tests == "" {
+		c.Paths.Tests = d.Paths.Tests
+	}
 	if c.Lab.Profile == "" {
 		c.Lab.Profile = d.Lab.Profile
 	}
@@ -79,14 +91,42 @@ func (c Config) Validate() error {
 	if strings.TrimSpace(c.Name) == "" {
 		return fmt.Errorf("name is required")
 	}
-	if strings.TrimSpace(c.Paths.BPMN) == "" {
-		return fmt.Errorf("paths.bpmn is required")
+	for _, path := range []struct {
+		name  string
+		value string
+	}{
+		{name: "paths.bpmn", value: c.Paths.BPMN},
+		{name: "paths.dmn", value: c.Paths.DMN},
+		{name: "paths.forms", value: c.Paths.Forms},
+		{name: "paths.tests", value: c.Paths.Tests},
+	} {
+		if err := validateRelativePath(path.name, path.value); err != nil {
+			return err
+		}
 	}
-	if strings.TrimSpace(c.Paths.DMN) == "" {
-		return fmt.Errorf("paths.dmn is required")
+	return nil
+}
+
+func validateRelativePath(name, value string) error {
+	if strings.TrimSpace(value) == "" {
+		return fmt.Errorf("%s is required", name)
 	}
-	if strings.TrimSpace(c.Paths.Forms) == "" {
-		return fmt.Errorf("paths.forms is required")
+	if value != strings.TrimSpace(value) {
+		return fmt.Errorf("%s must not contain surrounding whitespace", name)
+	}
+	if filepath.IsAbs(value) {
+		return fmt.Errorf("%s must be relative", name)
+	}
+	if filepath.Clean(value) != value || value == "." {
+		return fmt.Errorf("%s must be clean and contained within the project", name)
+	}
+	if strings.Contains(value, `\`) {
+		return fmt.Errorf("%s must use project-relative path separators", name)
+	}
+	for _, part := range strings.Split(filepath.ToSlash(value), "/") {
+		if part == ".." {
+			return fmt.Errorf("%s must be contained within the project", name)
+		}
 	}
 	return nil
 }

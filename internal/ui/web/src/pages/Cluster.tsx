@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react'
 import { ApiError, getIncidents, getTrace, toolkitJSON, type ToolkitResult } from '../api'
+import {
+  ConfirmActionModal,
+  type ConfirmAction,
+} from '../components/ConfirmActionModal'
 import { getProjectDir, setProjectDir } from '../projectDir'
 
 type IncidentRow = {
@@ -23,6 +27,7 @@ export function ClusterPage() {
   const [cli, setCli] = useState('')
   const [incidents, setIncidents] = useState<IncidentRow[]>([])
   const [instanceKey, setInstanceKey] = useState('')
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null)
 
   function saveDir() {
     setProjectDir(projectPath.trim())
@@ -110,16 +115,21 @@ export function ClusterPage() {
                     type="button"
                     className="btn-sm"
                     disabled={!!busy}
-                    onClick={() => {
-                      void (async () => {
-                        await run('retry', () =>
-                          toolkitJSON(`/api/v1/incidents/${encodeURIComponent(id)}/retry`, {
-                            confirm: true,
-                          }),
-                        )
-                        await refreshIncidents()
-                      })()
-                    }}
+                    onClick={() =>
+                      setConfirmAction({
+                        title: 'Retry incident',
+                        message: `Retry incident ${id}. This resumes the affected workflow execution.`,
+                        confirmLabel: 'Retry incident',
+                        run: async () => {
+                          await run('retry', () =>
+                            toolkitJSON(`/api/v1/incidents/${encodeURIComponent(id)}/retry`, {
+                              confirm: true,
+                            }),
+                          )
+                          await refreshIncidents()
+                        },
+                      })
+                    }
                   >
                     Retry
                   </button>
@@ -199,6 +209,9 @@ export function ClusterPage() {
           )}
           <pre className="code">{output}</pre>
         </section>
+      )}
+      {confirmAction && (
+        <ConfirmActionModal action={confirmAction} onClose={() => setConfirmAction(null)} />
       )}
     </div>
   )

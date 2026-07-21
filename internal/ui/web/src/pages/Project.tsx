@@ -1,5 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ApiError, getEnv, getK8sStatus, postForm, toolkitJSON, type ToolkitResult } from '../api'
+import {
+  ConfirmActionModal,
+  type ConfirmAction,
+} from '../components/ConfirmActionModal'
 import { getProjectDir, setProjectDir } from '../projectDir'
 
 export function ProjectPage() {
@@ -18,6 +22,8 @@ export function ProjectPage() {
   const [orch, setOrch] = useState('')
   const [k8sComponent, setK8sComponent] = useState('orchestration')
   const [replicas, setReplicas] = useState(1)
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null)
+  const restoreInputRef = useRef<HTMLInputElement>(null)
 
   async function run(label: string, fn: () => Promise<ToolkitResult>) {
     setBusy(label)
@@ -150,9 +156,21 @@ export function ProjectPage() {
                   className="btn-sm"
                   disabled={!!busy}
                   onClick={() =>
-                    void run('rm', () =>
-                      toolkitJSON(`/api/v1/env/${encodeURIComponent(p.name)}`, undefined, 'DELETE'),
-                    ).then(() => refreshEnv())
+                    setConfirmAction({
+                      title: 'Remove environment',
+                      message: `Remove the ${p.name} environment profile? This does not delete the remote environment.`,
+                      confirmLabel: 'Remove environment',
+                      run: async () => {
+                        await run('rm', () =>
+                          toolkitJSON(
+                            `/api/v1/env/${encodeURIComponent(p.name)}`,
+                            undefined,
+                            'DELETE',
+                          ),
+                        )
+                        await refreshEnv()
+                      },
+                    })
                   }
                 >
                   Remove
@@ -220,16 +238,26 @@ export function ProjectPage() {
         <label className="field">
           <span>Restore archive</span>
           <input
+            ref={restoreInputRef}
             type="file"
             accept=".gz,.tgz,application/gzip"
             onChange={(e) => {
               const f = e.target.files?.[0]
               if (!f) return
-              const fd = new FormData()
-              fd.append('archive', f)
-              fd.append('yes', 'true')
-              if (projectPath.trim()) fd.append('dir', projectPath.trim())
-              void run('restore', () => postForm('/api/v1/restore', fd))
+              setConfirmAction({
+                title: 'Restore backup',
+                message:
+                  'Restoring replaces the current lab files with the selected archive. Type RESTORE to continue.',
+                requiredText: 'RESTORE',
+                confirmLabel: 'Restore backup',
+                run: async () => {
+                  const fd = new FormData()
+                  fd.append('archive', f)
+                  fd.append('yes', 'true')
+                  if (projectPath.trim()) fd.append('dir', projectPath.trim())
+                  await run('restore', () => postForm('/api/v1/restore', fd))
+                },
+              })
             }}
           />
         </label>
@@ -269,9 +297,19 @@ export function ProjectPage() {
             type="button"
             disabled={!!busy}
             onClick={() =>
-              void run('k8s-restart', () =>
-                toolkitJSON('/api/v1/k8s/restart', { component: k8sComponent, confirm: true }),
-              )
+              setConfirmAction({
+                title: 'Restart Kubernetes component',
+                message: `Restart ${k8sComponent}. Work handled by this component may be interrupted.`,
+                confirmLabel: 'Restart component',
+                run: async () => {
+                  await run('k8s-restart', () =>
+                    toolkitJSON('/api/v1/k8s/restart', {
+                      component: k8sComponent,
+                      confirm: true,
+                    }),
+                  )
+                },
+              })
             }
           >
             Restart
@@ -280,13 +318,20 @@ export function ProjectPage() {
             type="button"
             disabled={!!busy}
             onClick={() =>
-              void run('k8s-scale', () =>
-                toolkitJSON('/api/v1/k8s/scale', {
-                  component: k8sComponent,
-                  replicas,
-                  confirm: true,
-                }),
-              )
+              setConfirmAction({
+                title: 'Scale Kubernetes component',
+                message: `Scale ${k8sComponent} to ${replicas} replica${replicas === 1 ? '' : 's'}.`,
+                confirmLabel: 'Scale component',
+                run: async () => {
+                  await run('k8s-scale', () =>
+                    toolkitJSON('/api/v1/k8s/scale', {
+                      component: k8sComponent,
+                      replicas,
+                      confirm: true,
+                    }),
+                  )
+                },
+              })
             }
           >
             Scale
@@ -304,6 +349,17 @@ export function ProjectPage() {
           )}
           <pre className="code">{output}</pre>
         </section>
+      )}
+      {confirmAction && (
+        <ConfirmActionModal
+          action={confirmAction}
+          onClose={() => {
+            if (confirmAction.requiredText === 'RESTORE' && restoreInputRef.current) {
+              restoreInputRef.current.value = ''
+            }
+            setConfirmAction(null)
+          }}
+        />
       )}
     </div>
   )

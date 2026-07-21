@@ -43,13 +43,46 @@ async function parse<T>(res: Response): Promise<T> {
   return data as T
 }
 
+let sessionToken: Promise<string> | undefined
+
+async function getCSRFToken(): Promise<string> {
+  sessionToken ??= fetch('/api/v1/session')
+    .then((res) => parse<{ csrfToken: string }>(res))
+    .then((session) => session.csrfToken)
+    .catch((error) => {
+      sessionToken = undefined
+      throw error
+    })
+  return sessionToken
+}
+
+async function mutationFetch(
+  path: string,
+  init: RequestInit,
+  refreshed = false,
+): Promise<Response> {
+  const headers = new Headers(init.headers)
+  headers.set('X-Camunda-Lab-CSRF', await getCSRFToken())
+  const res = await fetch(path, { ...init, headers })
+
+  if (!refreshed && res.status === 403) {
+    const payload = (await res.clone().json().catch(() => null)) as { code?: string } | null
+    if (payload?.code === 'csrf_invalid') {
+      sessionToken = undefined
+      return mutationFetch(path, init, true)
+    }
+  }
+
+  return res
+}
+
 export async function getOverview(): Promise<Overview> {
   return parse(await fetch('/api/v1/overview'))
 }
 
 export async function postJSON(path: string, body?: unknown): Promise<unknown> {
   return parse(
-    await fetch(path, {
+    await mutationFetch(path, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: body === undefined ? '{}' : JSON.stringify(body),
@@ -140,7 +173,7 @@ export async function getUpdate(): Promise<UpdateInfo> {
 }
 
 export async function postUpdate(): Promise<UpdateResult> {
-  const res = await fetch('/api/v1/update', {
+  const res = await mutationFetch('/api/v1/update', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: '{}',
@@ -181,7 +214,7 @@ export async function getDoctorDeep(): Promise<{ ok: boolean; report: string }> 
 }
 
 export async function postForm(path: string, form: FormData): Promise<ToolkitResult> {
-  return parse(await fetch(path, { method: 'POST', body: form }))
+  return parse(await mutationFetch(path, { method: 'POST', body: form }))
 }
 
 export async function toolkitJSON(
@@ -194,7 +227,7 @@ export async function toolkitJSON(
     init.headers = { 'Content-Type': 'application/json' }
     init.body = body === undefined ? '{}' : JSON.stringify(body)
   }
-  return parse(await fetch(path, init))
+  return parse(await mutationFetch(path, init))
 }
 
 export async function getIncidents(): Promise<ToolkitResult> {

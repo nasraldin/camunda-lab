@@ -63,10 +63,10 @@ func Run(opts Options) error {
 	if err != nil {
 		return fmt.Errorf("ui assets: %w", err)
 	}
-
-	mux := http.NewServeMux()
-	api.Register(mux, opts.Version)
-	mux.Handle("/", spaHandler(http.FS(static)))
+	csrfToken, err := api.NewCSRFToken()
+	if err != nil {
+		return fmt.Errorf("generate CSRF token: %w", err)
+	}
 
 	addr := net.JoinHostPort(opts.Host, strconv.Itoa(opts.Port))
 	url := fmt.Sprintf("http://%s/", addr)
@@ -75,7 +75,7 @@ func Run(opts Options) error {
 
 	srv := &http.Server{
 		Addr:              addr,
-		Handler:           mux,
+		Handler:           serverHandler(http.FS(static), opts.Version, csrfToken),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
@@ -93,6 +93,13 @@ func Run(opts Options) error {
 		return err
 	}
 	return nil
+}
+
+func serverHandler(static http.FileSystem, version, csrfToken string) http.Handler {
+	mux := http.NewServeMux()
+	api.Register(mux, version, csrfToken)
+	mux.Handle("/", spaHandler(static))
+	return api.SecurityMiddleware(csrfToken, mux)
 }
 
 func isAddrInUse(err error) bool {

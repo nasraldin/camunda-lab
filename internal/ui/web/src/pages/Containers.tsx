@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getContainers, postJSON, type Container } from '../api'
+import {
+  ConfirmActionModal,
+  type ConfirmAction,
+} from '../components/ConfirmActionModal'
 import { friendlyName } from '../serviceNames'
 
 type Filter = 'all' | 'running' | 'attention'
@@ -47,6 +51,7 @@ export function ContainersPage() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<Filter>('all')
   const [query, setQuery] = useState('')
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null)
 
   const refresh = useCallback(async () => {
     setError('')
@@ -209,7 +214,20 @@ export function ContainersPage() {
                     </div>
                   </div>
                   <div className="service-actions">
-                    <button type="button" disabled={!!busy} onClick={() => void restart(c.service)}>
+                    <button
+                      type="button"
+                      disabled={!!busy}
+                      onClick={() =>
+                        setConfirmAction({
+                          title: 'Restart service',
+                          message: `Restart ${friendlyName(c.service)}. The service will be briefly unavailable.`,
+                          confirmLabel: 'Restart service',
+                          run: async () => {
+                            await restart(c.service)
+                          },
+                        })
+                      }
+                    >
                       {busy === c.service ? 'Restarting…' : 'Restart'}
                     </button>
                     <Link className="btn" to={`/logs?service=${encodeURIComponent(c.service)}`}>
@@ -224,6 +242,9 @@ export function ContainersPage() {
             </div>
           </div>
         </>
+      )}
+      {confirmAction && (
+        <ConfirmActionModal action={confirmAction} onClose={() => setConfirmAction(null)} />
       )}
     </div>
   )

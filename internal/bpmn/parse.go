@@ -1,6 +1,7 @@
 package bpmn
 
 import (
+	"bytes"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -9,174 +10,334 @@ import (
 	"strings"
 )
 
+const modelNamespace = "http://www.omg.org/spec/BPMN/20100524/MODEL"
+const zeebeNamespace = "http://camunda.org/schema/zeebe/1.0"
+
 // ParseFile reads and parses a BPMN XML file.
-func ParseFile(path string) (Model, error) {
+func ParseFile(path string) (Document, error) {
 	f, err := os.Open(path)
 	if err != nil {
-		return Model{}, err
+		return Document{}, err
 	}
 	defer f.Close()
 	return Parse(f)
 }
 
-// Parse parses BPMN XML into a Model.
-func Parse(r io.Reader) (Model, error) {
+// Parse parses and validates a BPMN XML document.
+func Parse(r io.Reader) (Document, error) {
 	dec := xml.NewDecoder(r)
-	dec.CharsetReader = func(charset string, input io.Reader) (io.Reader, error) {
-		return input, nil
-	}
-	var doc xmlDoc
-	if err := dec.Decode(&doc); err != nil {
-		return Model{}, fmt.Errorf("parse bpmn: %w", err)
-	}
-	return normalize(doc), nil
-}
-
-type xmlDoc struct {
-	XMLName  xml.Name
-	Messages []xmlMessage `xml:"message"`
-	Process  []xmlProcess `xml:"process"`
-}
-
-type xmlMessage struct {
-	ID   string `xml:"id,attr"`
-	Name string `xml:"name,attr"`
-}
-
-type xmlProcess struct {
-	ID   string `xml:"id,attr"`
-	Name string `xml:"name,attr"`
-
-	StartEvents  []xmlNode `xml:"startEvent"`
-	EndEvents    []xmlNode `xml:"endEvent"`
-	ServiceTasks []xmlNode `xml:"serviceTask"`
-	UserTasks    []xmlNode `xml:"userTask"`
-	ScriptTasks  []xmlNode `xml:"scriptTask"`
-	ExclusiveGW  []xmlNode `xml:"exclusiveGateway"`
-	ParallelGW   []xmlNode `xml:"parallelGateway"`
-	InclusiveGW  []xmlNode `xml:"inclusiveGateway"`
-	Intermediate []xmlNode `xml:"intermediateCatchEvent"`
-	Boundary     []xmlNode `xml:"boundaryEvent"`
-	Flows        []xmlFlow `xml:"sequenceFlow"`
-}
-
-type xmlNode struct {
-	ID                string     `xml:"id,attr"`
-	Name              string     `xml:"name,attr"`
-	Default           string     `xml:"default,attr"`
-	AttachedToRef     string     `xml:"attachedToRef,attr"`
-	TimerEventDef     []xmlTimer `xml:"timerEventDefinition"`
-	ErrorEventDef     []xmlError `xml:"errorEventDefinition"`
-	MessageEventDef   []xmlMsgEv `xml:"messageEventDefinition"`
-	ExtensionElements xmlExt     `xml:"extensionElements"`
-}
-
-type xmlTimer struct {
-	TimeDuration string `xml:"timeDuration"`
-	TimeDate     string `xml:"timeDate"`
-	TimeCycle    string `xml:"timeCycle"`
-}
-
-type xmlError struct {
-	ErrorRef string `xml:"errorRef,attr"`
-}
-
-type xmlMsgEv struct {
-	MessageRef string `xml:"messageRef,attr"`
-}
-
-type xmlExt struct {
-	TaskDefinition []xmlTaskDef `xml:",any"`
-}
-
-type xmlTaskDef struct {
-	XMLName xml.Name
-	Type    string `xml:"type,attr"`
-	Retries string `xml:"retries,attr"`
-}
-
-type xmlFlow struct {
-	ID                  string `xml:"id,attr"`
-	Name                string `xml:"name,attr"`
-	SourceRef           string `xml:"sourceRef,attr"`
-	TargetRef           string `xml:"targetRef,attr"`
-	ConditionExpression string `xml:"conditionExpression"`
-}
-
-func normalize(doc xmlDoc) Model {
-	m := Model{}
-	for _, msg := range doc.Messages {
-		m.Messages = append(m.Messages, Message{ID: msg.ID, Name: msg.Name})
-	}
-	if len(doc.Process) == 0 {
-		return m
-	}
-	p := doc.Process[0]
-	m.ProcessID = p.ID
-	m.Name = p.Name
-
-	add := func(typ string, nodes []xmlNode) {
-		for _, n := range nodes {
-			el := Element{
-				ID:          n.ID,
-				Type:        typ,
-				Name:        n.Name,
-				DefaultFlow: n.Default,
-				AttachedTo:  n.AttachedToRef,
-			}
-			for _, t := range n.TimerEventDef {
-				el.Timer = firstNonEmpty(t.TimeDuration, t.TimeDate, t.TimeCycle)
-				el.EventDefs = append(el.EventDefs, "timer")
-			}
-			for _, e := range n.ErrorEventDef {
-				el.ErrorRef = e.ErrorRef
-				el.EventDefs = append(el.EventDefs, "error")
-			}
-			for _, msg := range n.MessageEventDef {
-				el.MessageRef = msg.MessageRef
-				el.EventDefs = append(el.EventDefs, "message")
-			}
-			for _, td := range n.ExtensionElements.TaskDefinition {
-				local := td.XMLName.Local
-				if local == "taskDefinition" || strings.HasSuffix(local, "taskDefinition") {
-					el.JobType = td.Type
-					el.RetryCount = td.Retries
-				}
-			}
-			m.Elements = append(m.Elements, el)
+	var root rawElement
+	if err := dec.Decode(&root); err != nil {
+		return Document{}, &ParseError{
+			Kind: ErrorMalformedXML, Detail: err.Error(),
+			Action: "fix the XML syntax and try again", Err: err,
 		}
 	}
-	add("startEvent", p.StartEvents)
-	add("endEvent", p.EndEvents)
-	add("serviceTask", p.ServiceTasks)
-	add("userTask", p.UserTasks)
-	add("scriptTask", p.ScriptTasks)
-	add("exclusiveGateway", p.ExclusiveGW)
-	add("parallelGateway", p.ParallelGW)
-	add("inclusiveGateway", p.InclusiveGW)
-	add("intermediateCatchEvent", p.Intermediate)
-	add("boundaryEvent", p.Boundary)
-
-	for _, f := range p.Flows {
-		m.Flows = append(m.Flows, Flow{
-			ID:        f.ID,
-			Name:      f.Name,
-			Source:    f.SourceRef,
-			Target:    f.TargetRef,
-			Condition: strings.TrimSpace(f.ConditionExpression),
-		})
+	for {
+		token, err := dec.Token()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return Document{}, &ParseError{
+				Kind: ErrorMalformedXML, Detail: err.Error(),
+				Action: "remove malformed content after the BPMN definitions element", Err: err,
+			}
+		}
+		if data, ok := token.(xml.CharData); ok && strings.TrimSpace(string(data)) == "" {
+			continue
+		}
+		switch token.(type) {
+		case xml.Comment, xml.Directive, xml.ProcInst:
+			continue
+		}
+		return Document{}, &ParseError{
+			Kind: ErrorMalformedXML, Detail: "unexpected content after the definitions element",
+			Action: "keep exactly one BPMN definitions root element",
+		}
 	}
-
-	sort.Slice(m.Elements, func(i, j int) bool { return m.Elements[i].ID < m.Elements[j].ID })
-	sort.Slice(m.Flows, func(i, j int) bool { return m.Flows[i].ID < m.Flows[j].ID })
-	sort.Slice(m.Messages, func(i, j int) bool { return m.Messages[i].ID < m.Messages[j].ID })
-	return m
+	if root.Name.Local != "definitions" {
+		return Document{}, &ParseError{
+			Kind: ErrorInvalidRoot, Detail: "root element is " + root.Name.Local,
+			Action: "provide a BPMN definitions document",
+		}
+	}
+	if root.Name.Space != modelNamespace {
+		return Document{}, &ParseError{
+			Kind: ErrorInvalidNamespace, Detail: fmt.Sprintf("definitions namespace is %q", root.Name.Space),
+			Action: "use the BPMN 2.0 model namespace " + modelNamespace,
+		}
+	}
+	doc := documentFromRaw(root)
+	if len(doc.Processes) == 0 {
+		return Document{}, &ParseError{
+			Kind: ErrorNoProcess, Action: "add at least one BPMN process",
+		}
+	}
+	usable := 0
+	for _, p := range doc.Processes {
+		usable += len(p.Elements)
+	}
+	if usable == 0 {
+		return Document{}, &ParseError{
+			Kind: ErrorNoFlowNodes, Action: "add a task, gateway, event, subprocess, or call activity",
+		}
+	}
+	normalizeDocument(&doc)
+	applyCompatibilityView(&doc)
+	return doc, nil
 }
 
-func firstNonEmpty(vals ...string) string {
-	for _, v := range vals {
-		if strings.TrimSpace(v) != "" {
-			return strings.TrimSpace(v)
+type rawElement struct {
+	Name     xml.Name
+	Attrs    []xml.Attr
+	Children []rawElement
+	Text     string
+	Content  []rawContent
+}
+
+type rawContent struct {
+	Kind       string
+	Text       string
+	Child      *rawElement
+	Comment    string
+	Directive  string
+	ProcTarget string
+	ProcInst   string
+}
+
+func (e *rawElement) UnmarshalXML(dec *xml.Decoder, start xml.StartElement) error {
+	e.Name, e.Attrs = start.Name, append([]xml.Attr(nil), start.Attr...)
+	for {
+		token, err := dec.Token()
+		if err != nil {
+			return err
+		}
+		switch value := token.(type) {
+		case xml.StartElement:
+			var child rawElement
+			if err := dec.DecodeElement(&child, &value); err != nil {
+				return err
+			}
+			e.Children = append(e.Children, child)
+			e.Content = append(e.Content, rawContent{Kind: "child", Child: &e.Children[len(e.Children)-1]})
+		case xml.CharData:
+			text := string(value)
+			e.Text += text
+			e.Content = append(e.Content, rawContent{Kind: "text", Text: text})
+		case xml.Comment:
+			e.Content = append(e.Content, rawContent{Kind: "comment", Comment: string(value)})
+		case xml.Directive:
+			e.Content = append(e.Content, rawContent{Kind: "directive", Directive: string(value)})
+		case xml.ProcInst:
+			e.Content = append(e.Content, rawContent{Kind: "procinst", ProcTarget: value.Target, ProcInst: string(value.Inst)})
+		case xml.EndElement:
+			if value.Name == start.Name {
+				return nil
+			}
+		}
+	}
+}
+
+func documentFromRaw(root rawElement) Document {
+	var doc Document
+	for _, child := range root.Children {
+		if child.Name.Space != modelNamespace {
+			continue
+		}
+		switch child.Name.Local {
+		case "extensionElements":
+			for _, extension := range child.Children {
+				doc.UnknownExtensions = append(doc.UnknownExtensions, retainExtension(extension))
+			}
+		case "message":
+			doc.Messages = append(doc.Messages, Message{ID: attr(child, "id"), Name: attr(child, "name")})
+		case "error":
+			doc.Errors = append(doc.Errors, Error{
+				ID: attr(child, "id"), Name: attr(child, "name"), ErrorCode: attr(child, "errorCode"),
+			})
+		case "process":
+			doc.Processes = append(doc.Processes, processFromRaw(child, doc.Messages, &doc.UnknownExtensions))
+		}
+	}
+	return doc
+}
+
+func processFromRaw(raw rawElement, messages []Message, documentExtensions *[]Extension) Process {
+	p := Process{ID: attr(raw, "id"), Name: attr(raw, "name"), Messages: append([]Message(nil), messages...)}
+	p.ProcessID = p.ID
+	parseContainer(raw, "", &p, documentExtensions)
+	return p
+}
+
+func parseContainer(container rawElement, parentID string, p *Process, documentExtensions *[]Extension) {
+	for _, child := range container.Children {
+		if child.Name.Space != modelNamespace {
+			continue
+		}
+		if child.Name.Local == "extensionElements" {
+			for _, extension := range child.Children {
+				retained := retainExtension(extension)
+				p.UnknownExtensions = append(p.UnknownExtensions, retained)
+				*documentExtensions = append(*documentExtensions, retained)
+			}
+			continue
+		}
+		if child.Name.Local == "sequenceFlow" {
+			p.Flows = append(p.Flows, Flow{
+				ID: attr(child, "id"), Name: attr(child, "name"),
+				Source: attr(child, "sourceRef"), Target: attr(child, "targetRef"),
+				Condition: strings.TrimSpace(childText(child, "conditionExpression")),
+			})
+			continue
+		}
+		if !isFlowNode(child.Name.Local) {
+			continue
+		}
+		element := elementFromRaw(child, parentID, documentExtensions)
+		p.Elements = append(p.Elements, element)
+		if child.Name.Local == "subProcess" || child.Name.Local == "transaction" || child.Name.Local == "adHocSubProcess" {
+			parseContainer(child, element.ID, p, documentExtensions)
+		}
+	}
+}
+
+func elementFromRaw(raw rawElement, parentID string, documentExtensions *[]Extension) Element {
+	e := Element{
+		ID: attr(raw, "id"), Type: raw.Name.Local, Name: attr(raw, "name"),
+		ParentID: parentID, CalledElement: attr(raw, "calledElement"),
+		DefaultFlow: attr(raw, "default"), AttachedTo: attr(raw, "attachedToRef"),
+	}
+	if raw.Name.Local == "boundaryEvent" {
+		cancelActivity := attr(raw, "cancelActivity")
+		e.CancelActivity = cancelActivity != "false" && cancelActivity != "0"
+	}
+	for _, child := range raw.Children {
+		switch child.Name.Local {
+		case "timerEventDefinition":
+			for _, timer := range child.Children {
+				if timer.Name.Space != modelNamespace {
+					continue
+				}
+				switch timer.Name.Local {
+				case "timeDate":
+					e.TimerKind, e.Timer = "date", strings.TrimSpace(timer.Text)
+				case "timeDuration":
+					e.TimerKind, e.Timer = "duration", strings.TrimSpace(timer.Text)
+				case "timeCycle":
+					e.TimerKind, e.Timer = "cycle", strings.TrimSpace(timer.Text)
+				}
+				if e.TimerKind != "" {
+					break
+				}
+			}
+			e.EventDefs = append(e.EventDefs, "timer")
+		case "errorEventDefinition":
+			e.ErrorRef = attr(child, "errorRef")
+			e.EventDefs = append(e.EventDefs, "error")
+		case "messageEventDefinition":
+			e.MessageRef = attr(child, "messageRef")
+			e.EventDefs = append(e.EventDefs, "message")
+		case "extensionElements":
+			for _, extension := range child.Children {
+				if extension.Name.Space == zeebeNamespace && extension.Name.Local == "taskDefinition" {
+					e.JobType = attr(extension, "type")
+					e.RetryCount = attr(extension, "retries")
+					continue
+				}
+				retained := retainExtension(extension)
+				e.Extensions = append(e.Extensions, retained)
+				*documentExtensions = append(*documentExtensions, retained)
+			}
+		}
+	}
+	return e
+}
+
+func isFlowNode(local string) bool {
+	switch local {
+	case "task", "serviceTask", "userTask", "manualTask", "businessRuleTask", "scriptTask",
+		"sendTask", "receiveTask", "callActivity", "subProcess", "transaction", "adHocSubProcess",
+		"exclusiveGateway", "parallelGateway", "inclusiveGateway", "complexGateway", "eventBasedGateway",
+		"startEvent", "endEvent", "intermediateCatchEvent", "intermediateThrowEvent", "boundaryEvent":
+		return true
+	default:
+		return false
+	}
+}
+
+func retainExtension(raw rawElement) Extension {
+	extension := Extension{QName: raw.Name}
+	for _, a := range raw.Attrs {
+		extension.Attributes = append(extension.Attributes, Attribute{QName: a.Name, Value: a.Value})
+	}
+	var b bytes.Buffer
+	enc := xml.NewEncoder(&b)
+	for _, content := range raw.Content {
+		_ = encodeRawContent(enc, content)
+	}
+	_ = enc.Flush()
+	extension.InnerXML = b.String()
+	return extension
+}
+
+func encodeRaw(enc *xml.Encoder, raw rawElement) error {
+	attrs := append([]xml.Attr(nil), raw.Attrs...)
+	sort.SliceStable(attrs, func(i, j int) bool {
+		return attrs[i].Name.Space+"\x00"+attrs[i].Name.Local+"\x00"+attrs[i].Value <
+			attrs[j].Name.Space+"\x00"+attrs[j].Name.Local+"\x00"+attrs[j].Value
+	})
+	start := xml.StartElement{Name: raw.Name, Attr: attrs}
+	if err := enc.EncodeToken(start); err != nil {
+		return err
+	}
+	for _, content := range raw.Content {
+		if err := encodeRawContent(enc, content); err != nil {
+			return err
+		}
+	}
+	return enc.EncodeToken(start.End())
+}
+
+func encodeRawContent(enc *xml.Encoder, content rawContent) error {
+	switch content.Kind {
+	case "child":
+		return encodeRaw(enc, *content.Child)
+	case "text":
+		return enc.EncodeToken(xml.CharData(content.Text))
+	case "comment":
+		return enc.EncodeToken(xml.Comment(content.Comment))
+	case "directive":
+		return enc.EncodeToken(xml.Directive(content.Directive))
+	case "procinst":
+		return enc.EncodeToken(xml.ProcInst{Target: content.ProcTarget, Inst: []byte(content.ProcInst)})
+	default:
+		return nil
+	}
+}
+
+func attr(raw rawElement, local string) string {
+	for _, a := range raw.Attrs {
+		if a.Name.Local == local {
+			return strings.TrimSpace(a.Value)
+		}
+	}
+	return ""
+}
+
+func childText(raw rawElement, local string) string {
+	for _, child := range raw.Children {
+		if child.Name.Local == local {
+			return strings.TrimSpace(child.Text)
+		}
+	}
+	return ""
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		if value = strings.TrimSpace(value); value != "" {
+			return value
 		}
 	}
 	return ""

@@ -636,7 +636,12 @@ func (h *handler) runPlan(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusBadRequest, fmt.Errorf("cluster inventory: %w", err))
 		return
 	}
-	p := plan.Build(env.GetActive(paths.Home()), local, remote)
+	active, err := env.GetActive(paths.Home())
+	if err != nil {
+		writeErr(w, http.StatusBadRequest, err)
+		return
+	}
+	p := plan.Build(active, local, remote)
 	writeJSON(w, http.StatusOK, map[string]any{
 		"ok":     true,
 		"plan":   p,
@@ -677,7 +682,12 @@ func (h *handler) runDrift(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusBadRequest, fmt.Errorf("cluster inventory: %w", err))
 		return
 	}
-	res := drift.Compare(env.GetActive(paths.Home()), local, remote)
+	active, err := env.GetActive(paths.Home())
+	if err != nil {
+		writeErr(w, http.StatusBadRequest, err)
+		return
+	}
+	res := drift.Compare(active, local, remote)
 	ok := !drift.HasDrift(res)
 	writeJSON(w, http.StatusOK, map[string]any{
 		"ok":     ok,
@@ -740,7 +750,11 @@ func (h *handler) projectInit(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) envList(w http.ResponseWriter, r *http.Request) {
-	active := env.GetActive(paths.Home())
+	active, err := env.GetActive(paths.Home())
+	if err != nil {
+		writeErr(w, http.StatusBadRequest, err)
+		return
+	}
 	ps, err := env.ListProfiles(filepath.Join(paths.Home(), "envs"))
 	if err != nil {
 		writeErr(w, http.StatusBadRequest, err)
@@ -762,7 +776,7 @@ func (h *handler) envUse(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusBadRequest, fmt.Errorf("name is required"))
 		return
 	}
-	if err := env.SetActive(paths.Home(), body.Name); err != nil {
+	if err := env.SetActive(paths.Home(), filepath.Join(paths.Home(), "envs"), body.Name); err != nil {
 		writeErr(w, http.StatusBadRequest, err)
 		return
 	}
@@ -811,12 +825,7 @@ func (h *handler) envAdd(w http.ResponseWriter, r *http.Request) {
 
 func (h *handler) envRemove(w http.ResponseWriter, r *http.Request) {
 	name := r.PathValue("name")
-	if name == "" || name == "lab" {
-		writeErr(w, http.StatusBadRequest, fmt.Errorf("cannot remove implicit lab profile"))
-		return
-	}
-	path := filepath.Join(paths.Home(), "envs", name+".yaml")
-	if err := os.Remove(path); err != nil {
+	if err := env.RemoveProfile(paths.Home(), filepath.Join(paths.Home(), "envs"), name); err != nil {
 		writeErr(w, http.StatusBadRequest, err)
 		return
 	}
@@ -903,7 +912,11 @@ func (h *handler) runRestore(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	m, err := backup.Restore(tmp.Name(), paths.Home(), proj)
+	m, err := backup.Restore(r.Context(), backup.RestoreOptions{
+		ArchivePath: tmp.Name(),
+		LabHome:     paths.Home(),
+		ProjectDir:  proj,
+	})
 	if err != nil {
 		writeErr(w, http.StatusBadRequest, err)
 		return

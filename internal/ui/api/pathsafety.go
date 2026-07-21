@@ -13,33 +13,77 @@ const maxUploadBytes = 10 << 20 // 10 MiB
 
 // allowPath ensures dir/file is absolute and under an allowed root
 // (user home, /tmp, CAMUNDA_LAB_HOME, or the active lab home).
-func allowPath(p string) (string, error) {
-	p = strings.TrimSpace(p)
-	if p == "" {
+func allowPath(path string) (string, error) {
+	return allowPathWithin(path, allowedRoots())
+}
+
+func allowPathWithin(path string, roots []string) (string, error) {
+	path = strings.TrimSpace(path)
+	if path == "" {
 		return "", fmt.Errorf("path is required")
 	}
-	if !filepath.IsAbs(p) {
-		return "", fmt.Errorf("path must be absolute (got %q)", p)
+	if !filepath.IsAbs(path) {
+		return "", fmt.Errorf("path must be absolute (got %q)", path)
 	}
-	abs, err := filepath.Abs(p)
+
+	canonicalPath, err := canonicalizeForAuthorization(path)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("canonicalize path %q: %w", path, err)
 	}
-	abs = filepath.Clean(abs)
-	roots := allowedRoots()
 	for _, root := range roots {
-		if root == "" {
+		root = strings.TrimSpace(root)
+		if root == "" || !filepath.IsAbs(root) {
 			continue
 		}
-		rel, err := filepath.Rel(root, abs)
+		canonicalRoot, err := canonicalizeForAuthorization(root)
 		if err != nil {
 			continue
 		}
-		if rel == "." || (!strings.HasPrefix(rel, "..") && !filepath.IsAbs(rel)) {
-			return abs, nil
+		rel, err := filepath.Rel(canonicalRoot, canonicalPath)
+		if err != nil {
+			continue
+		}
+		if rel == "." || (rel != ".." &&
+			!strings.HasPrefix(rel, ".."+string(filepath.Separator)) &&
+			!filepath.IsAbs(rel)) {
+			return canonicalPath, nil
 		}
 	}
-	return "", fmt.Errorf("path %q is outside allowed roots (home, /tmp, lab home)", abs)
+	return "", fmt.Errorf("path %q is outside allowed roots (home, /tmp, lab home)", canonicalPath)
+}
+
+func canonicalizeForAuthorization(path string) (string, error) {
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		return "", err
+	}
+
+	current := filepath.Clean(abs)
+	var missing []string
+	for {
+		canonical, err := filepath.EvalSymlinks(current)
+		if err == nil {
+			for i := len(missing) - 1; i >= 0; i-- {
+				canonical = filepath.Join(canonical, missing[i])
+			}
+			return filepath.Clean(canonical), nil
+		}
+		if !os.IsNotExist(err) {
+			return "", err
+		}
+		if _, lstatErr := os.Lstat(current); lstatErr == nil {
+			return "", err
+		} else if !os.IsNotExist(lstatErr) {
+			return "", lstatErr
+		}
+
+		parent := filepath.Dir(current)
+		if parent == current {
+			return "", err
+		}
+		missing = append(missing, filepath.Base(current))
+		current = parent
+	}
 }
 
 func allowedRoots() []string {

@@ -28,8 +28,9 @@ import (
 )
 
 // Register mounts /api/v1 routes on mux.
-func Register(mux *http.ServeMux, cliVersion string) {
-	h := &handler{cliVersion: cliVersion, lab: lab.New()}
+func Register(mux *http.ServeMux, cliVersion, csrfToken string) {
+	h := &handler{cliVersion: cliVersion, csrfToken: csrfToken, lab: lab.New()}
+	mux.HandleFunc("GET /api/v1/session", h.session)
 	mux.HandleFunc("GET /api/v1/overview", h.overview)
 	mux.HandleFunc("POST /api/v1/install", h.install)
 	mux.HandleFunc("POST /api/v1/recover", h.recover)
@@ -63,6 +64,7 @@ func Register(mux *http.ServeMux, cliVersion string) {
 
 type handler struct {
 	cliVersion string
+	csrfToken  string
 	lab        *lab.Lab
 }
 
@@ -103,6 +105,10 @@ func decodeJSON(r *http.Request, dst any) error {
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
 	return dec.Decode(dst)
+}
+
+func (h *handler) session(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]string{"csrfToken": h.csrfToken})
 }
 
 func (h *handler) overview(w http.ResponseWriter, r *http.Request) {

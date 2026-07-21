@@ -97,3 +97,55 @@ func TestScaffoldDefaultNameFromDir(t *testing.T) {
 		t.Fatalf("name %q", cfg.Name)
 	}
 }
+
+func TestScaffoldOptsValidate(t *testing.T) {
+	valid := ScaffoldOpts{
+		Dir:       filepath.Join(t.TempDir(), "valid"),
+		Name:      "orders",
+		Version:   "8.9",
+		Profile:   "light",
+		Resources: "balanced",
+	}
+	if err := valid.Validate(); err != nil {
+		t.Fatalf("valid options rejected: %v", err)
+	}
+
+	tests := []struct {
+		name   string
+		mutate func(*ScaffoldOpts)
+		want   string
+	}{
+		{name: "empty directory", mutate: func(o *ScaffoldOpts) { o.Dir = " " }, want: "directory"},
+		{name: "invalid name", mutate: func(o *ScaffoldOpts) { o.Name = "../orders" }, want: "name"},
+		{name: "invalid profile", mutate: func(o *ScaffoldOpts) { o.Profile = "huge" }, want: "profile"},
+		{name: "invalid resources", mutate: func(o *ScaffoldOpts) { o.Resources = "tiny" }, want: "resources"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			opts := valid
+			tt.mutate(&opts)
+			err := opts.Validate()
+			if err == nil || !strings.Contains(err.Error(), tt.want) {
+				t.Fatalf("Validate() error = %v, want error containing %q", err, tt.want)
+			}
+		})
+	}
+}
+
+func TestScaffoldOutputOpensAsProject(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "orders")
+	if err := Scaffold(ScaffoldOpts{Dir: dir, Name: "orders"}); err != nil {
+		t.Fatal(err)
+	}
+	got, err := Open(filepath.Join(dir, "bpmn"))
+	if err != nil {
+		t.Fatalf("Open(scaffold): %v", err)
+	}
+	root, err := filepath.EvalSymlinks(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Root != root || got.Config.Name != "orders" {
+		t.Fatalf("project = %+v, want root %q and name orders", got, root)
+	}
+}

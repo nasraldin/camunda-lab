@@ -1,11 +1,31 @@
 import { useState } from 'react'
 import { postJSON } from '../api'
+import {
+  ConfirmActionModal,
+  type ConfirmAction,
+} from '../components/ConfirmActionModal'
 
 export function DangerPage() {
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState('')
   const [msg, setMsg] = useState('')
   const [busy, setBusy] = useState(false)
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null)
+
+  async function resetLab() {
+    setBusy(true)
+    setError('')
+    setMsg('')
+    try {
+      await postJSON('/api/v1/nuke', { confirm: 'DELETE' })
+      setMsg('Lab deleted. Open Get started to install again.')
+      setConfirm('')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setBusy(false)
+    }
+  }
 
   return (
     <div className="stack">
@@ -32,24 +52,23 @@ export function DangerPage() {
           type="button"
           className="danger"
           disabled={busy || confirm !== 'DELETE'}
-          onClick={async () => {
-            setBusy(true)
-            setError('')
-            setMsg('')
-            try {
-              await postJSON('/api/v1/nuke', { confirm: 'DELETE' })
-              setMsg('Lab deleted. Open Get started to install again.')
-              setConfirm('')
-            } catch (e) {
-              setError(e instanceof Error ? e.message : String(e))
-            } finally {
-              setBusy(false)
-            }
-          }}
+          onClick={() =>
+            setConfirmAction({
+              title: 'Permanently delete lab',
+              message:
+                'This permanently deletes the lab files and data from this computer. This cannot be undone.',
+              requiredText: 'DELETE',
+              confirmLabel: 'Permanently delete lab',
+              run: resetLab,
+            })
+          }
         >
           {busy ? 'Deleting…' : 'Delete everything'}
         </button>
       </div>
+      {confirmAction && (
+        <ConfirmActionModal action={confirmAction} onClose={() => setConfirmAction(null)} />
+      )}
     </div>
   )
 }

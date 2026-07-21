@@ -17,6 +17,30 @@ type ScaffoldOpts struct {
 	Force     bool
 }
 
+// Validate checks scaffold inputs shared by all callers.
+func (o ScaffoldOpts) Validate() error {
+	if strings.TrimSpace(o.Dir) == "" {
+		return fmt.Errorf("directory is required")
+	}
+	if o.Name != "" {
+		name := strings.TrimSpace(o.Name)
+		if name == "" || name != o.Name || name == "." || name == ".." ||
+			strings.ContainsAny(name, `/\`) {
+			return fmt.Errorf("name must be a plain project name")
+		}
+	}
+	if o.Version != "" && strings.TrimSpace(o.Version) != o.Version {
+		return fmt.Errorf("version must not contain surrounding whitespace")
+	}
+	if o.Profile != "" && !oneOf(o.Profile, "light", "full", "modeler") {
+		return fmt.Errorf("profile must be one of light, full, or modeler")
+	}
+	if o.Resources != "" && !oneOf(o.Resources, "small", "balanced", "power") {
+		return fmt.Errorf("resources must be one of small, balanced, or power")
+	}
+	return nil
+}
+
 var scaffoldDirs = []string{
 	"bpmn",
 	"dmn",
@@ -31,8 +55,8 @@ var scaffoldDirs = []string{
 
 // Scaffold creates a Camunda application project tree under opts.Dir.
 func Scaffold(opts ScaffoldOpts) error {
-	if strings.TrimSpace(opts.Dir) == "" {
-		return fmt.Errorf("directory is required")
+	if err := opts.Validate(); err != nil {
+		return err
 	}
 	dir, err := filepath.Abs(opts.Dir)
 	if err != nil {
@@ -89,6 +113,15 @@ func Scaffold(opts ScaffoldOpts) error {
 		return err
 	}
 	return nil
+}
+
+func oneOf(value string, allowed ...string) bool {
+	for _, candidate := range allowed {
+		if value == candidate {
+			return true
+		}
+	}
+	return false
 }
 
 func ensureEmptyOrForce(dir string, force bool) error {
