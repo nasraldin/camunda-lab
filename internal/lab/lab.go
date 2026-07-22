@@ -295,7 +295,7 @@ func parsePSJSON(raw string) ([]composePSRow, error) {
 }
 
 func summarizeURLs(cfg config.Config) []string {
-	wanted := []string{"operate", "tasklist", "admin", "console", "optimize", "identity", "web-modeler", "keycloak", "elasticvue", "connectors", "grpc", "mcp-cluster", "mcp-processes"}
+	wanted := []string{"operate", "tasklist", "admin", "console", "optimize", "identity", "web-modeler", "keycloak", "elasticvue", "grafana", "prometheus", "connectors", "grpc", "mcp-cluster", "mcp-processes"}
 	entries := ListStatusURLs(cfg)
 	var lines []string
 	for _, name := range wanted {
@@ -310,7 +310,7 @@ func ListStatusURLs(cfg config.Config) map[string]string {
 	out := map[string]string{}
 	for _, entry := range urls.List(cfg) {
 		switch entry.Name {
-		case "operate", "tasklist", "admin", "console", "optimize", "identity", "web-modeler", "keycloak", "elasticvue", "connectors", "grpc", "mcp-cluster", "mcp-processes":
+		case "operate", "tasklist", "admin", "console", "optimize", "identity", "web-modeler", "keycloak", "elasticvue", "grafana", "prometheus", "connectors", "grpc", "mcp-cluster", "mcp-processes":
 			out[entry.Name] = entry.URL
 		}
 	}
@@ -360,7 +360,7 @@ func (l *Lab) resolve(cfg config.Config) (workDir string, files []string, envFil
 		}
 		files = append(files, p)
 	}
-	overrides, err := overlay.ComposeOverrideFiles(cfg.Version, cfg.Profile, cfg.AI.Enabled)
+	overrides, err := overlay.ComposeOverrideFiles(cfg.Version, cfg.Profile, cfg.AI.Enabled, cfg.Monitoring.Enabled)
 	if err != nil {
 		return "", nil, nil, err
 	}

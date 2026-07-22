@@ -63,7 +63,7 @@ func TestComposeOverrideFiles810Full(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("CAMUNDA_LAB_HOME", home)
 	paths.Reset()
-	files, err := overlay.ComposeOverrideFiles("8.10", "full", false)
+	files, err := overlay.ComposeOverrideFiles("8.10", "full", false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -83,7 +83,7 @@ func TestComposeOverrideFiles89Full(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("CAMUNDA_LAB_HOME", home)
 	paths.Reset()
-	files, err := overlay.ComposeOverrideFiles("8.9", "full", false)
+	files, err := overlay.ComposeOverrideFiles("8.9", "full", false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,7 +103,7 @@ func TestComposeOverrideFiles810LightNone(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("CAMUNDA_LAB_HOME", home)
 	paths.Reset()
-	files, err := overlay.ComposeOverrideFiles("8.10", "light", false)
+	files, err := overlay.ComposeOverrideFiles("8.10", "light", false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,7 +117,7 @@ func TestComposeOverrideFiles89LightNone(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("CAMUNDA_LAB_HOME", home)
 	paths.Reset()
-	files, err := overlay.ComposeOverrideFiles("8.9", "light", false)
+	files, err := overlay.ComposeOverrideFiles("8.9", "light", false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -128,7 +128,7 @@ func TestComposeOverrideFiles89LightNone(t *testing.T) {
 }
 
 func TestComposeOverrideFilesModelerNone(t *testing.T) {
-	files, err := overlay.ComposeOverrideFiles("8.9", "modeler", false)
+	files, err := overlay.ComposeOverrideFiles("8.9", "modeler", false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -141,7 +141,7 @@ func TestComposeOverrideFiles89LightAI(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("CAMUNDA_LAB_HOME", home)
 	paths.Reset()
-	files, err := overlay.ComposeOverrideFiles("8.9", "light", true)
+	files, err := overlay.ComposeOverrideFiles("8.9", "light", true, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -151,9 +151,80 @@ func TestComposeOverrideFiles89LightAI(t *testing.T) {
 	}
 }
 
+func TestComposeOverrideFilesMonitoring(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("CAMUNDA_LAB_HOME", home)
+	paths.Reset()
+	files, err := overlay.ComposeOverrideFiles("8.9", "light", false, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// light also writes csrf-disabled.yaml; monitoring adds monitoring.yaml.
+	var monitoringPath string
+	for _, f := range files {
+		if filepath.Base(f) == "monitoring.yaml" {
+			monitoringPath = f
+		}
+	}
+	if monitoringPath == "" {
+		t.Fatalf("monitoring.yaml not among %v", basenames(files))
+	}
+	// The overlay must be templated with the absolute overlays dir (no placeholder left).
+	data, err := os.ReadFile(monitoringPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(data), "__OVERLAYS_DIR__") {
+		t.Fatalf("placeholder not replaced in %s", monitoringPath)
+	}
+	if !strings.Contains(string(data), paths.OverlaysDir()) {
+		t.Fatalf("absolute overlays dir missing in %s", monitoringPath)
+	}
+	// Provisioning assets must be extracted to disk for the bind mounts.
+	for _, rel := range []string{
+		"monitoring/prometheus.yml",
+		"monitoring/grafana/provisioning/datasources/prometheus.yml",
+		"monitoring/grafana/dashboards/zeebe.json",
+	} {
+		if _, err := os.Stat(filepath.Join(paths.OverlaysDir(), rel)); err != nil {
+			t.Fatalf("missing asset %s: %v", rel, err)
+		}
+	}
+}
+
+// TestMonitoringAssetsPreserveEdits guards the documented promise that user
+// edits under overlays/monitoring/ survive a `camunda restart` / re-enable.
+func TestMonitoringAssetsPreserveEdits(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("CAMUNDA_LAB_HOME", home)
+	paths.Reset()
+
+	// First seed.
+	if _, err := overlay.ComposeOverrideFiles("8.9", "light", false, true); err != nil {
+		t.Fatal(err)
+	}
+	promPath := filepath.Join(paths.OverlaysDir(), "monitoring", "prometheus.yml")
+	edited := []byte("# user edit\nglobal: {}\n")
+	if err := os.WriteFile(promPath, edited, 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Re-run (simulates a later up/restart) — the edit must survive.
+	if _, err := overlay.ComposeOverrideFiles("8.9", "light", false, true); err != nil {
+		t.Fatal(err)
+	}
+	got, err := os.ReadFile(promPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(got, edited) {
+		t.Fatalf("prometheus.yml was overwritten on re-seed; user edits lost")
+	}
+}
+
 func TestOverlaysInSync(t *testing.T) {
 	root := repoRoot(t)
-	names := []string{"elasticsearch-8.10.yaml", "elasticsearch-cors.yaml", "elasticvue.yaml", "http-headers.yaml", "connectors-ai-secrets.yaml", "csrf-disabled.yaml"}
+	names := []string{"elasticsearch-8.10.yaml", "elasticsearch-cors.yaml", "elasticvue.yaml", "http-headers.yaml", "connectors-ai-secrets.yaml", "csrf-disabled.yaml", "monitoring.yaml"}
 	for _, name := range names {
 		embedPath := filepath.Join(root, "internal", "overlay", "embed", name)
 		repoPath := filepath.Join(root, "overlays", name)

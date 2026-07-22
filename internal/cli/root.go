@@ -66,6 +66,7 @@ switching, doctor, and developer tool helpers. Not affiliated with Camunda GmbH.
 	root.AddCommand(newNukeCmd())
 	root.AddCommand(newToolsCmd())
 	root.AddCommand(newAICmd())
+	root.AddCommand(newMonitoringCmd())
 	root.AddCommand(newUICmd())
 	root.AddCommand(newLintCmdWith(deps))
 	root.AddCommand(newDiffCmdWith(deps))

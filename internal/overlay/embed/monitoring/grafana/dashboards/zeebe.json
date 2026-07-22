@@ -1,0 +1,64 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "graphTooltip": 0,
+  "schemaVersion": 39,
+  "tags": ["camunda-lab", "zeebe"],
+  "title": "Camunda Lab — Zeebe / Orchestration",
+  "uid": "camunda-lab-zeebe",
+  "time": { "from": "now-1h", "to": "now" },
+  "timezone": "",
+  "templating": { "list": [] },
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Orchestration targets up",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "datasource": null,
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "targets": [
+        { "expr": "sum(up{job=\"orchestration\"})", "legendFormat": "up" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "JVM heap used (bytes)",
+      "gridPos": { "h": 8, "w": 12, "x": 6, "y": 0 },
+      "datasource": null,
+      "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+      "targets": [
+        { "expr": "jvm_memory_used_bytes{job=\"orchestration\"}", "legendFormat": "{{area}} {{id}}" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Stream processor records/s",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "datasource": null,
+      "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] },
+      "targets": [
+        { "expr": "rate(zeebe_stream_processor_records_total[1m])", "legendFormat": "{{action}} p{{partition}}" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Exported events/s",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": null,
+      "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] },
+      "targets": [
+        { "expr": "rate(zeebe_exporter_events_total[1m])", "legendFormat": "{{exporter}}" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Process CPU usage",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "datasource": null,
+      "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] },
+      "targets": [
+        { "expr": "process_cpu_usage{job=\"orchestration\"}", "legendFormat": "cpu" }
+      ]
+    }
+  ]
+}

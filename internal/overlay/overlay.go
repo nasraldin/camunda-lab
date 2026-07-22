@@ -1,8 +1,11 @@
 package overlay
 
 import (
+	"bytes"
+	"embed"
 	_ "embed"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
@@ -28,6 +31,17 @@ var csrfDisabledYAML []byte
 
 //go:embed embed/connectors-ai-secrets.yaml
 var connectorsAISecretsYAML []byte
+
+//go:embed embed/monitoring.yaml
+var monitoringYAML []byte
+
+//go:embed embed/monitoring
+var monitoringAssets embed.FS
+
+// overlaysDirPlaceholder is replaced with the absolute overlays dir at write
+// time so Compose bind mounts resolve (Compose resolves relative mounts against
+// the project dir, not the override file's dir).
+const overlaysDirPlaceholder = "__OVERLAYS_DIR__"
 
 func ValidateResources(resources string) error {
 	switch resources {
@@ -74,7 +88,7 @@ func SyncResourcesEnv(resources string) (string, error) {
 }
 
 // ComposeOverrideFiles returns extra -f compose files (absolute paths).
-func ComposeOverrideFiles(minor, profile string, aiEnabled bool) ([]string, error) {
+func ComposeOverrideFiles(minor, profile string, aiEnabled, monitoringEnabled bool) ([]string, error) {
 	if err := os.MkdirAll(paths.OverlaysDir(), 0o755); err != nil {
 		return nil, err
 	}
@@ -116,12 +130,59 @@ func ComposeOverrideFiles(minor, profile string, aiEnabled bool) ([]string, erro
 			return nil, err
 		}
 	}
+	if monitoringEnabled {
+		if err := writeMonitoringAssets(); err != nil {
+			return nil, err
+		}
+		// Template the absolute overlays dir into bind-mount sources.
+		yaml := bytes.ReplaceAll(monitoringYAML, []byte(overlaysDirPlaceholder), []byte(paths.OverlaysDir()))
+		if err := write("monitoring.yaml", yaml); err != nil {
+			return nil, err
+		}
+	}
 	return out, nil
+}
+
+// writeMonitoringAssets seeds the embedded monitoring/ tree (prometheus config,
+// Grafana provisioning + dashboards) into ~/.camunda-lab/overlays/ — but only
+// for files that don't already exist. This is write-if-missing on purpose: users
+// are told they can edit prometheus.yml and the dashboards, so a `camunda up` /
+// `restart` / re-enable must not clobber those edits. Delete a file (or the whole
+// monitoring/ dir) to re-seed the shipped defaults.
+func writeMonitoringAssets() error {
+	return fs.WalkDir(monitoringAssets, "embed/monitoring", func(p string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		// Strip the leading "embed/" so files land under overlays/monitoring/...
+		rel, err := filepath.Rel("embed", p)
+		if err != nil {
+			return err
+		}
+		dest := filepath.Join(paths.OverlaysDir(), filepath.FromSlash(rel))
+		if d.IsDir() {
+			return os.MkdirAll(dest, 0o755)
+		}
+		// Preserve existing (possibly user-edited) files.
+		if _, statErr := os.Stat(dest); statErr == nil {
+			return nil
+		} else if !os.IsNotExist(statErr) {
+			return statErr
+		}
+		data, err := monitoringAssets.ReadFile(p)
+		if err != nil {
+			return err
+		}
+		if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
+			return err
+		}
+		return os.WriteFile(dest, data, 0o644)
+	})
 }
 
 // ExpectedFiles reports the managed overlay filenames for a configuration
 // without creating or modifying anything on disk.
-func ExpectedFiles(minor, profile string, aiEnabled bool) ([]string, error) {
+func ExpectedFiles(minor, profile string, aiEnabled, monitoringEnabled bool) ([]string, error) {
 	if err := versions.ValidateMinor(minor); err != nil {
 		return nil, err
 	}
@@ -144,12 +205,20 @@ func ExpectedFiles(minor, profile string, aiEnabled bool) ([]string, error) {
 	if aiEnabled && versions.SupportsAIFeature(minor, profile) == nil {
 		out = append(out, "connectors-ai-secrets.yaml")
 	}
+	if monitoringEnabled {
+		out = append(out, "monitoring.yaml")
+	}
 	sort.Strings(out)
 	return out, nil
 }
 
 // ExpectedContent returns the embedded managed content for an overlay filename.
+// For monitoring.yaml the __OVERLAYS_DIR__ placeholder is replaced so the result
+// matches what ComposeOverrideFiles writes to disk.
 func ExpectedContent(name string) ([]byte, bool) {
+	if name == "monitoring.yaml" {
+		return bytes.ReplaceAll(monitoringYAML, []byte(overlaysDirPlaceholder), []byte(paths.OverlaysDir())), true
+	}
 	content := map[string][]byte{
 		"elasticsearch-8.10.yaml":    elasticsearch810YAML,
 		"elasticsearch-cors.yaml":    elasticsearchCorsYAML,

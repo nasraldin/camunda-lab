@@ -104,6 +104,12 @@ const CATEGORIES: Category[] = [
       'mcp-processes',
     ],
   },
+  {
+    id: 'monitoring',
+    title: 'Monitoring',
+    hint: 'Dashboards and metrics (when enabled)',
+    names: ['grafana', 'prometheus'],
+  },
 ]
 
 function isCredentialNote(notes?: string): boolean {

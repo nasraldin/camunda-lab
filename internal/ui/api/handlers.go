@@ -57,6 +57,9 @@ func registerCore(mux *http.ServeMux, h *handler) {
 	mux.HandleFunc("POST /api/v1/ai/enable", h.aiEnable)
 	mux.HandleFunc("POST /api/v1/ai/disable", h.aiDisable)
 	mux.HandleFunc("GET /api/v1/ai/config", h.aiConfig)
+	mux.HandleFunc("GET /api/v1/monitoring/status", h.monitoringStatus)
+	mux.HandleFunc("POST /api/v1/monitoring/enable", h.monitoringEnable)
+	mux.HandleFunc("POST /api/v1/monitoring/disable", h.monitoringDisable)
 	mux.HandleFunc("GET /api/v1/tools/c8ctl/status", h.c8ctlStatus)
 	mux.HandleFunc("POST /api/v1/tools/c8ctl/install", h.c8ctlInstall)
 	mux.HandleFunc("POST /api/v1/tools/modeler/profile", h.modelerProfile)
@@ -121,12 +124,13 @@ func (h *handler) overview(w http.ResponseWriter, r *http.Request) {
 		"labHome":    paths.Home(),
 		"configured": configured && cfg.Version != "",
 		"config": map[string]any{
-			"version":   cfg.Version,
-			"profile":   cfg.Profile,
-			"resources": cfg.Resources,
-			"host":      cfg.Host,
-			"project":   cfg.ComposeProject,
-			"aiEnabled": cfg.AI.Enabled,
+			"version":           cfg.Version,
+			"profile":           cfg.Profile,
+			"resources":         cfg.Resources,
+			"host":              cfg.Host,
+			"project":           cfg.ComposeProject,
+			"aiEnabled":         cfg.AI.Enabled,
+			"monitoringEnabled": cfg.Monitoring.Enabled,
 		},
 		"supportedVersions": versions.Supported,
 		"defaultVersion":    config.Defaults().Version,
@@ -517,6 +521,39 @@ func (h *handler) aiDisable(w http.ResponseWriter, r *http.Request) {
 	}
 	_ = decodeJSON(r, &body)
 	if err := h.lab.DisableAI(r.Context(), body.WipeSecrets); err != nil {
+		writeErr(w, http.StatusBadRequest, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+}
+
+func (h *handler) monitoringStatus(w http.ResponseWriter, r *http.Request) {
+	cfg, err := config.Load()
+	if err != nil {
+		writeErr(w, http.StatusBadRequest, err)
+		return
+	}
+	host := cfg.Host
+	if host == "" {
+		host = "localhost"
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"enabled":    cfg.Monitoring.Enabled,
+		"grafana":    fmt.Sprintf("http://%s:3000", host),
+		"prometheus": fmt.Sprintf("http://%s:9490", host),
+	})
+}
+
+func (h *handler) monitoringEnable(w http.ResponseWriter, r *http.Request) {
+	if err := h.lab.EnableMonitoring(r.Context()); err != nil {
+		writeErr(w, http.StatusBadRequest, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+}
+
+func (h *handler) monitoringDisable(w http.ResponseWriter, r *http.Request) {
+	if err := h.lab.DisableMonitoring(r.Context()); err != nil {
 		writeErr(w, http.StatusBadRequest, err)
 		return
 	}

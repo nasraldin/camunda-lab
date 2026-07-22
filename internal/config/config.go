@@ -11,14 +11,19 @@ type AIConfig struct {
 	Enabled bool `yaml:"enabled"`
 }
 
+type MonitoringConfig struct {
+	Enabled bool `yaml:"enabled"`
+}
+
 type Config struct {
-	Version        string   `yaml:"version"`
-	Profile        string   `yaml:"profile"`
-	Resources      string   `yaml:"resources"`
-	Host           string   `yaml:"host"`
-	ComposeProject string   `yaml:"compose_project"`
-	ActiveEnv      string   `yaml:"activeEnv,omitempty"`
-	AI             AIConfig `yaml:"ai"`
+	Version        string           `yaml:"version"`
+	Profile        string           `yaml:"profile"`
+	Resources      string           `yaml:"resources"`
+	Host           string           `yaml:"host"`
+	ComposeProject string           `yaml:"compose_project"`
+	ActiveEnv      string           `yaml:"activeEnv,omitempty"`
+	AI             AIConfig         `yaml:"ai"`
+	Monitoring     MonitoringConfig `yaml:"monitoring"`
 }
 
 func Defaults() Config {

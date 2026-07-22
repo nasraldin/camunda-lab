@@ -103,8 +103,8 @@ const (
 	maxOverlayBytes   = int64(2 << 20)
 )
 
-func inspectOverlays(ctx context.Context, fs FileSystem, dir, version, profile string, aiEnabled bool) (Status, string) {
-	expected, err := laboverlay.ExpectedFiles(version, profile, aiEnabled)
+func inspectOverlays(ctx context.Context, fs FileSystem, dir, version, profile string, aiEnabled, monitoringEnabled bool) (Status, string) {
+	expected, err := laboverlay.ExpectedFiles(version, profile, aiEnabled, monitoringEnabled)
 	if err != nil {
 		return StatusFail, sanitize(err.Error())
 	}

@@ -88,6 +88,7 @@ func (*runningTestEngine) Up(string, []string, []string, string) error { return 
 func (*runningTestEngine) UpService(string, []string, []string, string, string) error {
 	return nil
 }
+func (*runningTestEngine) RemoveByName(...string) error              { return nil }
 func (*runningTestEngine) Down(string, []string, string, bool) error { return nil }
 func (*runningTestEngine) Ps(string, string) (string, error)         { return "", nil }
 func (e *runningTestEngine) PsJSON(workDir, project string) (string, error) {

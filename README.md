@@ -115,6 +115,7 @@ Ports differ by Camunda minor — run `camunda urls` (see [profiles](https://nas
 | `camunda ui`                               | Lab UI in background (http://localhost:9090) |
 | `camunda ui logs -f`                       | Follow background UI logs                    |
 | `camunda ai enable` / `config`             | MCP + AI Agent secrets (8.9+)                |
+| `camunda monitoring enable`                | Prometheus + Grafana dashboards              |
 | `camunda switch 8.9 --wipe`                | Another minor, clean volumes                 |
 | `camunda profile light\|full\|modeler`     | Compose profile                              |
 | `camunda resources small\|balanced\|power` | Heap settings                                |
@@ -135,6 +136,7 @@ More: [CLI reference](https://nasraldin.github.io/camunda-lab/cli-reference/) ·
 | [Why Camunda Lab](https://nasraldin.github.io/camunda-lab/comparison/)      | vs zip / Helm / 8 Run          |
 | [Profiles](https://nasraldin.github.io/camunda-lab/profiles/)               | Versions, ports, ElasticVue    |
 | [AI and MCP](https://nasraldin.github.io/camunda-lab/ai-mcp/)               | Cursor MCP + connector secrets |
+| [Monitoring](https://nasraldin.github.io/camunda-lab/monitoring/)           | Prometheus + Grafana dashboards |
 | [CLI reference](https://nasraldin.github.io/camunda-lab/cli-reference/)     | Every command                  |
 | [Lab API reference](https://nasraldin.github.io/camunda-lab/api-reference/) | `/api/v1` toolkit routes       |
 | [Roadmap](https://nasraldin.github.io/camunda-lab/roadmap/)                 | Implemented features and next  |

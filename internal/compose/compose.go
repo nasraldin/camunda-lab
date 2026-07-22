@@ -28,6 +28,7 @@ func BuildArgs(subcommand, project string, files, envFiles []string, extra ...st
 type Engine interface {
 	Up(workDir string, files, envFiles []string, project string) error
 	UpService(workDir string, files, envFiles []string, project, service string) error
+	RemoveByName(names ...string) error
 	Down(workDir string, files []string, project string, volumes bool) error
 	Ps(workDir, project string) (string, error)
 	PsJSON(workDir, project string) (string, error)
@@ -58,6 +59,30 @@ func (r *Runner) UpService(workDir string, files, envFiles []string, project, se
 	_, err := r.Exec(workDir, append([]string{"docker"}, args...))
 	if err != nil {
 		return fmt.Errorf("docker compose up %s: %w", service, err)
+	}
+	return nil
+}
+
+// RemoveByName force-removes containers by name (docker rm -f), skipping any
+// that don't exist. Removal is per-name and a "No such container" error is
+// treated as success, so engine differences in how `docker rm -f` handles a
+// missing name don't matter. Used to tear down overlay add-ons whose services
+// are no longer in the active compose file set. Containers must set container_name.
+func (r *Runner) RemoveByName(names ...string) error {
+	for _, name := range names {
+		if name == "" {
+			continue
+		}
+		out, err := r.Exec("", []string{"docker", "rm", "-f", name})
+		if err == nil {
+			continue
+		}
+		// defaultExec puts Docker's stderr into the returned error; stdout is often empty.
+		msg := strings.ToLower(out + " " + err.Error())
+		if strings.Contains(msg, "no such container") {
+			continue
+		}
+		return fmt.Errorf("docker rm -f %s: %w", name, err)
 	}
 	return nil
 }

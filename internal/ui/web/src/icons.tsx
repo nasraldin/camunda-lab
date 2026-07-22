@@ -96,6 +96,16 @@ export function IconAI(p: IconProps) {
   )
 }
 
+export function IconMonitoring(p: IconProps) {
+  return (
+    <svg className={p.className} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <rect x="3" y="4" width="18" height="14" rx="1.5" stroke="currentColor" strokeWidth="1.75" />
+      <path d="M6 13.5l2.5-3 2 2.2L14 8l4 5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M9 21h6M12 18v3" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 export function IconTools(p: IconProps) {
   return (
     <svg className={p.className} viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -401,6 +411,8 @@ const APP_META: Record<string, AppDef> = {
   'zeebe-http': { label: 'Zeebe HTTP', color: '#FC5D0D', Icon: ApiIcon },
   'mcp-cluster': { label: 'MCP Cluster', color: '#0B7285', Icon: McpIcon },
   'mcp-processes': { label: 'MCP Processes', color: '#0B7285', Icon: McpIcon },
+  grafana: { label: 'Grafana', color: '#F46800', Icon: OptimizeIcon },
+  prometheus: { label: 'Prometheus', color: '#E6522C', Icon: ApiIcon },
 }
 
 export function appMeta(name: string): AppDef {

@@ -95,6 +95,7 @@ nav:
       - Profiles and versions: profiles.md
       - Lab UI: lab-ui.md
       - AI and MCP: ai-mcp.md
+      - Monitoring: monitoring.md
       - Architecture: architecture.md
       - App screenshots: screenshots.md
   - Reference:

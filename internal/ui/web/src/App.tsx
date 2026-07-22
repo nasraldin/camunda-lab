@@ -7,6 +7,7 @@ import { AdminPage } from './pages/Admin'
 import { ContainersPage } from './pages/Containers'
 import { LogsPage } from './pages/Logs'
 import { AIPage } from './pages/AI'
+import { MonitoringPage } from './pages/Monitoring'
 import { ToolsPage } from './pages/Tools'
 import { DangerPage } from './pages/Danger'
 import { BpmnPage } from './pages/Bpmn'
@@ -22,6 +23,7 @@ import {
   IconDocs,
   IconGitHub,
   IconLogs,
+  IconMonitoring,
   IconOverview,
   IconReleases,
   IconSetup,
@@ -98,6 +100,7 @@ const links: {
   { to: '/containers', label: 'Services', icon: IconContainers },
   { to: '/logs', label: 'Logs', icon: IconLogs },
   { to: '/ai', label: 'AI helpers', icon: IconAI },
+  { to: '/monitoring', label: 'Monitoring', icon: IconMonitoring },
   { to: '/tools', label: 'Extras', icon: IconTools },
   { to: '/danger', label: 'Reset lab', icon: IconDanger },
 ]
@@ -227,6 +230,7 @@ export function App() {
           <Route path="/containers" element={<ContainersPage />} />
           <Route path="/logs" element={<LogsPage />} />
           <Route path="/ai" element={<AIPage />} />
+          <Route path="/monitoring" element={<MonitoringPage />} />
           <Route path="/tools" element={<ToolsPage />} />
           <Route path="/danger" element={<DangerPage />} />
         </Routes>

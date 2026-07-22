@@ -31,56 +31,24 @@ Direction and phase boundaries: [platform toolkit vision](https://github.com/nas
 - Home, Get started, Apps (auto sign-in), Services, Logs, AI helpers, Reset lab
 - Camunda Compose **8.7–8.10**, profiles, ElasticVue, AI Agent + MCP, official CLI / Modeler tools
 - GitHub Releases, `install.sh`, Homebrew (`camunda-lab`)
-- Basic `camunda doctor`, smoke/wait, version switch, resource presets
-
-## Phase 1 — lab core
-
-**Shipped:** install / switch / profile / resources, Lab UI, AI/MCP, basic `doctor`, smoke/wait, tools glue, overlays, **`camunda init`** (project scaffold + `.camunda.yaml`).
-
-Plan (historical): [project-init](https://github.com/nasraldin/camunda-lab/blob/main/docs/superpowers/plans/2026-07-17-project-init.md)
 
 ## Next up (maintainer / small DX)
 
 Things we’re actively building or next in line — no hard ETA:
 
+- **Monitoring add-on** *(in review — [PR #15](https://github.com/nasraldin/camunda-lab/pull/15))* — `camunda monitoring enable` wires opt-in **Prometheus + Grafana** (loopback only, admin/admin) with pre-provisioned dashboards for **Zeebe/orchestration, Elasticsearch, and connectors** (via the ES exporter), plus a best-effort Optimize placeholder. Surfaced through `camunda open grafana`, `camunda urls`, and a **Monitoring** page + Apps cards in the Lab UI. Scrape targets are best-effort per Camunda minor and user-editable. Guide: [Monitoring](monitoring.md) _(idea: @MahmoudSaid037)_
 - Optional Cosign verify when `cosign` is on your PATH
 - Scheduled LIVE smoke in CI (nightly-ish; too heavy for every PR)
 - Optional `--write-cursor` to drop MCP JSON into the user’s Cursor config
-- Sample AI Agent BPMN deploy helper (thin wrap of official deploy tooling)
-
-## Phase 2 — Developer experience
-
-**Implemented on main** (Go unit/integration + Playwright mock evidence): `lint`, `diff`, `explain`, `review`, `test generate`, `scan`, `doctor --deep`. Live cluster acceptance for remote-only paths remains **Gate 5 open** — see [acceptance status](acceptance/platform-toolkit-parity.md).
-
-| Command                 | Intent                                  |
-| ----------------------- | --------------------------------------- |
-| `camunda diff`          | Semantic BPMN diff (not raw XML)        |
-| `camunda lint`          | Deterministic BPMN rules (eslint-style) |
-| `camunda review`        | Lint + optional AI review (`--ai`)      |
-| `camunda explain`       | Business + technical process summary    |
-| `camunda test generate` | Test skeletons from BPMN                |
-| `camunda scan`          | Secrets / hardcoded credential scan     |
-| `camunda doctor --deep` | Component health beyond Docker/config   |
-
-## Phase 3 — Platform engineering
-
-**Implemented on main** (automated mock + Go contract evidence): `env`, `plan`, `drift`, `backup`/`restore`, `incidents`, `trace`. Live OIDC, incidents, trace, and backup round-trip against a real cluster are **not** fully accepted yet (**Gate 5 open**).
-
-`plan` / `drift` / `incidents` / `trace` call the active env’s **Orchestration Cluster REST API** (`/v2`) — lab URLs by default (`camunda urls` → `rest`). Remote profiles use `endpoints.orchestration`.
-
-| Command                      | Intent                                                       |
-| ---------------------------- | ------------------------------------------------------------ |
-| `camunda env`                | Named lab / remote environment profiles                      |
-| `camunda plan`               | Deployment preview vs cluster definitions (does not deploy)  |
-| `camunda drift`              | Local project XML digest vs deployed definition XML          |
-| `camunda backup` / `restore` | Lab-oriented snapshot MVP                                    |
-| `camunda incidents`          | List/resolve via `POST /v2/incidents/search` + `/resolution` |
-| `camunda trace`              | Timeline via process instance + element-instances search     |
-
-**Lab UI parity (localhost):** sidebar **BPMN**, **Cluster**, and **Project** call the same packages as these CLI commands (upload or absolute project path). Not a full Camunda Console — Operate/Tasklist remain the primary ops UIs.
+- Sample AI Agent BPMN deploy helper (thin wrapper around `c8ctl`)
+- **Sample-data seeder** — deploy a demo process and start a few instances so Operate/Tasklist aren’t empty on first boot (pairs with the BPMN deploy helper above) _(idea: @MahmoudSaid037)_
+- **Port-conflict detection & remap** — `doctor` / install spot colliding host ports (they differ per minor) and offer to remap instead of failing _(idea: @MahmoudSaid037)_
 
 ## Later / maybe
 
+- **Console lite (Lab UI scope 3)** — process definitions, start instance, instance/incident views, job retry, richer connector secrets, Operate deep links, plus **compare process versions** (visual `bpmn-js` diff to spot the gaps between two versions) and **promote an older version to latest** (re-deploy its XML as the new highest version — Zeebe assigns versions by deployment order, so this republishes rather than repoints) — inside the same localhost UI, using official Camunda APIs (not a full Optimize/Identity rebuild). Details in the [lab UI design](https://github.com/nasraldin/camunda-lab/blob/main/docs/superpowers/specs/2026-07-17-lab-ui-design.md) “Future — option 3” section _(version compare + promote idea: @MahmoudSaid037)_
+- **Snapshot / restore lab state** — dump Elasticsearch volumes + deployed BPMN and restore later, for reproducible demos and safer version-switch experiments _(idea: @MahmoudSaid037)_
+- **Deeper monitoring dashboards** — per-minor dashboard tuning, alert rules, and a proper Optimize dashboard on top of the shipped Prometheus/Grafana add-on _(idea: @MahmoudSaid037)_
 - Named labs (`camunda --name upgrade-test`) for side-by-side minors
 - Windows support if there’s real demand
 - Process replay, C7→C8 migration assistant, executive HTML report (explicitly out of Phase 1–3 commitments)

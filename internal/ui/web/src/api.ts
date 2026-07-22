@@ -27,6 +27,7 @@ export type Overview = {
     host: string
     project: string
     aiEnabled: boolean
+    monitoringEnabled: boolean
   }
   supportedVersions: string[]
   defaultVersion: string
@@ -130,6 +131,14 @@ export async function getAIStatus(): Promise<{
 
 export async function getAIConfig(): Promise<{ config: string }> {
   return getJSON('/api/v1/ai/config')
+}
+
+export async function getMonitoringStatus(): Promise<{
+  enabled: boolean
+  grafana: string
+  prometheus: string
+}> {
+  return getJSON('/api/v1/monitoring/status')
 }
 
 export async function getC8ctlStatus(): Promise<{ installed: boolean; path: string }> {

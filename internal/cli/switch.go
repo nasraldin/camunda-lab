@@ -123,6 +123,7 @@ func printURLs(cmd *cobra.Command, cfg config.Config) {
 	entries := urls.List(cfg)
 	webApps := []string{"operate", "tasklist", "admin", "console", "optimize", "identity", "web-modeler", "keycloak", "elasticvue"}
 	apis := []string{"rest", "orchestration", "grpc", "zeebe-http", "connectors", "elasticsearch", "mcp-cluster", "mcp-processes"}
+	monitoring := []string{"grafana", "prometheus"}
 
 	index := map[string]urls.Entry{}
 	for _, entry := range entries {
@@ -142,6 +143,9 @@ func printURLs(cmd *cobra.Command, cfg config.Config) {
 	}
 	if lines := formatURLSection(index, apis); len(lines) > 0 {
 		rep.Sections = append(rep.Sections, display.Section{Title: "APIs and infra", Items: lines})
+	}
+	if lines := formatURLSection(index, monitoring); len(lines) > 0 {
+		rep.Sections = append(rep.Sections, display.Section{Title: "Monitoring", Items: lines})
 	}
 	if notes := collectAuthNotes(entries); len(notes) > 0 {
 		rep.Sections = append(rep.Sections, display.Section{Title: "Auth", Items: notes})
