@@ -1,0 +1,1 @@
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"><process id="start-invalid"><task id="task"/><endEvent id="end"/><sequenceFlow id="flow" sourceRef="task" targetRef="end"/></process></definitions>

@@ -5,7 +5,13 @@ This is an honest status page — not a delivery calendar. Dates slip; features 
 **Current release:** [v0.6.0](https://github.com/nasraldin/camunda-lab/releases/tag/v0.6.0)  
 **Docs site:** [nasraldin.github.io/camunda-lab](https://nasraldin.github.io/camunda-lab/)
 
-## What’s in v0.6.0
+## Vision
+
+Camunda Lab starts as the easiest way to run and manage **local** Camunda environments, then evolves into a **productivity toolkit** for developers and platform engineers. It complements official Camunda cluster CLIs (deploy, start instance, resource CRUD) rather than replacing them.
+
+Direction and phase boundaries: [platform toolkit vision](https://github.com/nasraldin/camunda-lab/blob/main/docs/superpowers/specs/2026-07-17-platform-toolkit-vision.md) (in-repo, not on the docs site).
+
+## What’s in v0.6.0 (Phase 1 lab core)
 
 ### Lab UI polish
 
@@ -23,24 +29,62 @@ This is an honest status page — not a delivery calendar. Dates slip; features 
 
 - **`camunda ui`** — embedded Camunda Lab Console on `http://localhost:9090`
 - Home, Get started, Apps (auto sign-in), Services, Logs, AI helpers, Reset lab
-- Camunda Compose **8.7–8.10**, profiles, ElasticVue, AI Agent + MCP, `c8ctl` / Modeler tools
+- Camunda Compose **8.7–8.10**, profiles, ElasticVue, AI Agent + MCP, official CLI / Modeler tools
 - GitHub Releases, `install.sh`, Homebrew (`camunda-lab`)
+- Basic `camunda doctor`, smoke/wait, version switch, resource presets
 
-## Next up
+## Phase 1 — lab core
+
+**Shipped:** install / switch / profile / resources, Lab UI, AI/MCP, basic `doctor`, smoke/wait, tools glue, overlays, **`camunda init`** (project scaffold + `.camunda.yaml`).
+
+Plan (historical): [project-init](https://github.com/nasraldin/camunda-lab/blob/main/docs/superpowers/plans/2026-07-17-project-init.md)
+
+## Next up (maintainer / small DX)
 
 Things we’re actively building or next in line — no hard ETA:
 
 - Optional Cosign verify when `cosign` is on your PATH
 - Scheduled LIVE smoke in CI (nightly-ish; too heavy for every PR)
 - Optional `--write-cursor` to drop MCP JSON into the user’s Cursor config
-- Sample AI Agent BPMN deploy helper (thin wrapper around `c8ctl`)
+- Sample AI Agent BPMN deploy helper (thin wrap of official deploy tooling)
+
+## Phase 2 — Developer experience
+
+**Implemented on main** (Go unit/integration + Playwright mock evidence): `lint`, `diff`, `explain`, `review`, `test generate`, `scan`, `doctor --deep`. Live cluster acceptance for remote-only paths remains **Gate 5 open** — see [acceptance status](acceptance/platform-toolkit-parity.md).
+
+| Command                 | Intent                                  |
+| ----------------------- | --------------------------------------- |
+| `camunda diff`          | Semantic BPMN diff (not raw XML)        |
+| `camunda lint`          | Deterministic BPMN rules (eslint-style) |
+| `camunda review`        | Lint + optional AI review (`--ai`)      |
+| `camunda explain`       | Business + technical process summary    |
+| `camunda test generate` | Test skeletons from BPMN                |
+| `camunda scan`          | Secrets / hardcoded credential scan     |
+| `camunda doctor --deep` | Component health beyond Docker/config   |
+
+## Phase 3 — Platform engineering
+
+**Implemented on main** (automated mock + Go contract evidence): `env`, `plan`, `drift`, `backup`/`restore`, `incidents`, `trace`. Live OIDC, incidents, trace, and backup round-trip against a real cluster are **not** fully accepted yet (**Gate 5 open**).
+
+`plan` / `drift` / `incidents` / `trace` call the active env’s **Orchestration Cluster REST API** (`/v2`) — lab URLs by default (`camunda urls` → `rest`). Remote profiles use `endpoints.orchestration`.
+
+| Command                      | Intent                                                       |
+| ---------------------------- | ------------------------------------------------------------ |
+| `camunda env`                | Named lab / remote environment profiles                      |
+| `camunda plan`               | Deployment preview vs cluster definitions (does not deploy)  |
+| `camunda drift`              | Local project XML digest vs deployed definition XML          |
+| `camunda backup` / `restore` | Lab-oriented snapshot MVP                                    |
+| `camunda incidents`          | List/resolve via `POST /v2/incidents/search` + `/resolution` |
+| `camunda trace`              | Timeline via process instance + element-instances search     |
+
+**Lab UI parity (localhost):** sidebar **BPMN**, **Cluster**, and **Project** call the same packages as these CLI commands (upload or absolute project path). Not a full Camunda Console — Operate/Tasklist remain the primary ops UIs.
 
 ## Later / maybe
 
-- **Console lite (Lab UI scope 3)** — process definitions, start instance, instance/incident views, job retry, richer connector secrets, Operate deep links — inside the same localhost UI, using official Camunda APIs (not a full Optimize/Identity rebuild). Details in the [lab UI design](https://github.com/nasraldin/camunda-lab/blob/main/docs/superpowers/specs/2026-07-17-lab-ui-design.md) “Future — option 3” section
 - Named labs (`camunda --name upgrade-test`) for side-by-side minors
 - Windows support if there’s real demand
-- Thin Kind/Helm bridge that keeps the same CLI verbs for people who outgrew Compose
+- Process replay, C7→C8 migration assistant, executive HTML report (explicitly out of Phase 1–3 commitments)
+- Worker inspector / variable editor as separate epics
 
 ## How to steer this
 

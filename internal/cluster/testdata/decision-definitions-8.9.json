@@ -1,0 +1,21 @@
+{
+  "items": [
+    {
+      "decisionDefinitionId": "risk",
+      "decisionDefinitionKey": "9007199254740996",
+      "decisionRequirementsId": null,
+      "decisionRequirementsKey": null,
+      "decisionRequirementsName": null,
+      "decisionRequirementsVersion": null,
+      "name": "Risk",
+      "tenantId": "<default>",
+      "version": 3
+    }
+  ],
+  "page": {
+    "totalItems": 1,
+    "hasMoreTotalItems": false,
+    "startCursor": null,
+    "endCursor": null
+  }
+}

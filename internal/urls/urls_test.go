@@ -22,7 +22,7 @@ func TestLight87Operate(t *testing.T) {
 	cfg := config.Config{Version: "8.7", Profile: "light", Host: "localhost"}
 	mustURL(t, cfg, "operate", "http://localhost:8081")
 	mustURL(t, cfg, "tasklist", "http://localhost:8082")
-	mustURL(t, cfg, "connectors", "http://localhost:8085")
+	mustURL(t, cfg, "connectors", "http://localhost:8085/actuator/health")
 	mustURL(t, cfg, "rest", "http://localhost:8088")
 }
 
@@ -42,7 +42,7 @@ func TestLight88Uses8088(t *testing.T) {
 	mustURL(t, cfg, "tasklist", "http://localhost:8088/tasklist")
 	mustURL(t, cfg, "admin", "http://localhost:8088/admin")
 	mustURL(t, cfg, "rest", "http://localhost:8088/v2")
-	mustURL(t, cfg, "connectors", "http://localhost:8086")
+	mustURL(t, cfg, "connectors", "http://localhost:8086/actuator/health")
 	if got := urls.ModelerRESTBase(cfg); got != "http://localhost:8088" {
 		t.Fatalf("modeler rest base: %s", got)
 	}
@@ -120,5 +120,29 @@ func TestMCPURLsHiddenWhenAIDisabled(t *testing.T) {
 	cfg := config.Config{Version: "8.9", Profile: "light", Host: "localhost"}
 	if _, err := urls.Find(cfg, "mcp-cluster"); err == nil {
 		t.Fatal("expected hidden")
+	}
+}
+
+func TestProbeTargets(t *testing.T) {
+	cases := []struct {
+		e    urls.Entry
+		kind string
+		want string
+	}{
+		{urls.Entry{Name: "rest", URL: "http://localhost:8080/v2"}, "http", "http://localhost:8080/v2/topology"},
+		{urls.Entry{Name: "orchestration", URL: "http://localhost:8080"}, "http", "http://localhost:9600/actuator/health"},
+		{urls.Entry{Name: "orchestration", URL: "http://127.0.0.1:8080"}, "http", "http://127.0.0.1:9600/actuator/health"},
+		{urls.Entry{Name: "grpc", URL: "localhost:26500"}, "tcp", "localhost:26500"},
+		{urls.Entry{Name: "connectors", URL: "http://localhost:8086"}, "http", "http://localhost:8086/actuator/health"},
+		{urls.Entry{Name: "zeebe-http", URL: "http://localhost:8088"}, "http", "http://localhost:8088/v2/topology"},
+	}
+	for _, tc := range cases {
+		kind, target := urls.ProbeTarget(tc.e)
+		if kind != tc.kind || target != tc.want {
+			t.Fatalf("%s: got (%q,%q) want (%q,%q)", tc.e.Name, kind, target, tc.kind, tc.want)
+		}
+	}
+	if urls.IsBrowserApp("operate") != true || urls.IsBrowserApp("rest") != false {
+		t.Fatal("IsBrowserApp mismatch")
 	}
 }

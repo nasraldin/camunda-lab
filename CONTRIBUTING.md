@@ -24,12 +24,12 @@ Requirements: Go (see `go.mod`), Docker Compose v2 for LIVE tests.
 
 ## What to change carefully
 
-| Area | Guidance |
-| --- | --- |
-| Compose topology | Do **not** rewrite Camunda’s official files — thin overlays only |
-| Ports / URLs | Must match `camunda/camunda-distributions` per minor (`internal/urls`) |
-| Auth / OIDC | Leave Keycloak wiring to upstream Compose |
-| Homebrew | Formula template lives in `Formula/`; tap publish via `scripts/publish-homebrew.sh` |
+| Area             | Guidance                                                                            |
+| ---------------- | ----------------------------------------------------------------------------------- |
+| Compose topology | Do **not** rewrite Camunda’s official files — thin overlays only                    |
+| Ports / URLs     | Must match `camunda/camunda-distributions` per minor (`internal/urls`)              |
+| Auth / OIDC      | Leave Keycloak wiring to upstream Compose                                           |
+| Homebrew         | Formula template lives in `Formula/`; tap publish via `scripts/publish-homebrew.sh` |
 
 ## Tests
 

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:zeebe="http://camunda.org/schema/zeebe/1.0"
+             xmlns:vendor="urn:vendor:test">
+  <message id="deliveryMessage" name="delivery"/>
+  <error id="deliveryError" name="delivery failed" errorCode="DELIVERY_FAILED"/>
+  <process id="delivery">
+    <extensionElements>
+      <vendor:owner team="logistics"/>
+    </extensionElements>
+    <startEvent id="start"/>
+    <serviceTask id="work" name="Deliver">
+      <extensionElements>
+        <zeebe:taskDefinition type="ship-order" retries="5"/>
+        <vendor:policy mode="strict"><vendor:threshold>7</vendor:threshold></vendor:policy>
+      </extensionElements>
+    </serviceTask>
+    <boundaryEvent id="timerBoundary" attachedToRef="work">
+      <timerEventDefinition><timeDuration>PT10M</timeDuration></timerEventDefinition>
+    </boundaryEvent>
+    <boundaryEvent id="messageBoundary" attachedToRef="work">
+      <messageEventDefinition messageRef="deliveryMessage"/>
+    </boundaryEvent>
+    <boundaryEvent id="errorBoundary" attachedToRef="work">
+      <errorEventDefinition errorRef="deliveryError"/>
+    </boundaryEvent>
+    <endEvent id="end"/>
+    <sequenceFlow id="conditional" sourceRef="start" targetRef="work">
+      <conditionExpression> = approved </conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="done" sourceRef="work" targetRef="end"/>
+  </process>
+</definitions>

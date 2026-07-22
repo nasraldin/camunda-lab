@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+  xmlns:zeebe="http://camunda.org/schema/zeebe/1.0"
+  id="Defs" targetNamespace="http://camunda.org/schema/1.0/bpmn">
+  <bpmn:message id="MsgOrder" name="order-received" />
+  <bpmn:process id="orderProcess" name="Order" isExecutable="true">
+    <bpmn:startEvent id="Start" name="OrderCreated" />
+    <bpmn:serviceTask id="Validate" name="Validate Customer">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="validate-customer" retries="3" />
+      </bpmn:extensionElements>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Gateway" name="OK?" default="FlowDefault" />
+    <bpmn:serviceTask id="Reserve" name="Reserve Stock">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="reserve-stock" retries="3" />
+      </bpmn:extensionElements>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Payment" name="Payment">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="payment" retries="5" />
+      </bpmn:extensionElements>
+    </bpmn:serviceTask>
+    <bpmn:intermediateCatchEvent id="Wait" name="Wait">
+      <bpmn:timerEventDefinition>
+        <bpmn:timeDuration>PT10M</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:intermediateCatchEvent>
+    <bpmn:endEvent id="End" name="Done" />
+    <bpmn:sequenceFlow id="Flow1" sourceRef="Start" targetRef="Validate" />
+    <bpmn:sequenceFlow id="Flow2" sourceRef="Validate" targetRef="Gateway" />
+    <bpmn:sequenceFlow id="FlowOK" sourceRef="Gateway" targetRef="Reserve">
+      <bpmn:conditionExpression>=ok = true</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="FlowDefault" sourceRef="Gateway" targetRef="Wait" />
+    <bpmn:sequenceFlow id="FlowPay" sourceRef="Reserve" targetRef="Payment" />
+    <bpmn:sequenceFlow id="Flow3" sourceRef="Payment" targetRef="End" />
+    <bpmn:sequenceFlow id="Flow4" sourceRef="Wait" targetRef="End" />
+  </bpmn:process>
+</bpmn:definitions>

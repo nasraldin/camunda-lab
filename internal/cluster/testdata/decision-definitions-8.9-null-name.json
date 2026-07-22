@@ -1,0 +1,32 @@
+{
+  "items": [
+    {
+      "decisionDefinitionId": "risk-two",
+      "decisionDefinitionKey": "2",
+      "decisionRequirementsId": null,
+      "decisionRequirementsKey": null,
+      "decisionRequirementsName": null,
+      "decisionRequirementsVersion": null,
+      "name": "Risk Two",
+      "tenantId": "<default>",
+      "version": 1
+    },
+    {
+      "decisionDefinitionId": "risk-ten",
+      "decisionDefinitionKey": "10",
+      "decisionRequirementsId": null,
+      "decisionRequirementsKey": null,
+      "decisionRequirementsName": null,
+      "decisionRequirementsVersion": null,
+      "name": null,
+      "tenantId": "<default>",
+      "version": 1
+    }
+  ],
+  "page": {
+    "totalItems": 2,
+    "hasMoreTotalItems": false,
+    "startCursor": null,
+    "endCursor": null
+  }
+}

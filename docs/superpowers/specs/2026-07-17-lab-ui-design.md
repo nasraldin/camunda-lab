@@ -27,16 +27,16 @@ This document is the agent/source-of-truth contract for the Lab UI. Prefer this 
 
 ## Locked decisions
 
-| Topic | Choice |
-| --- | --- |
-| Hosting | Embedded in CLI (`camunda ui`) |
-| Default URL | `http://127.0.0.1:9090` |
-| Port override | `--port` / `CAMUNDA_LAB_UI_PORT` |
-| Host | `127.0.0.1` only in v1 (reject non-loopback) |
-| Auth | None |
-| Frontend | Vite + React + TypeScript → `internal/ui/web/dist` embedded |
-| Backend | Go stdlib `net/http`; handlers call `internal/lab`, `compose`, `doctor`, `smoke`, `urls`, `ai`, `tools` |
-| Daemon | Do not auto-start UI after install; print hint to run `camunda ui` |
+| Topic         | Choice                                                                                                  |
+| ------------- | ------------------------------------------------------------------------------------------------------- |
+| Hosting       | Embedded in CLI (`camunda ui`)                                                                          |
+| Default URL   | `http://127.0.0.1:9090`                                                                                 |
+| Port override | `--port` / `CAMUNDA_LAB_UI_PORT`                                                                        |
+| Host          | `127.0.0.1` only in v1 (reject non-loopback)                                                            |
+| Auth          | None                                                                                                    |
+| Frontend      | Vite + React + TypeScript → `internal/ui/web/dist` embedded                                             |
+| Backend       | Go stdlib `net/http`; handlers call `internal/lab`, `compose`, `doctor`, `smoke`, `urls`, `ai`, `tools` |
+| Daemon        | Do not auto-start UI after install; print hint to run `camunda ui`                                      |
 
 ---
 
@@ -56,20 +56,20 @@ Deep links open Camunda apps (Operate, etc.) in a new tab — we do not proxy th
 
 ## v1 product surface (scope 2)
 
-1. **Overview** — version/profile/resources, compose summary, up/down/restart, doctor/smoke, about snapshot  
-2. **Setup** — install / switch (minor, profile, resources, optional AI secrets)  
-3. **Apps** — URL cards from `urls` package  
-4. **Containers** — compose ps; per-service restart  
-5. **Logs** — stream/tail via SSE  
-6. **AI / MCP** — enable/disable/wipe, status, copy MCP JSON  
-7. **Tools** — c8ctl status/install; modeler profile; optional BPMN deploy if c8ctl present  
-8. **Danger** — nuke with typed confirm  
+1. **Overview** — version/profile/resources, compose summary, up/down/restart, doctor/smoke, about snapshot
+2. **Setup** — install / switch (minor, profile, resources, optional AI secrets)
+3. **Apps** — URL cards from `urls` package
+4. **Containers** — compose ps; per-service restart
+5. **Logs** — stream/tail via SSE
+6. **AI / MCP** — enable/disable/wipe, status, copy MCP JSON
+7. **Tools** — c8ctl status/install; modeler profile; optional BPMN deploy if c8ctl present
+8. **Danger** — nuke with typed confirm
 
 ### UX
 
-- Calm local-tool UI; clear status; one primary action per section  
-- Long ops: disable conflicting actions; show progress/errors  
-- Mask secrets; never echo full API keys in status  
+- Calm local-tool UI; clear status; one primary action per section
+- Long ops: disable conflicting actions; show progress/errors
+- Mask secrets; never echo full API keys in status
 - Empty state: “No lab yet — Install”
 
 ---
@@ -78,23 +78,23 @@ Deep links open Camunda apps (Operate, etc.) in a new tab — we do not proxy th
 
 Errors: `{ "error": "message" }` + suitable HTTP status.
 
-| Method | Path | Behavior |
-| --- | --- | --- |
-| GET | `/overview` | config + version + compose ps summary |
-| POST | `/install` | body: version, profile, resources, ai?, secrets? |
-| POST | `/up` `/down` `/restart` | lifecycle |
-| POST | `/switch` | version, wipe?, ai? |
-| POST | `/profile` `/resources` | set profile / resources |
-| GET | `/urls` | component URLs |
-| GET | `/doctor` `/smoke` | diagnostics |
-| GET | `/containers` | compose ps JSON |
-| POST | `/containers/{service}/restart` | recreate service |
-| GET | `/logs/{service}` | SSE log stream |
-| GET/POST | `/ai/*` | status / enable / disable / config |
-| GET/POST | `/tools/c8ctl/*` | status / install |
-| POST | `/tools/modeler/profile` | write Desktop Modeler profile |
-| POST | `/tools/deploy` | multipart BPMN if c8ctl installed |
-| POST | `/nuke` | body `{ "confirm": "DELETE" }` |
+| Method   | Path                            | Behavior                                         |
+| -------- | ------------------------------- | ------------------------------------------------ |
+| GET      | `/overview`                     | config + version + compose ps summary            |
+| POST     | `/install`                      | body: version, profile, resources, ai?, secrets? |
+| POST     | `/up` `/down` `/restart`        | lifecycle                                        |
+| POST     | `/switch`                       | version, wipe?, ai?                              |
+| POST     | `/profile` `/resources`         | set profile / resources                          |
+| GET      | `/urls`                         | component URLs                                   |
+| GET      | `/doctor` `/smoke`              | diagnostics                                      |
+| GET      | `/containers`                   | compose ps JSON                                  |
+| POST     | `/containers/{service}/restart` | recreate service                                 |
+| GET      | `/logs/{service}`               | SSE log stream                                   |
+| GET/POST | `/ai/*`                         | status / enable / disable / config               |
+| GET/POST | `/tools/c8ctl/*`                | status / install                                 |
+| POST     | `/tools/modeler/profile`        | write Desktop Modeler profile                    |
+| POST     | `/tools/deploy`                 | multipart BPMN if c8ctl installed                |
+| POST     | `/nuke`                         | body `{ "confirm": "DELETE" }`                   |
 
 Mutating routes must refuse if the server is not bound to loopback.
 

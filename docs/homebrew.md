@@ -47,16 +47,16 @@ Local publish:
 
 Create a fine-grained PAT (or classic) and store it as repo secret `HOMEBREW_TAP_TOKEN`.
 
-| Target | Permission |
-| --- | --- |
-| `nasraldin/homebrew-tools` | **Contents: Read and write** |
+| Target                             | Permission                                          |
+| ---------------------------------- | --------------------------------------------------- |
+| `nasraldin/homebrew-tools`         | **Contents: Read and write**                        |
 | (optional) `nasraldin/camunda-lab` | Metadata read — only if the token is org-restricted |
 
 A token that can read but not push fails with **403** on `git push`. Fix the PAT scopes or publish locally with the script above.
 
-| Piece | Path |
-| --- | --- |
-| Formula template | `Formula/camunda-lab.rb` |
-| Publish script | `scripts/publish-homebrew.sh` |
+| Piece                          | Path                                                     |
+| ------------------------------ | -------------------------------------------------------- |
+| Formula template               | `Formula/camunda-lab.rb`                                 |
+| Publish script                 | `scripts/publish-homebrew.sh`                            |
 | Release workflow (tap publish) | `.github/workflows/release.yml` → `publish-homebrew` job |
-| Backfill workflow | `.github/workflows/homebrew.yml` (manual only) |
+| Backfill workflow              | `.github/workflows/homebrew.yml` (manual only)           |

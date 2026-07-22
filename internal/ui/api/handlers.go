@@ -14,22 +14,28 @@ import (
 	"time"
 
 	"github.com/nasraldin/camunda-lab/internal/ai"
+	"github.com/nasraldin/camunda-lab/internal/backup"
+	"github.com/nasraldin/camunda-lab/internal/cluster"
 	"github.com/nasraldin/camunda-lab/internal/config"
 	"github.com/nasraldin/camunda-lab/internal/doctor"
+	"github.com/nasraldin/camunda-lab/internal/drift"
+	"github.com/nasraldin/camunda-lab/internal/incidents"
 	"github.com/nasraldin/camunda-lab/internal/lab"
 	"github.com/nasraldin/camunda-lab/internal/laberrors"
 	"github.com/nasraldin/camunda-lab/internal/paths"
+	"github.com/nasraldin/camunda-lab/internal/plan"
 	"github.com/nasraldin/camunda-lab/internal/smoke"
+	"github.com/nasraldin/camunda-lab/internal/toolkit"
 	"github.com/nasraldin/camunda-lab/internal/tools"
+	"github.com/nasraldin/camunda-lab/internal/trace"
 	"github.com/nasraldin/camunda-lab/internal/ui/sso"
 	"github.com/nasraldin/camunda-lab/internal/update"
 	"github.com/nasraldin/camunda-lab/internal/urls"
 	"github.com/nasraldin/camunda-lab/internal/versions"
 )
 
-// Register mounts /api/v1 routes on mux.
-func Register(mux *http.ServeMux, cliVersion string) {
-	h := &handler{cliVersion: cliVersion, lab: lab.New()}
+func registerCore(mux *http.ServeMux, h *handler) {
+	mux.HandleFunc("GET /api/v1/session", h.session)
 	mux.HandleFunc("GET /api/v1/overview", h.overview)
 	mux.HandleFunc("POST /api/v1/install", h.install)
 	mux.HandleFunc("POST /api/v1/recover", h.recover)
@@ -40,6 +46,7 @@ func Register(mux *http.ServeMux, cliVersion string) {
 	mux.HandleFunc("POST /api/v1/profile", h.setProfile)
 	mux.HandleFunc("POST /api/v1/resources", h.setResources)
 	mux.HandleFunc("GET /api/v1/urls", h.listURLs)
+	mux.HandleFunc("GET /api/v1/probe", h.probe)
 	mux.HandleFunc("GET /api/v1/sso/open", h.ssoOpen)
 	mux.HandleFunc("GET /api/v1/doctor", h.runDoctor)
 	mux.HandleFunc("GET /api/v1/smoke", h.runSmoke)
@@ -60,32 +67,28 @@ func Register(mux *http.ServeMux, cliVersion string) {
 }
 
 type handler struct {
-	cliVersion string
-	lab        *lab.Lab
+	cliVersion     string
+	csrfToken      string
+	lab            *lab.Lab
+	doctor         *developerDoctorDependencies
+	clusterFactory cluster.Factory
+	runningLab     backup.RunningChecker // optional test override; defaults to lab
+	// backupCreate overrides backup create for tests (e.g. forced CreateTemp/Rename failures).
+	backupCreate      func(context.Context, backup.Options) (backup.Manifest, error)
+	toolkitService    toolkit.BPMNService
+	plan              func(context.Context, plan.Request) (plan.Result, error)
+	drift             func(context.Context, drift.Request) (drift.Report, error)
+	listIncidentsFn   func(context.Context, incidents.ListRequest) (incidents.Result, error)
+	resolveIncidentFn func(context.Context, incidents.ResolveRequest) (incidents.Result, error)
+	traceGetFn        func(context.Context, trace.Request) (trace.Timeline, error)
+	traceFollowFn     func(context.Context, trace.Request, time.Duration, func(trace.Timeline) error) error
+	envService        EnvService
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(v)
-}
-
-func writeErr(w http.ResponseWriter, status int, err error) {
-	err = laberrors.Wrap(err)
-	payload := map[string]any{"error": err.Error()}
-	if u, ok := laberrors.AsUser(err); ok {
-		payload["error"] = u.Message
-		if u.Hint != "" {
-			payload["hint"] = u.Hint
-		}
-		if u.Code != "" {
-			payload["code"] = u.Code
-		}
-		if u.Recoverable {
-			payload["recoverable"] = true
-		}
-	}
-	writeJSON(w, status, payload)
 }
 
 func (h *handler) recover(w http.ResponseWriter, r *http.Request) {
@@ -101,6 +104,10 @@ func decodeJSON(r *http.Request, dst any) error {
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
 	return dec.Decode(dst)
+}
+
+func (h *handler) session(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]string{"csrfToken": h.csrfToken})
 }
 
 func (h *handler) overview(w http.ResponseWriter, r *http.Request) {
@@ -122,6 +129,7 @@ func (h *handler) overview(w http.ResponseWriter, r *http.Request) {
 			"aiEnabled": cfg.AI.Enabled,
 		},
 		"supportedVersions": versions.Supported,
+		"defaultVersion":    config.Defaults().Version,
 		"uiHint":            "http://localhost:9090",
 	}
 	if configured && cfg.Version != "" {
@@ -292,6 +300,28 @@ func (h *handler) listURLs(w http.ResponseWriter, r *http.Request) {
 	}
 	entries := urls.List(cfg)
 	writeJSON(w, http.StatusOK, map[string]any{"urls": entries})
+}
+
+func (h *handler) probe(w http.ResponseWriter, r *http.Request) {
+	name := strings.TrimSpace(r.URL.Query().Get("name"))
+	if name == "" {
+		writeErr(w, http.StatusBadRequest, fmt.Errorf("missing name query parameter"))
+		return
+	}
+	cfg, err := config.Load()
+	if err != nil {
+		writeErr(w, http.StatusBadRequest, err)
+		return
+	}
+	entry, err := urls.Find(cfg, name)
+	if err != nil {
+		writeErr(w, http.StatusNotFound, err)
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 8*time.Second)
+	defer cancel()
+	res := urls.ProbeEntry(ctx, entry, 5*time.Second)
+	writeJSON(w, http.StatusOK, res)
 }
 
 // ssoOpen warms Keycloak SSO cookies in the browser, then redirects to the app.

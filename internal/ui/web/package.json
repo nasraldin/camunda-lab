@@ -6,7 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint .",
+    "test:browser": "playwright test",
+    "test:browser:live": "playwright test --project=live",
+    "check": "npm run typecheck && npm run lint && npm run test:browser"
   },
   "dependencies": {
     "react": "^19.1.0",
@@ -14,10 +19,17 @@
     "react-router-dom": "^7.6.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
+    "@eslint/js": "^9.39.1",
+    "@playwright/test": "^1.61.1",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
+    "@typescript/native": "npm:typescript@~7.0.2",
     "@vitejs/plugin-react": "^6.0.3",
-    "typescript": "~7.0.2",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "typescript-eslint": "^8.46.4",
     "vite": "^8.1.5"
   }
 }

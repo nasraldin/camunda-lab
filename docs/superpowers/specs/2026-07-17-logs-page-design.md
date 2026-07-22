@@ -23,10 +23,10 @@ Make Logs match the Services page language (friendly names, clearer controls) an
 
 ### Search
 
-| Mode | Behavior |
-|------|----------|
-| Filter | Show only matching lines. Meta: `Showing N of M lines`. Empty hint if no matches. |
-| Highlight | Show all lines; wrap match substrings. Meta: `N matches highlighted`. |
+| Mode      | Behavior                                                                          |
+| --------- | --------------------------------------------------------------------------------- |
+| Filter    | Show only matching lines. Meta: `Showing N of M lines`. Empty hint if no matches. |
+| Highlight | Show all lines; wrap match substrings. Meta: `N matches highlighted`.             |
 
 - Search applies to the in-memory buffer (max ~2000 lines), including while following.
 - Empty search = show all lines (no filter / no highlights).

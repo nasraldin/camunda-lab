@@ -23,6 +23,31 @@ type Container struct {
 	Ports   string `json:"ports,omitempty"`
 }
 
+// Running reports whether any container in the configured Compose project is running.
+func (l *Lab) Running(ctx context.Context) (bool, error) {
+	if err := ctx.Err(); err != nil {
+		return false, err
+	}
+	cfg, err := config.Load()
+	if err != nil {
+		return false, err
+	}
+	raw, err := l.Engine.PsJSON(paths.VersionDir(cfg.Version), cfg.ComposeProject)
+	if err != nil {
+		return false, err
+	}
+	rows, err := parsePSJSON(raw)
+	if err != nil {
+		return false, err
+	}
+	for _, row := range rows {
+		if row.State == "running" {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 func (l *Lab) ListContainers(ctx context.Context) ([]Container, error) {
 	_ = ctx
 	cfg, err := config.Load()
