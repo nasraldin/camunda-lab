@@ -50,7 +50,7 @@ Things we’re actively building or next in line — no hard ETA:
 
 ## Phase 2 — Developer experience
 
-Shipped on main (MVP): `lint`, `diff`, `explain`, `review`, `test generate`, `scan`, `doctor --deep`.
+**Implemented on main** (Go unit/integration + Playwright mock evidence): `lint`, `diff`, `explain`, `review`, `test generate`, `scan`, `doctor --deep`. Live cluster acceptance for remote-only paths remains **Gate 5 open** — see [acceptance status](acceptance/platform-toolkit-parity.md).
 
 | Command                 | Intent                                  |
 | ----------------------- | --------------------------------------- |
@@ -64,7 +64,7 @@ Shipped on main (MVP): `lint`, `diff`, `explain`, `review`, `test generate`, `sc
 
 ## Phase 3 — Platform engineering
 
-Shipped on main: `env`, `plan`, `drift`, `backup`/`restore`, `incidents`, `trace`, `k8s`.
+**Implemented on main** (automated mock + Go contract evidence): `env`, `plan`, `drift`, `backup`/`restore`, `incidents`, `trace`. Live OIDC, incidents, trace, and backup round-trip against a real cluster are **not** fully accepted yet (**Gate 5 open**).
 
 `plan` / `drift` / `incidents` / `trace` call the active env’s **Orchestration Cluster REST API** (`/v2`) — lab URLs by default (`camunda urls` → `rest`). Remote profiles use `endpoints.orchestration`.
 
@@ -76,7 +76,6 @@ Shipped on main: `env`, `plan`, `drift`, `backup`/`restore`, `incidents`, `trace
 | `camunda backup` / `restore` | Lab-oriented snapshot MVP                                    |
 | `camunda incidents`          | List/resolve via `POST /v2/incidents/search` + `/resolution` |
 | `camunda trace`              | Timeline via process instance + element-instances search     |
-| `camunda k8s`                | Thin kubectl helpers for Camunda Helm labels                 |
 
 **Lab UI parity (localhost):** sidebar **BPMN**, **Cluster**, and **Project** call the same packages as these CLI commands (upload or absolute project path). Not a full Camunda Console — Operate/Tasklist remain the primary ops UIs.
 

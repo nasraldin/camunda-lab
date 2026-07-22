@@ -1,13 +1,13 @@
 :root {
   /* Camunda-inspired lab console — light */
-  --orange: #fc5d0d;
-  --orange-deep: #d94805;
+  --orange: #c24100;
+  --orange-deep: #b83800;
   --orange-soft: #fff1e9;
-  --orange-hover: #e35408;
+  --orange-hover: #c24100;
   --orange-border: #f0b896;
   --ink: #1a1a1a;
   --ink-soft: #3d4654;
-  --muted: #6b7585;
+  --muted: #576070;
   --line: #e4e7ec;
   --line-strong: #cfd5de;
   --surface: #ffffff;
@@ -19,7 +19,7 @@
   --ok: #0f7b4c;
   --ok-bg: #e8f7ef;
   --ok-border: #b7e4cd;
-  --warn: #9a6b00;
+  --warn: #7a5500;
   --warn-bg: #fff6e0;
   --warn-border: #f0dfaa;
   --danger: #c62828;
@@ -44,13 +44,13 @@
 
 html[data-theme='dark'] {
   --orange: #ff7a38;
-  --orange-deep: #ff9a62;
+  --orange-deep: #ffc29a;
   --orange-soft: #3a2418;
   --orange-hover: #ff8f55;
   --orange-border: #6b4330;
   --ink: #eef1f5;
   --ink-soft: #c5ccd6;
-  --muted: #8b95a5;
+  --muted: #9aa3b2;
   --line: #2a3140;
   --line-strong: #3a4456;
   --surface: #161a22;
@@ -107,6 +107,15 @@ a {
 
 a:hover {
   text-decoration: underline;
+}
+
+.hint a,
+.lead a,
+p a,
+.banner a,
+.steps a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 :focus-visible {
@@ -787,7 +796,8 @@ pre.log.log-viewer {
 }
 
 .log-empty {
-  color: var(--muted);
+  color: var(--code-fg);
+  opacity: 0.72;
 }
 
 .log-line {

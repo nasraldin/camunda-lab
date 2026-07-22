@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	configstore "github.com/nasraldin/camunda-lab/internal/config"
 	"gopkg.in/yaml.v3"
 )
 
@@ -34,6 +35,7 @@ type LabHints struct {
 type Config struct {
 	Name           string     `yaml:"name"`
 	CamundaVersion string     `yaml:"camundaVersion"`
+	Environment    string     `yaml:"environment,omitempty"`
 	Paths          Paths      `yaml:"paths"`
 	Lint           LintConfig `yaml:"lint,omitempty"`
 	Lab            LabHints   `yaml:"lab,omitempty"`
@@ -104,7 +106,43 @@ func (c Config) Validate() error {
 			return err
 		}
 	}
+	if err := validateResourcePathOverlap(c.Paths); err != nil {
+		return err
+	}
 	return nil
+}
+
+// validateResourcePathOverlap rejects BPMN/DMN/Forms directories that resolve to the
+// same path or where one contains another. Overlaps would duplicate archive
+// entry names during backup create while restore rejects duplicates.
+func validateResourcePathOverlap(p Paths) error {
+	type named struct {
+		name  string
+		value string
+	}
+	paths := []named{
+		{name: "paths.bpmn", value: p.BPMN},
+		{name: "paths.dmn", value: p.DMN},
+		{name: "paths.forms", value: p.Forms},
+	}
+	for i := 0; i < len(paths); i++ {
+		for j := i + 1; j < len(paths); j++ {
+			if resourcePathsOverlap(paths[i].value, paths[j].value) {
+				return fmt.Errorf("%s (%q) overlaps %s (%q)",
+					paths[i].name, paths[i].value, paths[j].name, paths[j].value)
+			}
+		}
+	}
+	return nil
+}
+
+func resourcePathsOverlap(a, b string) bool {
+	a = filepath.ToSlash(filepath.Clean(a))
+	b = filepath.ToSlash(filepath.Clean(b))
+	if a == b {
+		return true
+	}
+	return strings.HasPrefix(a+"/", b+"/") || strings.HasPrefix(b+"/", a+"/")
 }
 
 func validateRelativePath(name, value string) error {
@@ -133,7 +171,18 @@ func validateRelativePath(name, value string) error {
 
 // Load reads and validates a .camunda.yaml file.
 func Load(path string) (Config, error) {
-	data, err := os.ReadFile(path)
+	var data []byte
+	err := configstore.WithLocks([]string{path}, func() error {
+		state, err := configstore.SnapshotLocked(path)
+		if err != nil {
+			return err
+		}
+		if !state.Exists {
+			return os.ErrNotExist
+		}
+		data = state.Data
+		return nil
+	})
 	if err != nil {
 		return Config{}, err
 	}
@@ -158,5 +207,13 @@ func Save(path string, c Config) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, data, 0o644)
+	var desired yaml.Node
+	if err := yaml.Unmarshal(data, &desired); err != nil {
+		return err
+	}
+	return configstore.WithLocks([]string{path}, func() error {
+		return configstore.UpdateNodeLocked(path, 0o644, func(mapping *yaml.Node) error {
+			return configstore.MergeMapping(mapping, desired.Content[0])
+		})
+	})
 }

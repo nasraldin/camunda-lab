@@ -121,7 +121,7 @@ Ports differ by Camunda minor — run `camunda urls` (see [profiles](https://nas
 | `camunda tools c8ctl install`              | Official deploy/debug CLI                    |
 | `camunda nuke`                             | Wipe `~/.camunda-lab`                        |
 
-More: [CLI reference](https://nasraldin.github.io/camunda-lab/cli-reference/) · [AI and MCP](https://nasraldin.github.io/camunda-lab/ai-mcp/) · [Roadmap](https://nasraldin.github.io/camunda-lab/roadmap/).
+More: [CLI reference](https://nasraldin.github.io/camunda-lab/cli-reference/) · [Lab API reference](https://nasraldin.github.io/camunda-lab/api-reference/) · [AI and MCP](https://nasraldin.github.io/camunda-lab/ai-mcp/) · [Roadmap](https://nasraldin.github.io/camunda-lab/roadmap/).
 
 ---
 
@@ -135,7 +135,9 @@ More: [CLI reference](https://nasraldin.github.io/camunda-lab/cli-reference/) ·
 | [Why Camunda Lab](https://nasraldin.github.io/camunda-lab/comparison/)      | vs zip / Helm / 8 Run          |
 | [Profiles](https://nasraldin.github.io/camunda-lab/profiles/)               | Versions, ports, ElasticVue    |
 | [AI and MCP](https://nasraldin.github.io/camunda-lab/ai-mcp/)               | Cursor MCP + connector secrets |
-| [Roadmap](https://nasraldin.github.io/camunda-lab/roadmap/)                 | Shipped and next               |
+| [CLI reference](https://nasraldin.github.io/camunda-lab/cli-reference/)     | Every command                  |
+| [Lab API reference](https://nasraldin.github.io/camunda-lab/api-reference/) | `/api/v1` toolkit routes       |
+| [Roadmap](https://nasraldin.github.io/camunda-lab/roadmap/)                 | Implemented features and next  |
 | [Troubleshooting](https://nasraldin.github.io/camunda-lab/troubleshooting/) | When it breaks                 |
 
 ---

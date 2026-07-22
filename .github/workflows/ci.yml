@@ -57,6 +57,18 @@ jobs:
       - name: Test
         run: go test ./...
 
+      - name: Frontend typecheck
+        working-directory: internal/ui/web
+        run: npm ci && npm run typecheck
+
+      - name: Frontend lint
+        working-directory: internal/ui/web
+        run: npm run lint
+
+      - name: Playwright mock contracts
+        working-directory: internal/ui/web
+        run: npx playwright install chromium && npm run test:browser -- --project=mock
+
       - name: Build
         run: go build -ldflags "-X main.version=ci" -o bin/camunda ./cmd/camunda
 

@@ -80,6 +80,18 @@ func (g Graph) ReachableFrom(starts ...string) map[string]bool {
 	return reachable
 }
 
+// ConnectedNodes returns nodes incident to a valid same-scope sequence flow.
+func (g Graph) ConnectedNodes() map[string]bool {
+	connected := map[string]bool{}
+	for source, flows := range g.outgoing {
+		for _, flow := range flows {
+			connected[source] = true
+			connected[flow.Target] = true
+		}
+	}
+	return connected
+}
+
 // HappyPath returns the preferred start-to-terminal path. Gateway defaults win.
 func (g Graph) HappyPath() []string {
 	starts := g.starts()

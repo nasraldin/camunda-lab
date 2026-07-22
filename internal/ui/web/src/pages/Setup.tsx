@@ -14,9 +14,9 @@ function nextVersion(supported: string[], current: string): string {
 }
 
 export function SetupPage() {
-  const [versions, setVersions] = useState<string[]>(['8.7', '8.8', '8.9', '8.10'])
+  const [versions, setVersions] = useState<string[]>([])
   const [currentVersion, setCurrentVersion] = useState('')
-  const [version, setVersion] = useState('8.9')
+  const [version, setVersion] = useState('')
   const [profile, setProfile] = useState('light')
   const [resources, setResources] = useState('small')
   const [wipe, setWipe] = useState(true)
@@ -33,7 +33,7 @@ export function SetupPage() {
 
   useEffect(() => {
     void getOverview().then((o) => {
-      const supported = o.supportedVersions?.length ? o.supportedVersions : versions
+      const supported = o.supportedVersions?.length ? o.supportedVersions : [o.defaultVersion]
       setVersions(supported)
       setConfigured(o.configured)
       if (o.config.profile) setProfile(o.config.profile)
@@ -41,6 +41,8 @@ export function SetupPage() {
       if (o.config.version) {
         setCurrentVersion(o.config.version)
         setVersion(o.configured ? nextVersion(supported, o.config.version) : o.config.version)
+      } else {
+        setVersion(o.defaultVersion)
       }
     })
   }, [])

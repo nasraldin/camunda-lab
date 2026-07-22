@@ -8,6 +8,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -159,6 +160,47 @@ func TestEnvRemoveRejectsTraversalName(t *testing.T) {
 	}
 	if _, err := os.Stat(outside); err != nil {
 		t.Fatalf("outside file was modified: %v", err)
+	}
+}
+
+func TestLoadLintIgnoreUsesProjectConfiguration(t *testing.T) {
+	root := t.TempDir()
+	config := []byte("name: lint-test\nlint:\n  ignore:\n    - bpmn/service-task-retry\n    - bpmn/timer-reachable\n")
+	if err := os.WriteFile(filepath.Join(root, ".camunda.yaml"), config, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	nested := filepath.Join(root, "bpmn", "nested")
+	if err := os.MkdirAll(nested, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Chdir(nested)
+
+	want := []string{"bpmn/service-task-retry", "bpmn/timer-reachable"}
+	got, err := loadLintIgnore()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("lint ignore = %v, want %v", got, want)
+	}
+}
+
+func TestLintRejectsMalformedProjectConfiguration(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, ".camunda.yaml"), []byte("name: ["), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	model := filepath.Join(root, "process.bpmn")
+	source := `<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"><process id="valid"><startEvent id="start"/><endEvent id="end"/><sequenceFlow id="flow" sourceRef="start" targetRef="end"/></process></definitions>`
+	if err := os.WriteFile(model, []byte(source), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Chdir(root)
+
+	cmd := newLintCmd()
+	cmd.SetArgs([]string{model})
+	if err := cmd.Execute(); err == nil || !strings.Contains(err.Error(), "parse") {
+		t.Fatalf("lint error = %v, want malformed project configuration error", err)
 	}
 }
 

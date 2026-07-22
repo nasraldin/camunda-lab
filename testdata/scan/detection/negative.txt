@@ -1,0 +1,2 @@
+Documentation: Authorization: Bearer proseBearerToken12345
+The JSON key "client_secret" is discussed without assigning a credential.

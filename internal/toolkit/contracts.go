@@ -33,9 +33,9 @@ const (
 
 // Warning records a recoverable problem without presentation formatting.
 type Warning struct {
-	Code    string
-	Message string
-	Path    string
+	Code    string `json:"code"`
+	Message string `json:"message"`
+	Path    string `json:"path,omitempty"`
 }
 
 // BPMNInput is either in-memory BPMN or a file reference. Content wins when set.
@@ -87,6 +87,7 @@ type GenerateLanguage string
 const (
 	GenerateLanguageJava       GenerateLanguage = "java"
 	GenerateLanguageJavaScript GenerateLanguage = "js"
+	GenerateLanguagePython     GenerateLanguage = "python"
 )
 
 type LintRequest struct {
@@ -97,19 +98,19 @@ type LintRequest struct {
 }
 
 type LintResult struct {
-	Status    Status
-	Complete  bool
-	Warnings  []Warning
-	Inputs    []string
-	Documents []bpmn.Document
-	Findings  []LintFinding
+	Status    Status          `json:"status"`
+	Complete  bool            `json:"complete"`
+	Warnings  []Warning       `json:"warnings"`
+	Inputs    []string        `json:"inputs"`
+	Documents []bpmn.Document `json:"documents,omitempty"`
+	Findings  []LintFinding   `json:"findings"`
 }
 
 // LintFinding attributes process-scoped findings while leaving document-scoped
 // findings with an empty ProcessID.
 type LintFinding struct {
-	ProcessID string
-	Finding   lint.Finding
+	ProcessID string       `json:"processId,omitempty"`
+	Finding   lint.Finding `json:"finding"`
 }
 
 type DiffRequest struct {
@@ -120,12 +121,12 @@ type DiffRequest struct {
 }
 
 type DiffResult struct {
-	Status   Status
-	Complete bool
-	Warnings []Warning
-	Before   bpmn.Document
-	After    bpmn.Document
-	Changes  []ProcessChange
+	Status   Status          `json:"status"`
+	Complete bool            `json:"complete"`
+	Warnings []Warning       `json:"warnings"`
+	Before   bpmn.Document   `json:"before,omitempty"`
+	After    bpmn.Document   `json:"after,omitempty"`
+	Changes  []ProcessChange `json:"changes"`
 }
 
 type ProcessChangeKind string
@@ -140,10 +141,10 @@ const (
 // ProcessChange retains process identity around the current diff domain record.
 // Change is nil for explicit process additions/removals.
 type ProcessChange struct {
-	Kind            ProcessChangeKind
-	BeforeProcessID string
-	AfterProcessID  string
-	Change          *bpmndiff.Change
+	Kind            ProcessChangeKind `json:"kind"`
+	BeforeProcessID string            `json:"beforeProcessId,omitempty"`
+	AfterProcessID  string            `json:"afterProcessId,omitempty"`
+	Change          *bpmndiff.Change  `json:"change,omitempty"`
 }
 
 type ExplainRequest struct {
@@ -152,16 +153,16 @@ type ExplainRequest struct {
 }
 
 type ProcessExplanation struct {
-	ProcessID   string
-	Explanation explain.Result
+	ProcessID   string         `json:"processId"`
+	Explanation explain.Result `json:"explanation"`
 }
 
 type ExplainResult struct {
-	Status    Status
-	Complete  bool
-	Warnings  []Warning
-	Document  bpmn.Document
-	Processes []ProcessExplanation
+	Status    Status               `json:"status"`
+	Complete  bool                 `json:"complete"`
+	Warnings  []Warning            `json:"warnings"`
+	Document  bpmn.Document        `json:"document,omitempty"`
+	Processes []ProcessExplanation `json:"processes"`
 }
 
 type ReviewRequest struct {
@@ -173,19 +174,19 @@ type ReviewRequest struct {
 }
 
 type ProcessReview struct {
-	ProcessID string
-	Review    review.Result
+	ProcessID string        `json:"processId"`
+	Review    review.Result `json:"review"`
 }
 
 type ReviewResult struct {
-	Status    Status
-	Complete  bool
-	Warnings  []Warning
-	Inputs    []string
-	Documents []bpmn.Document
-	Processes []ProcessReview
-	Findings  []LintFinding
-	AIStatus  AIStatus
+	Status    Status          `json:"status"`
+	Complete  bool            `json:"complete"`
+	Warnings  []Warning       `json:"warnings"`
+	Inputs    []string        `json:"inputs"`
+	Documents []bpmn.Document `json:"documents,omitempty"`
+	Processes []ProcessReview `json:"processes"`
+	Findings  []LintFinding   `json:"findings"`
+	AIStatus  AIStatus        `json:"aiStatus"`
 }
 
 type GenerateRequest struct {
@@ -196,32 +197,35 @@ type GenerateRequest struct {
 	Force      bool
 }
 
-// Artifact is generated output plus the written path used by the current domain writer.
+// Artifact is generated output. Path is relative unless the caller requested publication.
 type Artifact struct {
-	Path      string
-	MediaType string
-	Content   []byte
+	Path      string `json:"path"`
+	MediaType string `json:"mediaType"`
+	Content   []byte `json:"content,omitempty"`
 }
 
 type GenerateResult struct {
-	Status    Status
-	Complete  bool
-	Warnings  []Warning
-	Document  bpmn.Document
-	Artifacts []Artifact
+	Status    Status        `json:"status"`
+	Complete  bool          `json:"complete"`
+	Warnings  []Warning     `json:"warnings"`
+	Document  bpmn.Document `json:"document,omitempty"`
+	Artifacts []Artifact    `json:"artifacts"`
 }
 
 type ScanRequest struct {
 	Roots      []string
 	ProjectDir string
 	FailOn     ScanThreshold
+	Ignore     []string
 }
 
 type ScanResult struct {
-	Status       Status
-	Complete     bool
-	Warnings     []Warning
-	ScannedRoots []string
-	FailedRoots  []string
-	Findings     []scan.Finding
+	Status       Status         `json:"status"`
+	Complete     bool           `json:"complete"`
+	Warnings     []Warning      `json:"warnings"`
+	ScannedRoots []string       `json:"scannedRoots"`
+	FailedRoots  []string       `json:"failedRoots"`
+	Findings     []scan.Finding `json:"findings"`
+	Issues       []scan.Issue   `json:"issues"`
+	Stats        scan.Stats     `json:"stats"`
 }

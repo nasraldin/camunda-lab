@@ -89,7 +89,10 @@ func Restore(ctx context.Context, opts RestoreOptions) (Manifest, error) {
 	if opts.LabHome == "" {
 		return Manifest{}, errors.New("lab home required")
 	}
-	if !opts.Force && opts.Lab != nil {
+	if !opts.Force {
+		if opts.Lab == nil {
+			return Manifest{}, errors.New("could not determine whether the lab is running")
+		}
 		running, err := opts.Lab.Running(ctx)
 		if err != nil {
 			return Manifest{}, errors.New("could not determine whether the lab is running")

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 
 	"github.com/nasraldin/camunda-lab/internal/paths"
 	"github.com/nasraldin/camunda-lab/internal/versions"
@@ -116,4 +117,50 @@ func ComposeOverrideFiles(minor, profile string, aiEnabled bool) ([]string, erro
 		}
 	}
 	return out, nil
+}
+
+// ExpectedFiles reports the managed overlay filenames for a configuration
+// without creating or modifying anything on disk.
+func ExpectedFiles(minor, profile string, aiEnabled bool) ([]string, error) {
+	if err := versions.ValidateMinor(minor); err != nil {
+		return nil, err
+	}
+	if err := versions.ValidateProfile(profile); err != nil {
+		return nil, err
+	}
+	var out []string
+	if versions.NeedsElasticsearchOverlay(minor, profile) {
+		out = append(out, "elasticsearch-8.10.yaml")
+	}
+	if versions.HasHostElasticsearch(minor, profile) {
+		out = append(out, "elasticsearch-cors.yaml", "elasticvue.yaml")
+	}
+	if profile == "full" {
+		out = append(out, "http-headers.yaml")
+	}
+	if profile == "light" || profile == "full" {
+		out = append(out, "csrf-disabled.yaml")
+	}
+	if aiEnabled && versions.SupportsAIFeature(minor, profile) == nil {
+		out = append(out, "connectors-ai-secrets.yaml")
+	}
+	sort.Strings(out)
+	return out, nil
+}
+
+// ExpectedContent returns the embedded managed content for an overlay filename.
+func ExpectedContent(name string) ([]byte, bool) {
+	content := map[string][]byte{
+		"elasticsearch-8.10.yaml":    elasticsearch810YAML,
+		"elasticsearch-cors.yaml":    elasticsearchCorsYAML,
+		"elasticvue.yaml":            elasticvueYAML,
+		"http-headers.yaml":          httpHeadersYAML,
+		"csrf-disabled.yaml":         csrfDisabledYAML,
+		"connectors-ai-secrets.yaml": connectorsAISecretsYAML,
+	}
+	data, ok := content[name]
+	if !ok {
+		return nil, false
+	}
+	return append([]byte(nil), data...), true
 }

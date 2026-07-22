@@ -120,25 +120,27 @@ Sidebar **BPMN** mirrors the CLI toolkit: lint, diff, explain, review, test gene
 
 ## Cluster
 
-Sidebar **Cluster**: incidents list/retry, process instance trace, deployment **plan** and **drift** (needs a project with `.camunda.yaml` — create via **Project → Init**).
+Sidebar **Cluster**: incidents list/retry (with refresh), process instance trace (optional bounded follow), deployment **plan** and **drift**. Set an absolute **project path** so incidents/trace/plan/drift resolve the project-local active env (same as CLI). Plan and drift also need `.camunda.yaml` in that directory — create via **Project → Init**.
 
 Uses the same Orchestration REST client as the CLI (OIDC on full labs).
 
 ## Project
 
-Sidebar **Project**: `camunda init` scaffold, env profiles, backup/restore, and optional Kubernetes helpers (`camunda k8s` — skip on Compose-only labs).
+Sidebar **Project**: `camunda init` scaffold, env profiles, and backup/restore for local Docker Compose labs.
 
 ### Backup and restore boundaries
 
-Browser backup writes a gzip tar archive to a temporary path unless an API caller supplies an allowed absolute output path. It includes lab `config.yaml`, AI key-name metadata without values, and regular files under the selected project's `bpmn/`, `dmn/`, and `forms/`. The browser does not expose the CLI's `--include-secrets` opt-in, so it does not put `ai.env` values into its backup. Docker volumes, databases, images, downloaded versions, logs, and other project directories are not backed up.
+Browser backup streams a gzip tar download (`POST /api/v1/backup/download`). Responses never include server temp paths. The archive includes lab `config.yaml`, AI key-name metadata without values, project `.camunda.yaml` when present, and regular files under the project's configured BPMN/DMN/form paths (or `bpmn/`/`dmn/`/`forms/` defaults). The browser does not expose the CLI's `--include-secrets` opt-in, so it does not put `ai.env` values into its backup. Docker volumes, databases, images, downloaded versions, logs, and other project directories are not backed up.
+
+Authorized absolute output paths can still be written via `POST /api/v1/backup` with an `output` field; empty output is rejected (use the download route instead).
 
 Browser restore requires selecting an archive and then typing exact `RESTORE` in the confirmation dialog. The selected project directory is the destination for `project/...` entries; if it is blank, those entries are validated but not written. The upload is capped by the API at 50 MiB compressed, and the shared restore engine additionally enforces the decompressed limits documented in [CLI backup / restore](cli-reference.md#backup--restore). It validates the complete manifest and payload, rejects unsafe paths and file types, stages privately, and rolls back a failed commit. It replaces archived files but does not remove unrelated files or restore Docker data.
 
-Unlike CLI restore, the browser endpoint does **not** expose `--force` and currently does not run the CLI's running-lab preflight. Stop the lab before browser restore. The archive safety checks still apply, but the confirmation dialog is not a substitute for stopping services that may be using the files.
+Browser restore uses the same `backup.Service` running-lab gate as the CLI. Without **Force restore while lab is running**, restore refuses when Compose containers are up. Force bypasses only that gate; archive validation and transactional safety still apply.
 
 ### Browser confirmation gates
 
-The browser opens an explicit confirmation dialog before incident retry, environment removal, Kubernetes restart/scale, service restart, lab stop/restart, and destructive version switch. Restore additionally requires typed `RESTORE`. Reset lab retains typed `DELETE` and adds a second explicit modal confirmation. These are browser interaction gates; direct API mutations are separately protected by the Lab API Origin/CSRF boundary and, where implemented, server-side confirmation fields. They do not turn backup/restore into a full data backup or make an operation reversible.
+The browser opens an explicit confirmation dialog before incident retry, environment removal, service restart, lab stop/restart, and destructive version switch. Restore additionally requires typed `RESTORE`. Reset lab retains typed `DELETE` and adds a second explicit modal confirmation. These are browser interaction gates; direct API mutations are separately protected by the Lab API Origin/CSRF boundary and, where implemented, server-side confirmation fields. They do not turn backup/restore into a full data backup or make an operation reversible.
 
 ---
 
@@ -188,6 +190,32 @@ Details: [AI and MCP](ai-mcp.md).
 Install or check **c8ctl**, Desktop Modeler profile helpers, and light deploy helpers.
 
 ![Extras](assets/screenshots/lab-ui-extras.png)
+
+---
+
+## Developer toolkit
+
+The BPMN toolkit page exposes the same service-backed lint, semantic diff,
+offline explain, optional/required AI review, test generation, and secret scan
+contracts as the CLI.
+
+- Lint/review show threshold and ignore controls.
+- Diff supports two files, `path`/`against`, and project-relative Git `base`
+  mode.
+- Review selects optional or required AI enrichment plus provider/model; the UI
+  never renders credentials or raw provider response bodies.
+- Test generation defaults to an in-memory browser download. Writing requires
+  the separate write switch and an authorized absolute output directory.
+- Scan shows complete or partial status, findings, issues, and accounting
+  statistics.
+- Deep doctor presents structured checks; invalid configuration is returned as
+  a stable fatal error rather than a partial success.
+
+Every mutation still passes the Lab API Origin/CSRF boundary, and filesystem
+paths still pass canonical authorization. These developer tools do not deploy
+resources or add platform-operation parity.
+
+HTTP route details: [Lab API reference](api-reference.md). Live cluster acceptance status: [acceptance record](acceptance/platform-toolkit-parity.md).
 
 ---
 

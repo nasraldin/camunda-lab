@@ -106,6 +106,8 @@ More detail: [Why Camunda Lab](comparison.md).
 | `camunda tools c8ctl install`  | Camunda’s `c8ctl` for deploy/debug  |
 | `camunda nuke`                 | Delete `~/.camunda-lab` and volumes |
 
+Platform toolkit commands (`lint`, `plan`, `incidents`, …) are **implemented** on main with automated test evidence; live cluster acceptance is tracked in [acceptance status](acceptance/platform-toolkit-parity.md).
+
 ## Where to go next
 
 - [Installation](installation.md) — prerequisites, first boot, state layout
@@ -114,7 +116,8 @@ More detail: [Why Camunda Lab](comparison.md).
 - [AI and MCP](ai-mcp.md) — Cursor MCP + OpenAI/Anthropic secrets
 - [App screenshots](screenshots.md) — Operate, Tasklist, Console, ElasticVue, …
 - [CLI reference](cli-reference.md) — every command
-- [Roadmap](roadmap.md) — what’s shipped and what’s next
+- [Lab API reference](api-reference.md) — `/api/v1` toolkit routes
+- [Roadmap](roadmap.md) — what’s implemented and what’s next
 - [Troubleshooting](troubleshooting.md) — when Keycloak won’t wake up
 
 ## Source

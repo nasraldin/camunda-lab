@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"context"
 	"os"
 
 	"github.com/nasraldin/camunda-lab/internal/cli"
@@ -11,8 +11,5 @@ var version = "0.0.0-dev"
 
 func main() {
 	cli.SetVersion(version)
-	if err := cli.NewRoot().Execute(); err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		os.Exit(1)
-	}
+	os.Exit(cli.Run(context.Background(), os.Args[1:], os.Stdout, os.Stderr))
 }

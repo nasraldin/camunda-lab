@@ -80,8 +80,10 @@ func isReadOnlyMethod(method string) bool {
 }
 
 func writeSecurityError(w http.ResponseWriter, status int, code string) {
-	writeJSON(w, status, map[string]string{
-		"error": code,
-		"code":  code,
+	writeJSON(w, status, errorEnvelope{
+		OK:    false,
+		Code:  code,
+		Error: code,
+		Hint:  hintForCode(code, status),
 	})
 }

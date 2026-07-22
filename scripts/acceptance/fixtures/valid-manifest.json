@@ -1,0 +1,13 @@
+{
+  "marker": "camunda-lab-acceptance-v1",
+  "run_id": "fixture-valid",
+  "profile": "selftest",
+  "created_at": "2026-07-22T00:00:00Z",
+  "camunda_lab_home": "/tmp/camunda-lab-acceptance-fixture/lab-home",
+  "project_root": "/tmp/camunda-lab-acceptance-fixture/project",
+  "compose_project": "camunda-lab-acc-fixture",
+  "ui_port": 0,
+  "devtools_port": 0,
+  "chrome_profile": "/tmp/camunda-lab-acceptance-fixture/chrome",
+  "pids": []
+}

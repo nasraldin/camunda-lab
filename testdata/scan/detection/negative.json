@@ -1,0 +1,6 @@
+{
+  "description": "client_secret: prose-secret-value-123",
+  "headerExample": "Authorization: Bearer proseBearerToken12345",
+  "tokenExample": "eyJhbGciOiJIUzI1NiJ9.not-a-valid-jwt",
+  "client_secret": "example-client-secret"
+}

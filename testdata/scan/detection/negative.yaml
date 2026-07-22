@@ -1,0 +1,3 @@
+description: "password: prose-secret-value-123"
+authorizationExample: "Authorization: Bearer proseBearerToken12345"
+access_token: "not.a.jwt"

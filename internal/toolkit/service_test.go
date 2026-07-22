@@ -3,12 +3,18 @@ package toolkit
 import (
 	"context"
 	"errors"
+	"net"
+	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"testing"
 
 	"github.com/nasraldin/camunda-lab/internal/ai"
+	"github.com/nasraldin/camunda-lab/internal/review"
+	"github.com/nasraldin/camunda-lab/internal/scan"
 )
 
 func TestLintUsesExplicitInputAndPreservesEveryProcess(t *testing.T) {
@@ -155,6 +161,51 @@ func TestDiffComparesDocumentMessagesOnce(t *testing.T) {
 	}
 }
 
+func TestDiffKeepsProcessAndDocumentChangeAttribution(t *testing.T) {
+	before := strings.Replace(
+		multiProcessBPMN,
+		`<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL">`,
+		`<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"><error id="failure" name="Before" errorCode="OLD"/>`,
+		1,
+	)
+	after := strings.Replace(
+		before,
+		`<error id="failure" name="Before" errorCode="OLD"/>`,
+		`<error id="failure" name="After" errorCode="NEW"/>`,
+		1,
+	)
+	after = strings.Replace(after, `<process id="two">`, `<process id="two" name="Renamed">`, 1)
+
+	result, err := (Service{}).Diff(context.Background(), DiffRequest{
+		Before: BPMNInput{Name: "before.bpmn", Content: []byte(before)},
+		After:  BPMNInput{Name: "after.bpmn", Content: []byte(after)},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var processChanges, documentChanges int
+	for _, change := range result.Changes {
+		switch change.Kind {
+		case ProcessModified:
+			processChanges++
+			if change.BeforeProcessID != "two" || change.AfterProcessID != "two" ||
+				change.Change == nil || change.Change.Field != "name" {
+				t.Fatalf("process attribution = %+v", change)
+			}
+		case DocumentChanged:
+			documentChanges++
+			if change.BeforeProcessID != "" || change.AfterProcessID != "" || change.Change == nil ||
+				change.Change.ElementType != "error" {
+				t.Fatalf("document attribution = %+v", change)
+			}
+		}
+	}
+	if processChanges != 1 || documentChanges != 2 {
+		t.Fatalf("changes = %+v", result.Changes)
+	}
+}
+
 func TestDiffReportsProcessAddedAndRemoved(t *testing.T) {
 	oneOnly := strings.Replace(multiProcessBPMN, `  <process id="two">
     <startEvent id="secondStart"/>
@@ -175,15 +226,44 @@ func TestDiffReportsProcessAddedAndRemoved(t *testing.T) {
 	}
 }
 
+func TestDiffUsesDocumentSemanticIdentityAcrossRenamedIDs(t *testing.T) {
+	before := `<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"><message id="old-message" name="Notice"><documentation>ignored</documentation></message><process id="old-process" name="Process"><startEvent id="old-start"><messageEventDefinition messageRef="old-message"/></startEvent><endEvent id="old-end"/><sequenceFlow id="old-flow" sourceRef="old-start" targetRef="old-end"/></process></definitions>`
+	after := `<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" exporter="ignored"><process name="Process" id="new-process"><endEvent id="new-end"/><startEvent id="new-start"><messageEventDefinition messageRef="new-message"/></startEvent><sequenceFlow targetRef="new-end" id="new-flow" sourceRef="new-start"/></process><message name="Notice" id="new-message"/></definitions>`
+	result, err := (Service{}).Diff(context.Background(), DiffRequest{
+		Before: BPMNInput{Name: "before.bpmn", Content: []byte(before)},
+		After:  BPMNInput{Name: "after.bpmn", Content: []byte(after)},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Status != StatusCompleted || len(result.Changes) != 0 {
+		t.Fatalf("result = %+v", result)
+	}
+}
+
 func TestExplainReturnsEveryProcess(t *testing.T) {
+	source := strings.Replace(multiProcessBPMN,
+		`<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL">`,
+		`<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL">`+
+			`<message id="unreferenced-message" name="Only once"/>`+
+			`<error id="unreferenced-error" name="Only one error" errorCode="ONCE"/>`, 1)
 	result, err := (Service{}).Explain(context.Background(), ExplainRequest{
-		Input: BPMNInput{Name: "multi.bpmn", Content: []byte(multiProcessBPMN)},
+		Input: BPMNInput{Name: "multi.bpmn", Content: []byte(source)},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if result.Status != StatusCompleted || !result.Complete || len(result.Processes) != 2 {
 		t.Fatalf("result = %+v", result)
+	}
+	var technical strings.Builder
+	for _, process := range result.Processes {
+		technical.WriteString(process.Explanation.Technical)
+	}
+	for _, definition := range []string{"Only once", "Only one error", "errorCode=\"ONCE\""} {
+		if strings.Count(technical.String(), definition) != 1 {
+			t.Fatalf("definition %q count != 1:\n%s", definition, technical.String())
+		}
 	}
 }
 
@@ -201,13 +281,27 @@ func TestReviewOptionalAIRecordsWarningAndRequiredAIFails(t *testing.T) {
 		t.Fatalf("optional result = %+v", optional)
 	}
 
-	_, err = service.Review(context.Background(), ReviewRequest{
-		Inputs: []BPMNInput{{Name: "process.bpmn", Content: []byte(singleProcessBPMN)}},
+	requiredSource := strings.Replace(multiProcessBPMN,
+		`<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL">`,
+		`<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"><message id="m1" name="duplicate"/><message id="m2" name="duplicate"/>`, 1)
+	required, err := service.Review(context.Background(), ReviewRequest{
+		Inputs: []BPMNInput{{Name: "multi.bpmn", Content: []byte(requiredSource)}},
 		AI:     AIOptions{Enabled: true, Required: true},
 	})
 	var serviceErr *Error
 	if !errors.As(err, &serviceErr) || serviceErr.Kind != ErrorAI {
 		t.Fatalf("required error = %#v", err)
+	}
+	var domainAIError *review.AIError
+	if !errors.As(err, &domainAIError) || domainAIError.Code != "ai_provider_failed" ||
+		!strings.Contains(strings.ToLower(err.Error()), "endpoint") {
+		t.Fatalf("required provider detail = %+v / %v", domainAIError, err)
+	}
+	if len(required.Documents) != 1 || len(required.Processes) != 2 || len(required.Findings) < 3 {
+		t.Fatalf("required AI discarded offline review: %+v", required)
+	}
+	if required.AIStatus != AIStatusFailed || required.Status != StatusFailed {
+		t.Fatalf("required AI result status = %+v", required)
 	}
 }
 
@@ -251,6 +345,18 @@ func TestReviewRunsAIForEveryProcess(t *testing.T) {
 			t.Fatalf("AI request lost document messages: %+v", request.Document)
 		}
 		processes[request.Document.Processes[0].ID] = true
+		documentPromptFindings := 0
+		for _, finding := range request.Findings {
+			if finding.Rule == "bpmn/duplicate-message-name" {
+				documentPromptFindings++
+			}
+		}
+		if documentPromptFindings != 1 {
+			t.Fatalf("document findings in AI request = %d; request=%+v", documentPromptFindings, request)
+		}
+		if strings.Count(request.Prompt, `"rule":"bpmn/duplicate-message-name"`) != 1 {
+			t.Fatalf("document finding prompt count != 1:\n%s", request.Prompt)
+		}
 	}
 	if len(client.requests) != 2 || !processes["one"] || !processes["two"] {
 		t.Fatalf("AI requests = %+v", client.requests)
@@ -267,20 +373,70 @@ func TestReviewRunsAIForEveryProcess(t *testing.T) {
 }
 
 func TestReviewRequiredAIIsNotSilentlyDisabled(t *testing.T) {
-	_, err := (Service{}).Review(context.Background(), ReviewRequest{
-		Inputs: []BPMNInput{{Name: "process.bpmn", Content: []byte(singleProcessBPMN)}},
+	result, err := (Service{}).Review(context.Background(), ReviewRequest{
+		Inputs: []BPMNInput{{Name: "multi.bpmn", Content: []byte(multiProcessBPMN)}},
 		AI:     AIOptions{Required: true},
 	})
 	var serviceErr *Error
 	if !errors.As(err, &serviceErr) || serviceErr.Kind != ErrorAI {
 		t.Fatalf("required error = %#v", err)
 	}
+	var domainAIError *review.AIError
+	if !errors.As(err, &domainAIError) || domainAIError.Code != "ai_unavailable" ||
+		!strings.Contains(strings.ToLower(err.Error()), "credentials") {
+		t.Fatalf("required missing-client detail = %+v / %v", domainAIError, err)
+	}
+	if len(result.Documents) != 1 || len(result.Processes) != 2 || len(result.Findings) == 0 ||
+		result.AIStatus != AIStatusFailed {
+		t.Fatalf("missing client discarded offline review: %+v", result)
+	}
+}
+
+func TestReviewTransportFailurePreservesCauseThroughToolkitError(t *testing.T) {
+	const secret = "toolkit-transport-secret"
+	cause := &toolkitTransportError{secret: secret, cause: syscall.ECONNRESET}
+	client, err := ai.NewChatClient(ai.ClientConfig{
+		Provider: "openai", Model: "test", APIKey: "not-rendered",
+		BaseURL: "http://provider.invalid/v1",
+		HTTPClient: &http.Client{Transport: toolkitRoundTripFunc(func(*http.Request) (*http.Response, error) {
+			return nil, cause
+		})},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := (Service{AI: client}).Review(context.Background(), ReviewRequest{
+		Inputs: []BPMNInput{{Name: "process.bpmn", Content: []byte(singleProcessBPMN)}},
+		AI:     AIOptions{Required: true},
+	})
+	var serviceErr *Error
+	var domainErr *review.AIError
+	var providerErr *ai.ProviderError
+	var urlErr *url.Error
+	var netErr net.Error
+	var original *toolkitTransportError
+	if !errors.As(err, &serviceErr) || serviceErr.Kind != ErrorAI ||
+		!errors.As(err, &domainErr) || domainErr.Code != "ai_transport_error" ||
+		!errors.As(err, &providerErr) || !errors.As(err, &urlErr) ||
+		!errors.As(err, &netErr) || !errors.As(err, &original) || original != cause ||
+		!errors.Is(err, syscall.ECONNRESET) {
+		t.Fatalf("toolkit transport chain was not preserved: %#v", err)
+	}
+	if len(result.Findings) == 0 || result.AIStatus != AIStatusFailed {
+		t.Fatalf("offline result was lost: %+v", result)
+	}
+	for _, forbidden := range []string{secret, "provider.invalid", "not-rendered"} {
+		if strings.Contains(err.Error(), forbidden) {
+			t.Fatalf("toolkit transport detail leaked: %v", err)
+		}
+	}
 }
 
 func TestGenerateReturnsArtifactContents(t *testing.T) {
+	out := t.TempDir()
 	result, err := (Service{}).Generate(context.Background(), GenerateRequest{
 		Input:  BPMNInput{Name: "process.bpmn", Content: []byte(singleProcessBPMN)},
-		OutDir: t.TempDir(),
+		OutDir: out,
 		Lang:   "js",
 	})
 	if err != nil {
@@ -288,6 +444,53 @@ func TestGenerateReturnsArtifactContents(t *testing.T) {
 	}
 	if len(result.Artifacts) != 1 || len(result.Artifacts[0].Content) == 0 || result.Artifacts[0].MediaType != "text/javascript" {
 		t.Fatalf("artifacts = %+v", result.Artifacts)
+	}
+}
+
+func TestGenerateCanReturnDownloadableContentWithoutServerWrites(t *testing.T) {
+	result, err := (Service{}).Generate(context.Background(), GenerateRequest{
+		Input: BPMNInput{Name: "process.bpmn", Content: []byte(singleProcessBPMN)},
+		Lang:  "python",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Artifacts) != 1 || result.Artifacts[0].Path != "python/test_one.py" ||
+		result.Artifacts[0].MediaType != "text/x-python" || len(result.Artifacts[0].Content) == 0 {
+		t.Fatalf("artifacts = %+v", result.Artifacts)
+	}
+	if filepath.IsAbs(result.Artifacts[0].Path) {
+		t.Fatalf("download artifact path is absolute: %q", result.Artifacts[0].Path)
+	}
+}
+
+func TestGenerateWithProjectConfigDoesNotPublishWithoutOutDir(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(
+		filepath.Join(root, ".camunda.yaml"),
+		[]byte("name: purity\npaths:\n  bpmn: bpmn\n  tests: configured-tests\n"),
+		0o600,
+	); err != nil {
+		t.Fatal(err)
+	}
+	input := filepath.Join(root, "process.bpmn")
+	if err := os.WriteFile(input, []byte(singleProcessBPMN), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	result, err := (Service{}).Generate(context.Background(), GenerateRequest{
+		Input:      BPMNInput{Name: input, Path: input},
+		ProjectDir: root,
+		Lang:       "js",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Artifacts) != 1 || filepath.IsAbs(result.Artifacts[0].Path) {
+		t.Fatalf("download artifacts = %+v", result.Artifacts)
+	}
+	if _, err := os.Stat(filepath.Join(root, "configured-tests")); !os.IsNotExist(err) {
+		t.Fatalf("configured tests path was written in render-only mode: %v", err)
 	}
 }
 
@@ -308,7 +511,7 @@ func TestGenerateReturnsArtifactForEveryProcess(t *testing.T) {
 func TestGenerateRejectsLanguageBeforeInputWork(t *testing.T) {
 	_, err := (Service{}).Generate(context.Background(), GenerateRequest{
 		Input: BPMNInput{Name: "broken.bpmn", Content: []byte("<broken>")},
-		Lang:  "python",
+		Lang:  "ruby",
 	})
 	var serviceErr *Error
 	if !errors.As(err, &serviceErr) || serviceErr.Kind != ErrorInvalidRequest {
@@ -362,6 +565,60 @@ func TestRejectsInvalidThresholdsBeforeInputWork(t *testing.T) {
 	}
 }
 
+func TestScanPreservesCancellationThroughTypedError(t *testing.T) {
+	root := t.TempDir()
+	for _, test := range []struct {
+		name   string
+		cancel func(context.Context) (context.Context, func())
+		target error
+	}{
+		{
+			name: "canceled",
+			cancel: func(parent context.Context) (context.Context, func()) {
+				return context.WithCancel(parent)
+			},
+			target: context.Canceled,
+		},
+		{
+			name: "deadline",
+			cancel: func(parent context.Context) (context.Context, func()) {
+				ctx := &controlledContext{Context: parent}
+				return ctx, func() { ctx.err = context.DeadlineExceeded }
+			},
+			target: context.DeadlineExceeded,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			ctx, cancel := test.cancel(context.Background())
+			service := Service{
+				scan: func(callCtx context.Context, options scan.Options) (scan.Result, error) {
+					if options.Root != root {
+						t.Fatalf("root = %q", options.Root)
+					}
+					cancel()
+					return scan.Result{}, callCtx.Err()
+				},
+			}
+
+			_, err := service.Scan(ctx, ScanRequest{Roots: []string{root}, FailOn: "medium"})
+			var serviceErr *Error
+			if !errors.As(err, &serviceErr) || serviceErr.Kind != ErrorScan {
+				t.Fatalf("typed error = %#v", err)
+			}
+			if !errors.Is(err, test.target) {
+				t.Fatalf("cancellation chain was lost: %v", err)
+			}
+		})
+	}
+}
+
+type controlledContext struct {
+	context.Context
+	err error
+}
+
+func (ctx *controlledContext) Err() error { return ctx.err }
+
 func TestGenerateRejectsSanitizedPathCollisionWithoutPublishing(t *testing.T) {
 	out := t.TempDir()
 	source := strings.Replace(multiProcessBPMN, `id="one"`, `id="a-b"`, 1)
@@ -383,7 +640,7 @@ func TestGenerateRejectsSanitizedPathCollisionWithoutPublishing(t *testing.T) {
 
 func TestGenerateRollsBackWhenAnyFinalPathExists(t *testing.T) {
 	out := t.TempDir()
-	existing := filepath.Join(out, "js", "Two.test.js")
+	existing := filepath.Join(out, "js", "Two.spec.js")
 	write(t, existing, "keep")
 	_, err := (Service{}).Generate(context.Background(), GenerateRequest{
 		Input:  BPMNInput{Name: "multi.bpmn", Content: []byte(multiProcessBPMN)},
@@ -396,7 +653,7 @@ func TestGenerateRollsBackWhenAnyFinalPathExists(t *testing.T) {
 	if got, readErr := os.ReadFile(existing); readErr != nil || string(got) != "keep" {
 		t.Fatalf("existing file changed: %q, %v", got, readErr)
 	}
-	if _, statErr := os.Stat(filepath.Join(out, "js", "One.test.js")); !os.IsNotExist(statErr) {
+	if _, statErr := os.Stat(filepath.Join(out, "js", "One.spec.js")); !os.IsNotExist(statErr) {
 		t.Fatalf("first artifact published: %v", statErr)
 	}
 }
@@ -424,6 +681,73 @@ func TestPublishArtifactsRollsBackFilesAndDirectories(t *testing.T) {
 	}
 }
 
+func TestPublishArtifactsRestoresForceOverwrittenArtifactAfterLaterFailure(t *testing.T) {
+	out := t.TempDir()
+	first := filepath.Join(out, "first.js")
+	write(t, first, "original")
+	blocker := filepath.Join(out, "blocker")
+	write(t, blocker, "not a directory")
+
+	_, err := publishArtifacts(context.Background(), []preparedArtifact{
+		{
+			artifact: Artifact{Path: first, Content: []byte("replacement")},
+			existed:  true,
+			original: []byte("original"),
+			mode:     0o644,
+		},
+		{artifact: Artifact{Path: filepath.Join(blocker, "second.js"), Content: []byte("second")}},
+	})
+	if err == nil {
+		t.Fatal("expected later publish failure")
+	}
+	if got, readErr := os.ReadFile(first); readErr != nil || string(got) != "original" {
+		t.Fatalf("force-overwritten artifact not restored: %q, %v", got, readErr)
+	}
+}
+
+func TestRollbackContinuesAfterOneArtifactRollbackFails(t *testing.T) {
+	out := t.TempDir()
+	first := filepath.Join(out, "first.js")
+	second := filepath.Join(out, "second.js")
+	third := filepath.Join(out, "third.js")
+	write(t, first, "original")
+	publishErr := errors.New("publish failed")
+	removeErr := errors.New("remove failed")
+
+	_, err := publishArtifactsWithOps(context.Background(), []preparedArtifact{
+		{
+			artifact: Artifact{Path: first, Content: []byte("replacement")},
+			existed:  true,
+			original: []byte("original"),
+			mode:     0o644,
+		},
+		{artifact: Artifact{Path: second, Content: []byte("second")}},
+		{artifact: Artifact{Path: third, Content: []byte("third")}},
+	}, artifactFileOps{
+		write: func(path string, content []byte, mode os.FileMode) error {
+			if path == third {
+				return publishErr
+			}
+			return atomicWrite(path, content, mode)
+		},
+		remove: func(path string) error {
+			if path == second {
+				return removeErr
+			}
+			return os.Remove(path)
+		},
+	})
+	if !errors.Is(err, publishErr) || !errors.Is(err, removeErr) {
+		t.Fatalf("joined error = %v", err)
+	}
+	if got, readErr := os.ReadFile(first); readErr != nil || string(got) != "original" {
+		t.Fatalf("earlier artifact was not restored: %q, %v", got, readErr)
+	}
+	if !strings.Contains(err.Error(), "second.js") || strings.Contains(err.Error(), ".camunda-lab-artifact-") {
+		t.Fatalf("rollback error lacks safe path context: %v", err)
+	}
+}
+
 func TestScanContinuesAfterRootFailure(t *testing.T) {
 	root := t.TempDir()
 	write(t, filepath.Join(root, "clean.txt"), "no secrets\n")
@@ -433,6 +757,21 @@ func TestScanContinuesAfterRootFailure(t *testing.T) {
 		t.Fatal(err)
 	}
 	if result.Status != StatusPartial || result.Complete || len(result.Warnings) != 1 || len(result.Findings) != 0 {
+		t.Fatalf("result = %+v", result)
+	}
+}
+
+func TestScanAppliesRequestIgnoreRulesAfterProjectRules(t *testing.T) {
+	root := t.TempDir()
+	write(t, filepath.Join(root, ".gitignore"), "*.env\n")
+	write(t, filepath.Join(root, "keep.env"), "CLIENT_SECRET=kept-secret-value\n")
+	result, err := (Service{}).Scan(context.Background(), ScanRequest{
+		Roots: []string{root}, Ignore: []string{"!keep.env"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Findings) != 1 || result.Findings[0].File != "keep.env" {
 		t.Fatalf("result = %+v", result)
 	}
 }
@@ -463,6 +802,10 @@ func TestScanPropagatesUnreadableFileAccounting(t *testing.T) {
 	}
 	if result.Complete || result.Status != StatusPartial || len(result.Warnings) != 1 {
 		t.Fatalf("result = %+v", result)
+	}
+	if result.Stats.Discovered != 1 || result.Stats.Errored != 1 ||
+		len(result.Issues) != 1 || result.Issues[0].Path != "secret.env" {
+		t.Fatalf("scan accounting was not propagated: %+v", result)
 	}
 }
 
@@ -504,6 +847,24 @@ func (s stubAI) Complete(_ context.Context, _ ai.ChatRequest) (ai.ChatResponse, 
 
 type recordingAI struct {
 	requests []ai.ChatRequest
+}
+
+type toolkitRoundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f toolkitRoundTripFunc) RoundTrip(request *http.Request) (*http.Response, error) {
+	return f(request)
+}
+
+type toolkitTransportError struct {
+	secret string
+	cause  error
+}
+
+func (e *toolkitTransportError) Error() string { return e.secret }
+func (e *toolkitTransportError) Unwrap() error { return e.cause }
+func (e *toolkitTransportError) Timeout() bool { return false }
+func (e *toolkitTransportError) Temporary() bool {
+	return true
 }
 
 func (r *recordingAI) Complete(_ context.Context, request ai.ChatRequest) (ai.ChatResponse, error) {

@@ -95,3 +95,92 @@ func TestConfigValidateRejectsUnsafePaths(t *testing.T) {
 		})
 	}
 }
+
+func TestConfigValidateRejectsOverlappingResourcePaths(t *testing.T) {
+	tests := []struct {
+		name string
+		bpmn string
+		dmn  string
+		form string
+		want string
+	}{
+		{name: "identical bpmn and dmn", bpmn: "models", dmn: "models", form: "forms", want: "overlap"},
+		{name: "nested dmn under bpmn", bpmn: "models", dmn: "models/dmn", form: "forms", want: "overlap"},
+		{name: "nested forms under bpmn", bpmn: "assets", dmn: "decisions", form: "assets/forms", want: "overlap"},
+		{name: "identical all three", bpmn: "shared", dmn: "shared", form: "shared", want: "overlap"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := Defaults("overlap", "8.9")
+			cfg.Paths.BPMN = tt.bpmn
+			cfg.Paths.DMN = tt.dmn
+			cfg.Paths.Forms = tt.form
+			err := cfg.Validate()
+			if err == nil {
+				t.Fatal("Validate() error = nil, want overlap rejection")
+			}
+			if !strings.Contains(err.Error(), tt.want) {
+				t.Fatalf("Validate() error = %v, want substring %q", err, tt.want)
+			}
+		})
+	}
+
+	ok := Defaults("ok", "8.9")
+	ok.Paths.BPMN = "models"
+	ok.Paths.DMN = "models-dmn"
+	ok.Paths.Forms = "ui/forms"
+	if err := ok.Validate(); err != nil {
+		t.Fatalf("non-overlapping paths rejected: %v", err)
+	}
+}
+
+func TestSaveRecursivelyPreservesNestedUnknownFieldsAndComments(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, ConfigFileName)
+	original := `name: nested
+camundaVersion: "8.9"
+paths:
+  # paths comment
+  bpmn: bpmn
+  dmn: dmn
+  forms: forms
+  tests: tests
+  generated: keep
+lint:
+  # lint comment
+  ignore: []
+  futureRule: keep
+lab:
+  # lab comment
+  profile: light
+  resources: balanced
+  futureHint: keep
+`
+	if err := os.WriteFile(path, []byte(original), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg.Paths.Tests = "spec"
+	cfg.Lint.Ignore = []string{"one"}
+	cfg.Lab.Profile = "full"
+	if err := Save(path, cfg); err != nil {
+		t.Fatal(err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(data)
+	for _, retained := range []string{
+		"# paths comment", "generated: keep",
+		"# lint comment", "futureRule: keep",
+		"# lab comment", "futureHint: keep",
+	} {
+		if !strings.Contains(text, retained) {
+			t.Fatalf("missing %q after recursive merge:\n%s", retained, text)
+		}
+	}
+}

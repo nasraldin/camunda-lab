@@ -14,18 +14,17 @@ Binary: **`camunda`**. Project / Homebrew formula: **`camunda-lab`**.
 | `ui`                 | Local Lab UI (http://localhost:9090)                                    |
 | `ai`                 | MCP + AI Agent connector secrets                                        |
 | `lint`               | Deterministic BPMN lint                                                 |
-| `diff`               | Semantic BPMN diff (`--from`/`--to`, `--against`, or two files)         |
+| `diff`               | Semantic BPMN diff (files, `--against`, or Git `--base`)                |
 | `explain`            | Offline BPMN summary                                                    |
 | `review`             | Lint + optional AI review                                               |
 | `test generate`      | Test skeletons from BPMN (`-o` output dir)                              |
 | `scan`               | Secrets scanner                                                         |
 | `env`                | Environment profiles                                                    |
-| `plan`               | Deployment preview (no deploy; needs `.camunda.yaml`, optional `--dir`) |
-| `drift`              | Git/project vs cluster drift (optional `--dir`)                         |
+| `plan`               | Deployment preview (no deploy; `--dir`, `--env`, `--json`)              |
+| `drift`              | Git/project vs cluster drift (`--dir`, `--ref`, `--env`, `--json`)      |
 | `backup` / `restore` | Lab-oriented backup                                                     |
 | `incidents`          | Incident list/retry (OIDC on full labs; auto token from lab `.env`)     |
 | `trace`              | Process instance timeline                                               |
-| `k8s`                | kubectl helpers for Helm releases                                       |
 | `up` / `start`       | Start                                                                   |
 | `down` / `stop`      | Stop (keep volumes)                                                     |
 | `restart`            | Restart                                                                 |
@@ -50,14 +49,14 @@ Details for each command are in the sections below.
 ```bash
 camunda init
 camunda init ./order-service
-camunda init ./order-service --name orders --version 8.9 --yes
+camunda init ./order-service --name orders --version 8.10 --yes
 camunda init ./order-service --force
 ```
 
 | Flag           | Meaning                                                                           |
 | -------------- | --------------------------------------------------------------------------------- |
 | `--name`       | Project name (default: directory basename)                                        |
-| `--version`    | Camunda version hint in `.camunda.yaml` (default: active lab version, else `8.9`) |
+| `--version`    | Camunda version hint in `.camunda.yaml` (default: active lab version or configured default) |
 | `--profile`    | Lab profile hint (`light` \| `full` \| `modeler`)                                 |
 | `--resources`  | Lab resources hint (`small` \| `balanced` \| `power`)                             |
 | `--yes` / `-y` | Non-interactive                                                                   |
@@ -273,6 +272,220 @@ camunda tools modeler profile
 
 ---
 
+## BPMN developer toolkit
+
+These local developer commands use the same toolkit services as the Lab API and
+UI. Policy findings exit `1`; invalid input, configuration, Git, incomplete
+scans, and other tool failures exit `2`; successful checks exit `0`.
+
+```bash
+camunda lint bpmn/order.bpmn --fail-on warning --ignore bpmn/rule --json
+camunda explain bpmn/order.bpmn
+camunda explain bpmn/order.bpmn --json
+camunda review bpmn/order.bpmn --ai --provider openai --model gpt-4o-mini
+camunda review bpmn/order.bpmn --ai-required --provider anthropic --model MODEL
+camunda test generate bpmn/order.bpmn --lang python -o tests
+```
+
+- `lint` accepts repeatable `--ignore`, `--fail-on error|warning`, and `--json`.
+- `explain` emits text by default, supports `--json`, and writes Markdown only
+  when `--output` is provided. `--json` and `--output` are mutually exclusive
+  and combining them exits `2`.
+- `review` accepts lint threshold/ignore controls. `--ai` is optional
+  enrichment; `--ai-required` makes unavailable or failed enrichment a tool
+  failure. Provider response bodies and credentials are never printed.
+- `test generate` supports `java`, `js`, and `python`. It writes to explicit
+  `--output`, otherwise to configured `paths.tests` (default `tests`), and
+  requires `--force` to replace existing artifacts.
+
+These commands do not deploy resources or perform platform operations.
+
+---
+
+## scan
+
+```bash
+camunda scan
+camunda scan ./connectors
+camunda scan --json
+camunda scan --fail-on high
+camunda scan --ignore 'fixtures/**'
+```
+
+The scan recursively inspects supported BPMN, DMN, form, YAML, JSON, environment,
+script, JavaScript, TypeScript, Java, Go, properties, and text sources. Built-in
+VCS, dependency, vendor, generated, and build-directory exclusions cannot be
+negated. When the requested path is inside a project, the nearest
+`.camunda.yaml` governs path attribution and ignore loading. Root and nested
+`.gitignore` files use directory-relative semantics and are applied first,
+followed by the project-root `.camunda-scanignore`, then repeatable `--ignore`
+rules; the last matching project/user rule wins. Directory patterns with or
+without a trailing slash apply to descendants. Unsafe absolute, traversing, or
+malformed patterns are rejected.
+
+The scanner detects bounded source-aware assignments, quoted JSON/YAML keys,
+standard `Authorization: Bearer ...` headers, and JWT-shaped access, ID, or
+OAuth tokens. It deliberately avoids credential-looking prose, placeholders,
+and malformed JWT examples. Bounded match prefixes still report values longer
+than detector caps, so an oversized credential cannot become a silent clean
+result. Values remain masked.
+
+Runtime references are classified after parsing the source-specific
+right-hand-side expression. Shell/environment `$VAR` and `${VAR}` are excluded
+when unquoted or double-quoted, where expansion is active; single-quoted forms
+are literal credentials. JSON, form JSON, properties, and YAML quoted forms are
+also literals. JavaScript/TypeScript `process.env`, `Bun.env`,
+`import.meta.env`, and `Deno.env.get`, Java `System.getenv`, and Go `os.Getenv`
+are excluded only when they are the actual unquoted right-hand-side expression.
+Compound or quoted literals that merely contain those strings are still scanned
+as credentials.
+
+Inline suppression is same-line and must follow the credential in valid source
+comment syntax: `# camunda-scan-ignore` for shell/environment/YAML,
+`// camunda-scan-ignore` or `/* camunda-scan-ignore */` for JavaScript,
+TypeScript, or Java, and `<!-- camunda-scan-ignore -->` for BPMN/DMN XML.
+JavaScript/TypeScript comment recognition tracks escaped backticks, template
+literals, and `${...}` interpolation conservatively, so directive-looking text
+inside a template is never a suppression comment.
+JSON, form JSON, properties, and plain text have no inline suppression syntax;
+directive text inside a value never suppresses a finding.
+
+Text and JSON reports use project-relative slash paths, masked values,
+deterministic ordering, source kinds, and explicit scanned/ignored/errored
+accounting. A candidate is either a supported regular source file or one
+built-in-pruned subtree represented by a single terminal record; vendor and
+dependency contents are never recursively enumerated. Binary and oversized
+files are reported as accepted ignores. Unreadable or truncated candidates
+make the report incomplete and produce a non-zero exit; an incomplete scan
+never prints `No secrets found.` The `--fail-on low|medium|high` finding
+threshold remains effective even when the scan is incomplete.
+
+Directory traversal and file opening are descriptor-relative and no-follow on
+Darwin/Linux. Explicit root symlinks are rejected, and parent/file replacement
+races are reported without reading outside the governing project boundary.
+
+---
+
+## plan / drift
+
+```bash
+camunda plan
+camunda plan --dir /tmp/my-app
+camunda plan --env prod
+camunda plan --json
+
+camunda drift
+camunda drift --dir /tmp/my-app --ref HEAD
+camunda drift --env prod --json
+```
+
+Both commands require a project with `.camunda.yaml` (discovered by walking up
+from the current directory, or via `--dir`). `--env` selects an exact
+environment profile; otherwise the project-local then global active profile is
+used. `--json` emits the stable domain result. Exit codes follow the comparison
+policy (`0` no-changes, `1` changes, `2` unknown/refused/error).
+
+---
+
+## env
+
+```bash
+camunda env list
+camunda env show
+camunda env use staging
+camunda env add remote-prod --kind remote --orchestration https://cluster.example/v2 \
+  --client-id-env CAMUNDA_CLIENT_ID --client-secret-env CAMUNDA_CLIENT_SECRET \
+  --token-url https://login.example/oauth/token --audience zeebe-api --scope openid
+camunda env remove remote-prod
+```
+
+| Subcommand | Purpose |
+| ---------- | ------- |
+| `list` | List global and project-local profiles |
+| `show` | Print active profile name |
+| `use` | Set active profile (project-local when run inside a project) |
+| `add` | Create a global profile |
+| `remove` | Delete a profile (refuses when referenced) |
+
+| Flag (`env add`) | Meaning |
+| ---------------- | ------- |
+| `--kind` | `lab` or `remote` (default `remote`) |
+| `--orchestration` | Orchestration REST base URL |
+| `--client-id-env` | Env var holding OIDC client id (default `CAMUNDA_CLIENT_ID`) |
+| `--client-secret-env` | Env var holding OIDC client secret |
+| `--token-url` | HTTPS OIDC token endpoint |
+| `--token-url-env` | Env var holding token URL instead of `--token-url` |
+| `--audience` | OIDC audience for cluster API token |
+| `--scope` | OIDC scope |
+
+Secrets are **never** stored in profile YAML — only env-var references. Full labs with Keycloak resolve tokens from lab `.env` automatically for local Orchestration REST calls.
+
+---
+
+## incidents
+
+```bash
+camunda incidents list
+camunda incidents list --env prod --limit 20
+camunda incidents show 9007199254740993
+camunda incidents retry 9007199254740993 --yes
+camunda incidents retry 9007199254740993 --dry-run
+```
+
+| Flag | Meaning |
+| ---- | ------- |
+| `--env` | Environment profile (default: resolved active) |
+| `--limit` | Max incidents returned (default `50`) |
+| `--yes` / `-y` | Confirm resolve (`retry` only) |
+| `--dry-run` | Validate resolve without mutation |
+
+Uses Orchestration REST `POST /v2/incidents/search` and `POST /v2/incidents/{key}/resolution`. Requires a reachable cluster and OIDC credentials when not on a local full lab.
+
+---
+
+## trace
+
+```bash
+camunda trace 9007199254740993
+camunda trace 9007199254740993 --env prod --json
+camunda trace 9007199254740993 --follow --interval 2s --timeout 5m
+camunda trace 9007199254740993 --follow --idle-stop 30s --max-events 10
+```
+
+| Flag | Meaning |
+| ---- | ------- |
+| `--env` | Environment profile |
+| `--json` | Emit JSON timeline |
+| `--follow` / `-f` | Poll until terminal state or timeout |
+| `--interval` | Follow poll interval (default `2s`) |
+| `--timeout` | Follow timeout (CLI default `5m`; API follow defaults to `30s`) |
+| `--idle-stop` | Stop follow after idle period (**CLI-only**) |
+| `--max-events` | Max changed timelines while following (`0` = domain default) |
+
+---
+
+## diff
+
+```bash
+camunda diff before.bpmn after.bpmn
+camunda diff --from before.bpmn --to after.bpmn
+camunda diff current.bpmn --against expected.bpmn
+camunda diff bpmn/order.bpmn --base HEAD~1
+camunda diff bpmn/order.bpmn --base main --json
+```
+
+The single-file `--base REF` form must be run inside a project with
+`.camunda.yaml`. Its file argument is project-relative: the command compares
+the working-tree BPMN file with the same repository path at `REF`. Absolute
+paths, traversal, symlink escapes, directories, DMN, and form inputs are
+rejected.
+
+Semantic differences are printed and exit with status `1`. Invalid input,
+project discovery, parsing, or Git failures exit with status `2`. No semantic
+changes exit with status `0`.
+
+---
+
 ## backup / restore
 
 ```bash
@@ -292,7 +505,7 @@ camunda restore ./lab-backup.tar.gz --yes --force
 - Lab `config.yaml`, when it exists.
 - AI secret **key names only** in `ai.keys.json` by default. Secret values are excluded.
 - `ai.env` values only with the explicit `--include-secrets` opt-in.
-- From the detected current Camunda project, regular files below `bpmn/`, `dmn/`, and `forms/`. Project symlinks and other special files are rejected.
+- From the detected current Camunda project: `.camunda.yaml` when present, plus regular files under the project's configured BPMN/DMN/form paths (defaults `bpmn/`, `dmn/`, `forms/` when unset). Project symlinks and other special files are rejected. Overlapping configured resource paths are rejected fail-closed.
 
 Backups do **not** contain Docker volumes, databases, container images, downloaded Camunda version directories, logs, generated tests, workers, connectors, scripts, Helm files, arbitrary project files, or environment profiles. This is a lab configuration and model-resource backup, not a complete running-system or data backup.
 

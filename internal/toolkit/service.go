@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 
-	"github.com/nasraldin/camunda-lab/internal/ai"
 	"github.com/nasraldin/camunda-lab/internal/bpmn"
 	bpmndiff "github.com/nasraldin/camunda-lab/internal/diff"
 	"github.com/nasraldin/camunda-lab/internal/explain"
@@ -119,9 +119,14 @@ func (s Service) Explain(ctx context.Context, request ExplainRequest) (ExplainRe
 		return ExplainResult{}, err
 	}
 	result := ExplainResult{Status: StatusCompleted, Complete: true, Document: document}
-	for _, process := range document.Processes {
+	for index, process := range document.Processes {
+		processDoc := processDocument(document, process)
+		if index > 0 {
+			processDoc.Messages = nil
+			processDoc.Errors = nil
+		}
 		result.Processes = append(result.Processes, ProcessExplanation{
-			ProcessID: process.ID, Explanation: explain.Offline(processDocument(document, process)),
+			ProcessID: process.ID, Explanation: explain.Offline(processDoc),
 		})
 	}
 	return result, nil
@@ -146,17 +151,14 @@ func (s Service) Review(ctx context.Context, request ReviewRequest) (ReviewResul
 		Status: StatusCompleted, Complete: true, AIStatus: AIStatusDisabled,
 	}
 	aiRequested := request.AI.Enabled || request.AI.Required
-	if aiRequested {
-		result.AIStatus = AIStatusSucceeded
-		if s.AI == nil {
-			if request.AI.Required {
-				return ReviewResult{}, operationError(OperationReview, ErrorAI, "", errors.New("AI client is not configured"))
-			}
-			result.AIStatus = AIStatusSkipped
-			result.Status, result.Complete = StatusPartial, false
-			result.Warnings = append(result.Warnings, Warning{Code: "ai_unavailable", Message: "AI client is not configured"})
-		}
+	type aiWork struct {
+		input          string
+		processIndex   int
+		lintDocument   bpmn.Document
+		promptDocument bpmn.Document
+		promptFindings []lint.Finding
 	}
+	var aiWorks []aiWork
 	for _, input := range inputs {
 		if err := ctx.Err(); err != nil {
 			return ReviewResult{}, operationError(OperationReview, ErrorInput, input.label(), err)
@@ -167,43 +169,97 @@ func (s Service) Review(ctx context.Context, request ReviewRequest) (ReviewResul
 		}
 		result.Inputs = append(result.Inputs, input.label())
 		result.Documents = append(result.Documents, document)
-		result.Findings = append(result.Findings, runDocumentLint(document, input.label(), ignore)...)
+		documentFindings := lint.Run(bpmn.Document{Messages: document.Messages}, lint.Options{
+			File: input.label(), Ignore: ignore, FailOn: string(request.FailOn),
+		}).Findings
+		result.Findings = append(result.Findings, attributeFindings("", documentFindings)...)
 		for _, process := range document.Processes {
 			reviewDoc := processDocument(document, process)
 			lintDoc := reviewDoc
 			lintDoc.Messages = nil
-			domainResult, err := review.Run(lintDoc, review.Options{
+			domainResult, err := review.RunContext(ctx, lintDoc, review.Options{
 				File: input.label(), FailOn: string(request.FailOn), Ignore: ignore,
 			})
 			if err != nil {
 				return ReviewResult{}, operationError(OperationReview, ErrorInput, input.label(), err)
 			}
-			if aiRequested && s.AI != nil {
-				if err := validateContext(ctx, OperationReview); err != nil {
-					return ReviewResult{}, err
-				}
-				response, aiErr := s.AI.Complete(ctx, ai.ChatRequest{
-					Purpose: "review", Document: reviewDoc, Findings: domainResult.Findings,
-				})
-				if aiErr != nil {
-					if request.AI.Required {
-						return ReviewResult{}, operationError(OperationReview, ErrorAI, input.label(), aiErr)
-					}
-					result.AIStatus = AIStatusFailed
-					result.Status, result.Complete = StatusPartial, false
-					result.Warnings = append(result.Warnings, Warning{
-						Code: "ai_failed", Message: aiErr.Error(), Path: input.label(),
-					})
-				} else {
-					domainResult.AIText = response.Content
-				}
-			}
 			result.Findings = append(result.Findings, attributeFindings(process.ID, domainResult.Findings)...)
 			result.Processes = append(result.Processes, ProcessReview{ProcessID: process.ID, Review: domainResult})
+			aiWorks = append(aiWorks, aiWork{
+				input: input.label(), processIndex: len(result.Processes) - 1,
+				lintDocument: lintDoc, promptDocument: reviewDoc,
+				promptFindings: documentFindings,
+			})
 		}
 	}
 	if lint.ShouldFail(rawLintFindings(result.Findings), string(request.FailOn)) {
 		result.Status = StatusFailed
+	}
+	if !aiRequested {
+		return result, nil
+	}
+	if s.AI == nil {
+		result.Complete = false
+		message := "AI client is not configured; choose a provider, model, and credentials"
+		if request.AI.Required {
+			result.AIStatus = AIStatusFailed
+			err := &review.AIError{
+				Stage: "configuration", Code: "ai_unavailable", Message: message,
+				Err: errors.New(message),
+			}
+			return result, operationError(OperationReview, ErrorAI, "", err)
+		}
+		result.AIStatus = AIStatusSkipped
+		if result.Status != StatusFailed {
+			result.Status = StatusPartial
+		}
+		result.Warnings = append(result.Warnings, Warning{Code: "ai_unavailable", Message: message})
+		return result, nil
+	}
+	result.AIStatus = AIStatusSucceeded
+	for _, work := range aiWorks {
+		domainResult, aiErr := review.RunContext(ctx, work.lintDocument, review.Options{
+			File: work.input, FailOn: string(request.FailOn), Ignore: ignore,
+			AI: true, AIRequired: request.AI.Required, AIClient: s.AI,
+			PromptDocument: &work.promptDocument, PromptFindings: work.promptFindings,
+		})
+		result.Processes[work.processIndex].Review = domainResult
+		if aiErr != nil {
+			result.AIStatus = AIStatusFailed
+			result.Complete = false
+			var typedAIError *review.AIError
+			if errors.As(aiErr, &typedAIError) {
+				return result, operationError(OperationReview, ErrorAI, work.input, aiErr)
+			}
+			return result, operationError(OperationReview, ErrorInput, work.input, aiErr)
+		}
+		switch domainResult.AIStatus {
+		case review.AIStatusFailed:
+			result.AIStatus = AIStatusFailed
+			result.Complete = false
+			if result.Status != StatusFailed {
+				result.Status = StatusPartial
+			}
+		case review.AIStatusSkipped:
+			if result.AIStatus != AIStatusFailed {
+				result.AIStatus = AIStatusSkipped
+			}
+			result.Complete = false
+			if result.Status != StatusFailed {
+				result.Status = StatusPartial
+			}
+		}
+		for _, warning := range domainResult.Warnings {
+			result.Warnings = append(result.Warnings, Warning{
+				Code: warning.Code, Message: warning.Message, Path: work.input,
+			})
+			if warning.Code == "ai_prompt_compacted" {
+				result.Complete = false
+				if result.Status != StatusFailed {
+					result.Status = StatusPartial
+				}
+			}
+		}
 	}
 	return result, nil
 }
@@ -215,7 +271,7 @@ func (s Service) Generate(ctx context.Context, request GenerateRequest) (Generat
 	if err := validateGenerateLanguage(request.Lang); err != nil {
 		return GenerateResult{}, err
 	}
-	inputs, opened, err := resolveBPMNInputs([]BPMNInput{request.Input}, request.ProjectDir, OperationGenerate)
+	inputs, _, err := resolveBPMNInputs([]BPMNInput{request.Input}, request.ProjectDir, OperationGenerate)
 	if err != nil {
 		return GenerateResult{}, err
 	}
@@ -226,27 +282,30 @@ func (s Service) Generate(ctx context.Context, request GenerateRequest) (Generat
 	if err != nil {
 		return GenerateResult{}, err
 	}
-	outDir := request.OutDir
-	if outDir == "" && opened != nil {
-		outDir, err = opened.Resolve(opened.Config.Paths.Tests)
-		if err != nil {
-			return GenerateResult{}, operationError(OperationGenerate, ErrorArtifact, opened.Config.Paths.Tests, err)
+	result := GenerateResult{Status: StatusCompleted, Complete: true, Document: document}
+	rendered, err := testgen.Render(document, testgen.Options{Lang: string(request.Lang)})
+	if err != nil {
+		return GenerateResult{}, operationError(OperationGenerate, ErrorArtifact, "", err)
+	}
+	result.Artifacts = make([]Artifact, len(rendered))
+	for index, artifact := range rendered {
+		result.Artifacts[index] = Artifact{
+			Path: artifact.Path, MediaType: artifact.MediaType, Content: append([]byte(nil), artifact.Content...),
 		}
 	}
-	if strings.TrimSpace(outDir) == "" {
-		return GenerateResult{}, operationError(OperationGenerate, ErrorInvalidRequest, "", errors.New("output directory is required"))
-	}
-	result := GenerateResult{Status: StatusCompleted, Complete: true, Document: document}
-	prepared, err := prepareArtifacts(ctx, document, outDir, request.Lang, request.Force)
-	if err != nil {
-		return GenerateResult{}, err
-	}
-	published, err := publishArtifacts(ctx, prepared)
-	result.Artifacts = published
-	if err != nil {
-		result.Status, result.Complete = StatusPartial, false
-		result.Warnings = append(result.Warnings, Warning{Code: "artifact_write_failed", Message: err.Error()})
-		return result, operationError(OperationGenerate, ErrorArtifact, outDir, err)
+	if strings.TrimSpace(request.OutDir) != "" {
+		if err := validateContext(ctx, OperationGenerate); err != nil {
+			return GenerateResult{}, err
+		}
+		paths, writeErr := testgen.Write(request.OutDir, rendered, request.Force)
+		if writeErr != nil {
+			result.Status, result.Complete = StatusPartial, false
+			result.Warnings = append(result.Warnings, Warning{Code: "artifact_write_failed", Message: writeErr.Error()})
+			return result, operationError(OperationGenerate, ErrorArtifact, request.OutDir, writeErr)
+		}
+		for index := range result.Artifacts {
+			result.Artifacts[index].Path = paths[index]
+		}
 	}
 	return result, nil
 }
@@ -267,7 +326,14 @@ func (s Service) Scan(ctx context.Context, request ScanRequest) (ScanResult, err
 		if err != nil {
 			return ScanResult{}, operationError(OperationScan, ErrorDiscovery, request.ProjectDir, err)
 		}
+		if err := ctx.Err(); err != nil {
+			return ScanResult{}, operationError(OperationScan, ErrorDiscovery, request.ProjectDir, err)
+		}
 		roots = []string{opened.Root}
+	}
+	scanRunner := s.scan
+	if scanRunner == nil {
+		scanRunner = scan.WalkWithReportContext
 	}
 	result := ScanResult{Status: StatusCompleted, Complete: true}
 	for _, root := range roots {
@@ -279,16 +345,34 @@ func (s Service) Scan(ctx context.Context, request ScanRequest) (ScanResult, err
 			result.Warnings = append(result.Warnings, Warning{Code: "scan_failed", Message: err.Error(), Path: root})
 			continue
 		}
-		scanResult, err := scan.WalkWithReport(scan.Options{Root: root, FailOn: string(request.FailOn)})
+		if err := ctx.Err(); err != nil {
+			return ScanResult{}, operationError(OperationScan, ErrorScan, root, err)
+		}
+		scanResult, err := scanRunner(ctx, scan.Options{
+			Root: root, FailOn: string(request.FailOn), Ignore: request.Ignore,
+		})
 		if err != nil {
+			if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+				return ScanResult{}, operationError(OperationScan, ErrorScan, root, err)
+			}
 			result.FailedRoots = append(result.FailedRoots, root)
 			result.Warnings = append(result.Warnings, Warning{Code: "scan_failed", Message: err.Error(), Path: root})
 			continue
 		}
 		result.ScannedRoots = append(result.ScannedRoots, root)
 		result.Findings = append(result.Findings, scanResult.Findings...)
+		result.Issues = append(result.Issues, scanResult.Issues...)
+		result.Stats.Discovered += scanResult.Stats.Discovered
+		result.Stats.Scanned += scanResult.Stats.Scanned
+		result.Stats.Ignored += scanResult.Stats.Ignored
+		result.Stats.Errored += scanResult.Stats.Errored
 		for _, issue := range scanResult.Issues {
-			result.Warnings = append(result.Warnings, Warning{Code: "scan_incomplete", Message: issue.Err.Error(), Path: issue.Path})
+			if issue.Kind == scan.IssueIgnored {
+				continue
+			}
+			result.Warnings = append(result.Warnings, Warning{
+				Code: "scan_incomplete", Message: issue.Message, Path: issue.Path,
+			})
 		}
 	}
 	if len(result.ScannedRoots) == 0 {
@@ -417,26 +501,30 @@ func processDocument(document bpmn.Document, process bpmn.Process) bpmn.Document
 }
 
 func runLint(document bpmn.Document, file string, ignore []string) []LintFinding {
-	findings := runDocumentLint(document, file, ignore)
-	for _, process := range document.Processes {
-		processDoc := processDocument(document, process)
-		processDoc.Messages = nil
-		findings = append(findings, attributeFindings(process.ID, lint.Run(processDoc, lint.Options{
-			File: file, Ignore: ignore,
-		}))...)
-	}
-	return findings
+	return attributeFindings("", lint.Run(document, lint.Options{
+		File: file, Ignore: ignore,
+	}).Findings)
 }
 
 func runDocumentLint(document bpmn.Document, file string, ignore []string) []LintFinding {
 	documentOnly := bpmn.Document{Messages: document.Messages}
-	return attributeFindings("", lint.Run(documentOnly, lint.Options{File: file, Ignore: ignore}))
+	return attributeFindings("", lint.Run(documentOnly, lint.Options{
+		File: file, Ignore: ignore,
+	}).Findings)
 }
 
 func attributeFindings(processID string, findings []lint.Finding) []LintFinding {
 	attributed := make([]LintFinding, 0, len(findings))
 	for _, finding := range findings {
-		attributed = append(attributed, LintFinding{ProcessID: processID, Finding: finding})
+		attributedProcessID := processID
+		if attributedProcessID == "" {
+			attributedProcessID = finding.ProcessID
+		}
+		finding.ProcessID = ""
+		attributed = append(attributed, LintFinding{
+			ProcessID: attributedProcessID,
+			Finding:   finding,
+		})
 	}
 	return attributed
 }
@@ -450,49 +538,29 @@ func rawLintFindings(findings []LintFinding) []lint.Finding {
 }
 
 func compareDocuments(before, after bpmn.Document) []ProcessChange {
-	beforeByID := make(map[string]bpmn.Process, len(before.Processes))
-	afterByID := make(map[string]bpmn.Process, len(after.Processes))
-	ids := map[string]bool{}
-	for _, process := range before.Processes {
-		beforeByID[process.ID], ids[process.ID] = process, true
-	}
-	for _, process := range after.Processes {
-		afterByID[process.ID], ids[process.ID] = process, true
-	}
-	ordered := make([]string, 0, len(ids))
-	for id := range ids {
-		ordered = append(ordered, id)
-	}
-	sort.Strings(ordered)
 	var changes []ProcessChange
-	for _, id := range ordered {
-		beforeProcess, beforeOK := beforeByID[id]
-		afterProcess, afterOK := afterByID[id]
-		if !beforeOK {
-			changes = append(changes, ProcessChange{Kind: ProcessAdded, AfterProcessID: id})
-			continue
-		}
-		if !afterOK {
-			changes = append(changes, ProcessChange{Kind: ProcessRemoved, BeforeProcessID: id})
-			continue
-		}
-		beforeDoc := processDocument(before, beforeProcess)
-		beforeDoc.Messages = nil
-		afterDoc := processDocument(after, afterProcess)
-		afterDoc.Messages = nil
-		for _, domainChange := range bpmndiff.Compare(beforeDoc, afterDoc) {
+	for _, domainChange := range bpmndiff.Compare(before, after) {
+		switch domainChange.Kind {
+		case bpmndiff.ProcessAdded:
+			changes = append(changes, ProcessChange{
+				Kind: ProcessAdded, AfterProcessID: domainChange.ProcessID,
+			})
+		case bpmndiff.ProcessRemoved:
+			changes = append(changes, ProcessChange{
+				Kind: ProcessRemoved, BeforeProcessID: domainChange.ProcessID,
+			})
+		default:
+			kind := DocumentChanged
+			beforeProcessID, afterProcessID := "", ""
+			if domainChange.ProcessID != "" {
+				kind = ProcessModified
+				beforeProcessID, afterProcessID = domainChange.ProcessID, domainChange.ProcessID
+			}
 			change := domainChange
 			changes = append(changes, ProcessChange{
-				Kind: ProcessModified, BeforeProcessID: id, AfterProcessID: id, Change: &change,
+				Kind: kind, BeforeProcessID: beforeProcessID, AfterProcessID: afterProcessID, Change: &change,
 			})
 		}
-	}
-	for _, domainChange := range bpmndiff.Compare(
-		bpmn.Document{Messages: before.Messages},
-		bpmn.Document{Messages: after.Messages},
-	) {
-		change := domainChange
-		changes = append(changes, ProcessChange{Kind: DocumentChanged, Change: &change})
 	}
 	return changes
 }
@@ -524,10 +592,10 @@ func validateScanThreshold(threshold ScanThreshold) error {
 
 func validateGenerateLanguage(language GenerateLanguage) error {
 	switch language {
-	case "", GenerateLanguageJava, GenerateLanguageJavaScript:
+	case "", GenerateLanguageJava, GenerateLanguageJavaScript, GenerateLanguagePython:
 		return nil
 	default:
-		return operationError(OperationGenerate, ErrorInvalidRequest, "", errors.New("language must be java or js"))
+		return operationError(OperationGenerate, ErrorInvalidRequest, "", errors.New("language must be java, js, or python"))
 	}
 }
 
@@ -536,6 +604,15 @@ type preparedArtifact struct {
 	existed  bool
 	original []byte
 	mode     os.FileMode
+}
+
+type artifactFileOps struct {
+	write  func(string, []byte, os.FileMode) error
+	remove func(string) error
+}
+
+func defaultArtifactFileOps() artifactFileOps {
+	return artifactFileOps{write: atomicWrite, remove: os.Remove}
 }
 
 func prepareArtifacts(
@@ -564,9 +641,11 @@ func prepareArtifacts(
 		if err != nil {
 			return nil, operationError(OperationGenerate, ErrorArtifact, outDir, err)
 		}
-		paths, err := testgen.Generate(processDocument(document, process), testgen.Options{
-			OutDir: processRoot, Lang: string(language),
-		})
+		rendered, err := testgen.Render(processDocument(document, process), testgen.Options{Lang: string(language)})
+		if err != nil {
+			return nil, operationError(OperationGenerate, ErrorArtifact, outDir, err)
+		}
+		paths, err := testgen.Write(processRoot, rendered, false)
 		if err != nil {
 			return nil, operationError(OperationGenerate, ErrorArtifact, outDir, err)
 		}
@@ -622,23 +701,27 @@ func prepareArtifacts(
 }
 
 func publishArtifacts(ctx context.Context, prepared []preparedArtifact) ([]Artifact, error) {
+	return publishArtifactsWithOps(ctx, prepared, defaultArtifactFileOps())
+}
+
+func publishArtifactsWithOps(ctx context.Context, prepared []preparedArtifact, ops artifactFileOps) ([]Artifact, error) {
 	published := make([]Artifact, 0, len(prepared))
 	var createdDirs []string
 	for index, item := range prepared {
 		if err := validateContext(ctx, OperationGenerate); err != nil {
-			_, rollbackErr := rollbackArtifacts(prepared[:index], published, err)
+			_, rollbackErr := rollbackArtifacts(prepared[:index], published, err, ops)
 			removeCreatedDirs(createdDirs)
 			return nil, rollbackErr
 		}
 		dirs, err := makeArtifactDir(filepath.Dir(item.artifact.Path))
 		createdDirs = append(createdDirs, dirs...)
 		if err != nil {
-			_, rollbackErr := rollbackArtifacts(prepared[:index], published, err)
+			_, rollbackErr := rollbackArtifacts(prepared[:index], published, err, ops)
 			removeCreatedDirs(createdDirs)
 			return nil, rollbackErr
 		}
-		if err := atomicWrite(item.artifact.Path, item.artifact.Content, 0o644); err != nil {
-			_, rollbackErr := rollbackArtifacts(prepared[:index], published, err)
+		if err := ops.write(item.artifact.Path, item.artifact.Content, 0o644); err != nil {
+			_, rollbackErr := rollbackArtifacts(prepared[:index], published, err, ops)
 			removeCreatedDirs(createdDirs)
 			return nil, rollbackErr
 		}
@@ -676,21 +759,36 @@ func removeCreatedDirs(paths []string) {
 	}
 }
 
-func rollbackArtifacts(prepared []preparedArtifact, published []Artifact, publishErr error) ([]Artifact, error) {
+func rollbackArtifacts(
+	prepared []preparedArtifact,
+	published []Artifact,
+	publishErr error,
+	ops artifactFileOps,
+) ([]Artifact, error) {
+	joined := publishErr
+	rollbackFailed := false
 	for index := len(prepared) - 1; index >= 0; index-- {
 		item := prepared[index]
 		var err error
 		if item.existed {
-			err = atomicWrite(item.artifact.Path, item.original, item.mode)
+			err = ops.write(item.artifact.Path, item.original, item.mode)
 		} else {
-			err = os.Remove(item.artifact.Path)
+			err = ops.remove(item.artifact.Path)
 			if os.IsNotExist(err) {
 				err = nil
 			}
 		}
 		if err != nil {
-			return published, errors.Join(publishErr, errors.New("artifact rollback failed"), err)
+			rollbackFailed = true
+			joined = errors.Join(joined, fmt.Errorf(
+				"rollback artifact %q: %w",
+				filepath.Base(item.artifact.Path),
+				err,
+			))
 		}
+	}
+	if rollbackFailed {
+		return published, joined
 	}
 	return nil, publishErr
 }

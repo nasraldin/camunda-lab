@@ -18,7 +18,7 @@
 - No paid AI calls in tests or CI.
 - Never expose raw secrets or absolute temporary server paths.
 - Live tests use unique `CAMUNDA_LAB_HOME`, project directories, Compose project names, and ownership manifests.
-- Never reset, stop, or delete the user’s normal lab or unrelated Docker/Kubernetes resources.
+- Never reset, stop, or delete the user’s normal lab or unrelated Docker resources.
 - Do not commit unless the user explicitly requests it.
 
 ## Plans and dependency order
@@ -28,7 +28,7 @@
 2. [Developer tooling](./2026-07-21-platform-toolkit-developer-tools.md)
    - Project discovery, BPMN IR, lint, diff, explain, review AI, test generation, scan, deep doctor.
 3. [Platform operations](./2026-07-21-platform-toolkit-platform-ops.md)
-   - Environment precedence/OIDC, trustworthy inventory/plan/drift, incidents, trace, backup, Kubernetes.
+   - Environment precedence/OIDC, trustworthy inventory/plan/drift, incidents, trace, backup.
 4. [Parity and acceptance](./2026-07-21-platform-toolkit-parity-acceptance.md)
    - CLI/API/UI contracts, browser automation, docs truthfulness, isolated light/full verification.
 
@@ -61,7 +61,7 @@ Plans 2 and 3 may proceed in parallel only after Plan 1 has established the secu
   Run:
 
   ```bash
-  go test ./internal/env ./internal/config ./internal/cluster ./internal/inventory ./internal/plan ./internal/drift ./internal/incidents ./internal/trace ./internal/backup ./internal/k8s -count=1
+  go test ./internal/env ./internal/config ./internal/cluster ./internal/inventory ./internal/plan ./internal/drift ./internal/incidents ./internal/trace ./internal/backup -count=1
   ```
 
   Expected: PASS; remote failures never produce noop or in-sync.
@@ -73,10 +73,11 @@ Plans 2 and 3 may proceed in parallel only after Plan 1 has established the secu
   ```bash
   make check
   make ui-check
+  cd internal/ui/web && npm run check
   git diff --check
   ```
 
-  Expected: PASS with current embedded UI assets and no whitespace errors.
+  Expected: PASS with current embedded UI assets, frontend typecheck/lint/Playwright mock, and no whitespace errors.
 
 - [ ] **Gate 5: Live acceptance**
 
@@ -85,10 +86,9 @@ Plans 2 and 3 may proceed in parallel only after Plan 1 has established the secu
   ```bash
   make acceptance-light
   make acceptance-full
-  make acceptance-k8s
   ```
 
-  Expected: light/full summaries pass; Kubernetes either passes against an explicitly disposable context or records deterministic fake-runner evidence. Cleanup proof shows no unrelated resource changed.
+  Expected: light/full summaries pass. Cleanup proof shows no unrelated resource changed.
 
 ## Merge condition
 

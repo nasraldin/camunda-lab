@@ -17,6 +17,15 @@ func allowPath(path string) (string, error) {
 	return allowPathWithin(path, allowedRoots())
 }
 
+// optionalAuthorizedDir returns "" when raw is blank; otherwise an authorized absolute path.
+func optionalAuthorizedDir(raw string) (string, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return "", nil
+	}
+	return allowPath(raw)
+}
+
 func allowPathWithin(path string, roots []string) (string, error) {
 	path = strings.TrimSpace(path)
 	if path == "" {
@@ -49,7 +58,7 @@ func allowPathWithin(path string, roots []string) (string, error) {
 			return canonicalPath, nil
 		}
 	}
-	return "", fmt.Errorf("path %q is outside allowed roots (home, /tmp, lab home)", canonicalPath)
+	return "", errPathForbidden(canonicalPath)
 }
 
 func canonicalizeForAuthorization(path string) (string, error) {

@@ -90,7 +90,7 @@ deploy with official Camunda tooling.`,
 		},
 	}
 	cmd.Flags().StringVar(&name, "name", "", "Project name (default: directory basename)")
-	cmd.Flags().StringVar(&version, "version", "", "Camunda version hint (default: active lab or 8.9)")
+	cmd.Flags().StringVar(&version, "version", "", "Camunda version hint (default: active lab or configured default)")
 	cmd.Flags().StringVar(&profile, "profile", "", "Lab profile hint (light|full|modeler)")
 	cmd.Flags().StringVar(&resources, "resources", "", "Lab resources hint (small|balanced|power)")
 	cmd.Flags().BoolVarP(&yes, "yes", "y", false, "Non-interactive")
@@ -100,11 +100,11 @@ deploy with official Camunda tooling.`,
 
 func defaultInitVersion() string {
 	if _, err := os.Stat(paths.ConfigFile()); err != nil {
-		return "8.9"
+		return config.Defaults().Version
 	}
 	cfg, err := config.Load()
 	if err != nil || cfg.Version == "" {
-		return "8.9"
+		return config.Defaults().Version
 	}
 	return cfg.Version
 }

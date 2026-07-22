@@ -20,20 +20,20 @@ func (l *Lab) EnableAI(ctx context.Context, s ai.Secrets) error {
 	if err := ai.WriteSecrets(s); err != nil {
 		return err
 	}
-	cfg.AI.Enabled = true
-	if err := config.Save(cfg); err != nil {
+	if err := config.Update(func(current *config.Config) error {
+		current.AI.Enabled = true
+		return nil
+	}); err != nil {
 		return err
 	}
 	return l.RecreateConnectors(ctx)
 }
 
 func (l *Lab) DisableAI(ctx context.Context, wipeSecrets bool) error {
-	cfg, err := config.Load()
-	if err != nil {
-		return err
-	}
-	cfg.AI.Enabled = false
-	if err := config.Save(cfg); err != nil {
+	if err := config.Update(func(current *config.Config) error {
+		current.AI.Enabled = false
+		return nil
+	}); err != nil {
 		return err
 	}
 	if wipeSecrets {

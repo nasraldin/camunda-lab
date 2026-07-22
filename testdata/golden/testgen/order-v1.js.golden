@@ -1,0 +1,22 @@
+'use strict';
+
+const { test, expect } = require('@playwright/test');
+
+const PROCESS_ID = 'orderProcess';
+
+test.describe('BPMN process orderProcess', () => {
+  test.skip('completes the happy path', async ({ request }) => {
+    // TODO: provide an authenticated test fixture, deploy the BPMN, and start PROCESS_ID.
+    // Limitation: generated tests never connect to or execute against a live cluster.
+    expect(PROCESS_ID).toBeTruthy();
+    void request;
+  });
+
+  test.skip('handles job type reserve-stock', async () => {
+    // TODO: complete the activated job and assert process variables and the next BPMN state.
+  });
+
+  test.skip('handles job type validate-customer', async () => {
+    // TODO: complete the activated job and assert process variables and the next BPMN state.
+  });
+});

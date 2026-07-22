@@ -3,27 +3,24 @@ package cluster
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
-	"path/filepath"
-	"strconv"
+	"net/url"
+	pathpkg "path"
 	"strings"
 	"time"
 
 	"github.com/nasraldin/camunda-lab/internal/config"
-	"github.com/nasraldin/camunda-lab/internal/env"
-	"github.com/nasraldin/camunda-lab/internal/plan"
-	"github.com/nasraldin/camunda-lab/internal/urls"
 )
 
 // Client talks to Camunda Orchestration Cluster REST API (/v2).
 type Client struct {
 	BaseURL    string // e.g. http://localhost:8080/v2
 	HTTPClient *http.Client
+	Kind       ClientKind
 	Token      string // optional Bearer
 	BasicUser  string
 	BasicPass  string
@@ -33,44 +30,68 @@ type Client struct {
 type ProcessDefinition struct {
 	Key                 string
 	ProcessDefinitionID string
-	Name                string
+	Name                *string
 	Version             int
+	VersionTag          *string
 	ResourceName        string
 	TenantID            string
+	HasStartForm        *bool
+	StartFormKey        *string
 }
 
 // Incident is a cluster incident.
 type Incident struct {
-	Key                 string
-	ProcessInstanceKey  string
-	ElementID           string
-	ErrorType           string
-	ErrorMessage        string
-	State               string
-	CreationTime        string
-	JobKey              string
-	ProcessDefinitionID string
+	Key                    string
+	ProcessInstanceKey     string
+	ElementID              string
+	ErrorType              string
+	ErrorMessage           string
+	State                  string
+	CreationTime           string
+	JobKey                 string
+	ProcessDefinitionID    string
+	ProcessDefinitionKey   string
+	RootProcessInstanceKey string
+	ElementInstanceKey     string
+	TenantID               string
 }
 
 // ElementInstance is a flow-node runtime record.
 type ElementInstance struct {
-	Key                string
-	ProcessInstanceKey string
-	ElementID          string
-	ElementName        string
-	Type               string
-	State              string
-	StartDate          string
-	EndDate            string
-	IncidentKey        string
+	Key                    string
+	ProcessInstanceKey     string
+	ElementID              string
+	ElementName            string
+	Type                   string
+	State                  string
+	StartDate              string
+	EndDate                string
+	IncidentKey            string
+	ProcessDefinitionID    string
+	ProcessDefinitionKey   string
+	RootProcessInstanceKey string
+	HasIncident            bool
+	TenantID               string
 }
 
 // ProcessInstance summary.
 type ProcessInstance struct {
-	Key                 string
-	ProcessDefinitionID string
-	State               string
-	HasIncident         bool
+	Key                         string
+	ProcessDefinitionID         string
+	ProcessDefinitionName       *string
+	ProcessDefinitionVersion    int
+	ProcessDefinitionVersionTag *string
+	ProcessDefinitionKey        string
+	StartDate                   string
+	EndDate                     string
+	State                       string
+	HasIncident                 bool
+	TenantID                    string
+	ParentProcessInstanceKey    string
+	ParentElementInstanceKey    string
+	RootProcessInstanceKey      string
+	Tags                        []string
+	BusinessID                  string
 }
 
 type searchPage struct {
@@ -82,66 +103,51 @@ type searchBody struct {
 	Page   searchPage     `json:"page"`
 }
 
-// ResolveBaseURL picks Orchestration /v2 URL for the active env (lab or remote).
+// NormalizeBaseURL validates an orchestration endpoint and returns its
+// canonical REST API base ending in /v2. Path prefixes (for gateways/reverse
+// proxies) are preserved.
+func NormalizeBaseURL(raw string) (string, error) {
+	parsed, err := url.Parse(strings.TrimSpace(raw))
+	if err != nil {
+		return "", fmt.Errorf("parse orchestration endpoint: %w", err)
+	}
+	if (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" {
+		return "", fmt.Errorf("orchestration endpoint must be an absolute HTTP(S) URL")
+	}
+	if parsed.User != nil || parsed.RawQuery != "" || parsed.Fragment != "" {
+		return "", fmt.Errorf("orchestration endpoint must not contain userinfo, query, or fragment")
+	}
+	basePath := pathpkg.Clean("/" + strings.Trim(parsed.Path, "/"))
+	if basePath == "/" {
+		basePath = ""
+	}
+	if basePath != "/v2" && !strings.HasSuffix(basePath, "/v2") {
+		basePath += "/v2"
+	}
+	parsed.Path = basePath
+	parsed.RawPath = ""
+	return strings.TrimRight(parsed.String(), "/"), nil
+}
+
+// ResolveBaseURL is a compatibility adapter for global/implicit selection.
+// New production code must use Factory.Client with its project root.
 func ResolveBaseURL(labHome string, cfg config.Config) (string, error) {
-	active, err := env.GetActive(labHome)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	client, _, err := NewFactory(labHome, cfg).Client(ctx, "", "")
 	if err != nil {
 		return "", err
 	}
-	if active != "" && active != "lab" {
-		p, err := env.LoadNamedProfile(filepath.Join(labHome, "envs"), active)
-		if err != nil {
-			return "", fmt.Errorf("active env %q not found (camunda env use lab): %w", active, err)
-		}
-		u := strings.TrimRight(p.Endpoints["orchestration"], "/")
-		if u == "" {
-			return "", fmt.Errorf("profile %q missing endpoints.orchestration", active)
-		}
-		if !strings.HasSuffix(u, "/v2") {
-			u += "/v2"
-		}
-		return u, nil
-	}
-	for _, e := range urls.List(cfg) {
-		if e.Name == "rest" && strings.HasPrefix(e.URL, "http") {
-			return strings.TrimRight(e.URL, "/"), nil
-		}
-	}
-	port := 8080
-	if cfg.Version == "8.8" {
-		port = 8088
-	}
-	if cfg.Version == "8.7" || cfg.Version == "8.6" || cfg.Version == "8.5" {
-		return fmt.Sprintf("http://%s:8088", defaultHost(cfg)), nil
-	}
-	return fmt.Sprintf("http://%s:%d/v2", defaultHost(cfg), port), nil
+	return client.BaseURL, nil
 }
 
-func defaultHost(cfg config.Config) string {
-	if cfg.Host != "" {
-		return cfg.Host
-	}
-	return "localhost"
-}
-
-// NewFromLab builds a client for the active environment (with lab OIDC when needed).
+// NewFromLab is a compatibility adapter for global/implicit selection. New
+// production code must use Factory.Client to supply project context.
 func NewFromLab(labHome string, cfg config.Config) (*Client, error) {
-	base, err := ResolveBaseURL(labHome, cfg)
-	if err != nil {
-		return nil, err
-	}
-	c := &Client{
-		BaseURL: base,
-		HTTPClient: &http.Client{
-			Timeout: 15 * time.Second,
-		},
-	}
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
-	if err := AttachLabAuth(ctx, c, labHome, cfg); err != nil {
-		return nil, err
-	}
-	return c, nil
+	client, _, err := NewFactory(labHome, cfg).Client(ctx, "", "")
+	return client, err
 }
 
 func (c *Client) client() *http.Client {
@@ -202,95 +208,29 @@ func (c *Client) SearchProcessDefinitions(ctx context.Context, limit int) ([]Pro
 	if limit <= 0 {
 		limit = 100
 	}
-	var raw struct {
-		Items []struct {
-			ProcessDefinitionKey string `json:"processDefinitionKey"`
-			ProcessDefinitionID  string `json:"processDefinitionId"`
-			Name                 string `json:"name"`
-			Version              int    `json:"version"`
-			ResourceName         string `json:"resourceName"`
-			TenantID             string `json:"tenantId"`
-		} `json:"items"`
+	if limit > maxInventoryPageSize {
+		limit = maxInventoryPageSize
 	}
-	if err := c.doJSON(ctx, http.MethodPost, "/process-definitions/search", searchBody{Page: searchPage{Limit: limit}}, &raw); err != nil {
+	page, err := c.searchProcessDefinitionPage(ctx, InventoryLimits{
+		PageSize: limit, MaxPages: 1, MaxItems: limit, MaxBodyBytes: defaultInventoryBodySize,
+	}, "")
+	if err != nil {
 		return nil, err
 	}
-	out := make([]ProcessDefinition, 0, len(raw.Items))
-	for _, it := range raw.Items {
-		out = append(out, ProcessDefinition{
-			Key:                 it.ProcessDefinitionKey,
-			ProcessDefinitionID: it.ProcessDefinitionID,
-			Name:                it.Name,
-			Version:             it.Version,
-			ResourceName:        it.ResourceName,
-			TenantID:            it.TenantID,
-		})
+	if len(page.Items) > limit {
+		page.Items = page.Items[:limit]
 	}
-	return out, nil
+	return page.Items, nil
 }
 
 // GetProcessDefinitionXML fetches deployed BPMN XML.
 func (c *Client) GetProcessDefinitionXML(ctx context.Context, processDefinitionKey string) (string, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, strings.TrimRight(c.BaseURL, "/")+"/process-definitions/"+processDefinitionKey+"/xml", nil)
+	path := "/process-definitions/" + url.PathEscape(processDefinitionKey) + "/xml"
+	data, err := c.doInventoryRequest(ctx, http.MethodGet, path, nil, defaultInventoryBodySize)
 	if err != nil {
 		return "", err
 	}
-	c.applyAuth(req)
-	resp, err := c.client().Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-	if resp.StatusCode >= 300 {
-		return "", fmt.Errorf("get xml: HTTP %d: %s", resp.StatusCode, truncate(string(data), 200))
-	}
-	// API may return raw XML or JSON wrapper {"xml":"..."}
-	var wrap struct {
-		XML string `json:"xml"`
-	}
-	if json.Unmarshal(data, &wrap) == nil && wrap.XML != "" {
-		return wrap.XML, nil
-	}
-	return string(data), nil
-}
-
-// RemoteInventory builds plan.Resource list from cluster (digest = hash of deployed XML).
-func (c *Client) RemoteInventory(ctx context.Context) ([]plan.Resource, error) {
-	defs, err := c.SearchProcessDefinitions(ctx, 200)
-	if err != nil {
-		return nil, err
-	}
-	latest := map[string]ProcessDefinition{}
-	for _, d := range defs {
-		prev, ok := latest[d.ProcessDefinitionID]
-		if !ok || d.Version > prev.Version {
-			latest[d.ProcessDefinitionID] = d
-		}
-	}
-	var out []plan.Resource
-	for id, d := range latest {
-		xmlBody, err := c.GetProcessDefinitionXML(ctx, d.Key)
-		digest := ""
-		if err == nil {
-			sum := sha256.Sum256([]byte(xmlBody))
-			digest = hex.EncodeToString(sum[:8])
-		}
-		key := d.ResourceName
-		if key == "" {
-			key = id + ".bpmn"
-		}
-		out = append(out, plan.Resource{
-			Key:     key,
-			Digest:  digest,
-			Version: strconv.Itoa(d.Version),
-			Path:    d.Key,
-		})
-	}
-	return out, nil
+	return parseProcessXMLResponse(data)
 }
 
 // SearchIncidents lists open incidents.
@@ -298,59 +238,30 @@ func (c *Client) SearchIncidents(ctx context.Context, limit int) ([]Incident, er
 	if limit <= 0 {
 		limit = 50
 	}
-	var raw struct {
-		Items []struct {
-			IncidentKey         string `json:"incidentKey"`
-			ProcessInstanceKey  string `json:"processInstanceKey"`
-			ElementID           string `json:"elementId"`
-			ErrorType           string `json:"errorType"`
-			ErrorMessage        string `json:"errorMessage"`
-			State               string `json:"state"`
-			CreationTime        string `json:"creationTime"`
-			JobKey              string `json:"jobKey"`
-			ProcessDefinitionID string `json:"processDefinitionId"`
-		} `json:"items"`
+	if limit > maxInventoryPageSize {
+		limit = maxInventoryPageSize
 	}
-	body := searchBody{
-		Filter: map[string]any{"state": "ACTIVE"},
-		Page:   searchPage{Limit: limit},
-	}
-	if err := c.doJSON(ctx, http.MethodPost, "/incidents/search", body, &raw); err != nil {
-		// Retry without filter for older clusters
-		if err2 := c.doJSON(ctx, http.MethodPost, "/incidents/search", searchBody{Page: searchPage{Limit: limit}}, &raw); err2 != nil {
-			return nil, err
-		}
-	}
-	out := make([]Incident, 0, len(raw.Items))
-	for _, it := range raw.Items {
-		out = append(out, Incident{
-			Key:                 it.IncidentKey,
-			ProcessInstanceKey:  it.ProcessInstanceKey,
-			ElementID:           it.ElementID,
-			ErrorType:           it.ErrorType,
-			ErrorMessage:        it.ErrorMessage,
-			State:               it.State,
-			CreationTime:        it.CreationTime,
-			JobKey:              it.JobKey,
-			ProcessDefinitionID: it.ProcessDefinitionID,
-		})
-	}
-	return out, nil
+	result, err := c.SearchIncidentsInventory(ctx, map[string]any{"state": "ACTIVE"}, InventoryLimits{
+		PageSize: limit, MaxPages: 1, MaxItems: limit, MaxBodyBytes: defaultInventoryBodySize,
+	})
+	return result.Items, err
 }
 
 // ResolveIncident marks an incident resolved.
 func (c *Client) ResolveIncident(ctx context.Context, incidentKey string) error {
-	return c.doJSON(ctx, http.MethodPost, "/incidents/"+incidentKey+"/resolution", map[string]any{}, nil)
+	body, err := json.Marshal(map[string]any{})
+	if err != nil {
+		return err
+	}
+	_, err = c.doInventoryRequest(
+		ctx, http.MethodPost, "/incidents/"+url.PathEscape(incidentKey)+"/resolution",
+		body, defaultInventoryBodySize,
+	)
+	return err
 }
 
 // GetProcessInstance fetches instance state.
 func (c *Client) GetProcessInstance(ctx context.Context, key string) (ProcessInstance, error) {
-	var raw struct {
-		ProcessInstanceKey  string `json:"processInstanceKey"`
-		ProcessDefinitionID string `json:"processDefinitionId"`
-		State               string `json:"state"`
-		HasIncident         bool   `json:"hasIncident"`
-	}
 	var last error
 	for attempt := 0; attempt < 5; attempt++ {
 		if attempt > 0 {
@@ -360,17 +271,20 @@ func (c *Client) GetProcessInstance(ctx context.Context, key string) (ProcessIns
 			case <-time.After(300 * time.Millisecond):
 			}
 		}
-		last = c.doJSON(ctx, http.MethodGet, "/process-instances/"+key, nil, &raw)
-		if last == nil {
-			return ProcessInstance{
-				Key:                 raw.ProcessInstanceKey,
-				ProcessDefinitionID: raw.ProcessDefinitionID,
-				State:               raw.State,
-				HasIncident:         raw.HasIncident,
-			}, nil
+		data, err := c.doInventoryRequest(
+			ctx, http.MethodGet, "/process-instances/"+url.PathEscape(key), nil, defaultInventoryBodySize,
+		)
+		if err == nil {
+			item, _, decodeErr := decodeProcessInstance(data)
+			if decodeErr != nil {
+				return ProcessInstance{}, fmt.Errorf("decode process instance response: %w", decodeErr)
+			}
+			return item, nil
 		}
+		last = err
 		// Secondary storage can lag briefly after start-instance.
-		if !strings.Contains(last.Error(), "HTTP 404") {
+		var apiError *APIError
+		if !errors.As(last, &apiError) || apiError.StatusCode != http.StatusNotFound {
 			return ProcessInstance{}, last
 		}
 	}
@@ -382,39 +296,16 @@ func (c *Client) SearchElementInstances(ctx context.Context, processInstanceKey 
 	if limit <= 0 {
 		limit = 200
 	}
-	var raw struct {
-		Items []struct {
-			ElementInstanceKey string `json:"elementInstanceKey"`
-			ProcessInstanceKey string `json:"processInstanceKey"`
-			ElementID          string `json:"elementId"`
-			ElementName        string `json:"elementName"`
-			Type               string `json:"type"`
-			State              string `json:"state"`
-			StartDate          string `json:"startDate"`
-			EndDate            string `json:"endDate"`
-			IncidentKey        string `json:"incidentKey"`
-		} `json:"items"`
+	if limit > maxInventoryPageSize {
+		limit = maxInventoryPageSize
 	}
-	body := searchBody{
-		Filter: map[string]any{"processInstanceKey": processInstanceKey},
-		Page:   searchPage{Limit: limit},
-	}
-	if err := c.doJSON(ctx, http.MethodPost, "/element-instances/search", body, &raw); err != nil {
+	result, err := searchTypedPage(ctx, c, "/element-instances/search",
+		map[string]any{"processInstanceKey": processInstanceKey},
+		InventoryLimits{
+			PageSize: limit, MaxPages: 1, MaxItems: limit, MaxBodyBytes: defaultInventoryBodySize,
+		}, "element-instances", decodeElementInstance)
+	if err != nil {
 		return nil, err
 	}
-	out := make([]ElementInstance, 0, len(raw.Items))
-	for _, it := range raw.Items {
-		out = append(out, ElementInstance{
-			Key:                it.ElementInstanceKey,
-			ProcessInstanceKey: it.ProcessInstanceKey,
-			ElementID:          it.ElementID,
-			ElementName:        it.ElementName,
-			Type:               it.Type,
-			State:              it.State,
-			StartDate:          it.StartDate,
-			EndDate:            it.EndDate,
-			IncidentKey:        it.IncidentKey,
-		})
-	}
-	return out, nil
+	return result, nil
 }

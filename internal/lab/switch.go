@@ -23,12 +23,15 @@ func (l *Lab) Switch(ctx context.Context, minor string, wipe bool) error {
 	}
 	display.Step(os.Stdout, "Switching lab to Camunda %s...", minor)
 	_ = l.Down(ctx, wipe)
-	cfg.Version = minor
-	if cfg.AI.Enabled && versions.SupportsAIFeature(cfg.Version, cfg.Profile) != nil {
-		display.Note(os.Stderr, "disabling AI/MCP — not supported on %s/%s", cfg.Version, cfg.Profile)
-		cfg.AI.Enabled = false
-	}
-	if err := config.Save(cfg); err != nil {
+	if err := config.Update(func(current *config.Config) error {
+		current.Version = minor
+		if current.AI.Enabled && versions.SupportsAIFeature(current.Version, current.Profile) != nil {
+			display.Note(os.Stderr, "disabling AI/MCP — not supported on %s/%s", current.Version, current.Profile)
+			current.AI.Enabled = false
+		}
+		cfg = *current
+		return nil
+	}); err != nil {
 		return err
 	}
 	if _, err := versions.Ensure(minor, versions.DownloadOptions{SkipIfPresent: true}); err != nil {
@@ -41,18 +44,16 @@ func (l *Lab) SetProfile(ctx context.Context, profile string) error {
 	if err := versions.ValidateProfile(profile); err != nil {
 		return err
 	}
-	cfg, err := config.Load()
-	if err != nil {
-		return err
-	}
 	display.Step(os.Stdout, "Switching profile to %s...", profile)
 	_ = l.Down(ctx, false)
-	cfg.Profile = profile
-	if cfg.AI.Enabled && versions.SupportsAIFeature(cfg.Version, cfg.Profile) != nil {
-		display.Note(os.Stderr, "disabling AI/MCP — not supported on %s/%s", cfg.Version, cfg.Profile)
-		cfg.AI.Enabled = false
-	}
-	if err := config.Save(cfg); err != nil {
+	if err := config.Update(func(current *config.Config) error {
+		current.Profile = profile
+		if current.AI.Enabled && versions.SupportsAIFeature(current.Version, current.Profile) != nil {
+			display.Note(os.Stderr, "disabling AI/MCP — not supported on %s/%s", current.Version, current.Profile)
+			current.AI.Enabled = false
+		}
+		return nil
+	}); err != nil {
 		return err
 	}
 	return l.Up(ctx)
@@ -62,12 +63,10 @@ func (l *Lab) SetResources(ctx context.Context, resources string) error {
 	if err := overlay.ValidateResources(resources); err != nil {
 		return err
 	}
-	cfg, err := config.Load()
-	if err != nil {
-		return err
-	}
-	cfg.Resources = resources
-	if err := config.Save(cfg); err != nil {
+	if err := config.Update(func(current *config.Config) error {
+		current.Resources = resources
+		return nil
+	}); err != nil {
 		return err
 	}
 	if _, err := overlay.SyncResourcesEnv(resources); err != nil {

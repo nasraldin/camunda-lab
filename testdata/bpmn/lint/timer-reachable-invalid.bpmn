@@ -1,0 +1,1 @@
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"><process id="timer-invalid"><startEvent id="start"/><endEvent id="end"/><intermediateCatchEvent id="timer"><timerEventDefinition><timeDuration>PT1M</timeDuration></timerEventDefinition></intermediateCatchEvent><sequenceFlow id="flow" sourceRef="start" targetRef="end"/></process></definitions>

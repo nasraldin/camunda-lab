@@ -29,6 +29,10 @@ func (f runningCheckerFunc) Running(ctx context.Context) (bool, error) {
 	return f(ctx)
 }
 
+func stoppedLabChecker() RunningChecker {
+	return runningCheckerFunc(func(context.Context) (bool, error) { return false, nil })
+}
+
 func TestRestoreRejectsUnsafeArchivesWithoutMutation(t *testing.T) {
 	tooLarge := int64(5)
 	negative := int64(-1)
@@ -71,6 +75,7 @@ func TestRestoreRejectsUnsafeArchivesWithoutMutation(t *testing.T) {
 				LabHome:     labHome,
 				ProjectDir:  projectDir,
 				Limits:      tc.limits,
+				Lab:         stoppedLabChecker(),
 			})
 			if err == nil {
 				t.Fatal("Restore() error = nil, want rejection")
@@ -92,6 +97,7 @@ func TestRestoreRejectsUnsupportedArchiveTypeWithoutMutation(t *testing.T) {
 		ArchivePath: archive,
 		LabHome:     labHome,
 		ProjectDir:  projectDir,
+		Lab:         stoppedLabChecker(),
 	}); err == nil {
 		t.Fatal("Restore() accepted an unsupported archive type")
 	}
@@ -112,6 +118,7 @@ func TestRestoreRejectsDestinationConflictWithoutMutation(t *testing.T) {
 		ArchivePath: archive,
 		LabHome:     labHome,
 		ProjectDir:  projectDir,
+		Lab:         stoppedLabChecker(),
 	}); err == nil {
 		t.Fatal("Restore() accepted an incompatible destination")
 	}
@@ -148,6 +155,7 @@ func TestRestoreValidatesManifestBeforeMutation(t *testing.T) {
 				ArchivePath: archive,
 				LabHome:     labHome,
 				ProjectDir:  projectDir,
+				Lab:         stoppedLabChecker(),
 			}); err == nil {
 				t.Fatal("Restore() error = nil, want manifest rejection")
 			}
@@ -174,6 +182,29 @@ func TestRestoreRequiresStoppedLabUnlessForced(t *testing.T) {
 		ArchivePath: archive, LabHome: labHome, ProjectDir: projectDir, Lab: checker, Force: true,
 	}); err != nil {
 		t.Fatalf("forced Restore() error = %v", err)
+	}
+	if got := readFile(t, filepath.Join(labHome, "config.yaml")); got != "new-config" {
+		t.Fatalf("config.yaml = %q, want new-config", got)
+	}
+}
+
+func TestRestoreRefusesNilLabUnlessForced(t *testing.T) {
+	labHome, projectDir := seededRestoreDestinations(t)
+	entries := []archiveEntry{{name: "config.yaml", body: []byte("new-config")}}
+	archive := writeTestArchive(t, entries, manifestForEntries(entries))
+
+	_, err := Restore(context.Background(), RestoreOptions{
+		ArchivePath: archive, LabHome: labHome, ProjectDir: projectDir,
+	})
+	if err == nil || !strings.Contains(err.Error(), "could not determine whether the lab is running") {
+		t.Fatalf("Restore() error = %v, want missing running checker refusal", err)
+	}
+	assertRestoreDestinationsUnchanged(t, labHome, projectDir)
+
+	if _, err := Restore(context.Background(), RestoreOptions{
+		ArchivePath: archive, LabHome: labHome, ProjectDir: projectDir, Force: true,
+	}); err != nil {
+		t.Fatalf("forced Restore() without Lab error = %v", err)
 	}
 	if got := readFile(t, filepath.Join(labHome, "config.yaml")); got != "new-config" {
 		t.Fatalf("config.yaml = %q, want new-config", got)
@@ -224,6 +255,7 @@ func TestRestoreValidArchive(t *testing.T) {
 		ArchivePath: archive,
 		LabHome:     labHome,
 		ProjectDir:  projectDir,
+		Lab:         stoppedLabChecker(),
 	})
 	if err != nil {
 		t.Fatalf("Restore() error = %v", err)

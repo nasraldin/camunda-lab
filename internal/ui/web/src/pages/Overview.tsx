@@ -13,10 +13,8 @@ import {
   type UpdateInfo,
 } from '../api'
 import { LabErrorBanner } from '../components/LabErrorBanner'
-import {
-  ConfirmActionModal,
-  type ConfirmAction,
-} from '../components/ConfirmActionModal'
+import { ConfirmDialog, type ConfirmAction } from '../components/ConfirmDialog'
+import { ActionResult } from '../components/ActionResult'
 import { PROJECT } from '../project'
 
 function pathTail(p?: string): string {
@@ -390,8 +388,16 @@ export function OverviewPage() {
                 {busy === 'smoke' ? 'Testing…' : 'Test apps'}
               </button>
             </div>
-            {doctor && <pre className="code">{doctor}</pre>}
-            {smoke && <pre className="code">{smoke}</pre>}
+            {(doctor || smoke) && (
+              <ActionResult
+                result={{
+                  ok: true,
+                  output: doctor || smoke,
+                  cli: doctor ? 'camunda doctor' : 'camunda smoke',
+                }}
+                downloadFilename={doctor ? 'camunda-lab-doctor.txt' : 'camunda-lab-smoke.txt'}
+              />
+            )}
           </section>
 
           <div className="link-bar">
@@ -424,7 +430,7 @@ export function OverviewPage() {
             </a>
           </div>
           {confirmAction && (
-            <ConfirmActionModal action={confirmAction} onClose={() => setConfirmAction(null)} />
+            <ConfirmDialog action={confirmAction} onClose={() => setConfirmAction(null)} />
           )}
         </>
       )}

@@ -1,0 +1,20 @@
+{
+  "items": [
+    {
+      "name": "Orders",
+      "resourceName": "orders.bpmn",
+      "version": 8,
+      "versionTag": "release-2026-07",
+      "processDefinitionId": "orders",
+      "tenantId": "tenant-a",
+      "processDefinitionKey": "9007199254740995",
+      "hasStartForm": true
+    }
+  ],
+  "page": {
+    "totalItems": 1,
+    "hasMoreTotalItems": false,
+    "startCursor": null,
+    "endCursor": null
+  }
+}

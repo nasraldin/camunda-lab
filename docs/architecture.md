@@ -43,23 +43,23 @@ We extract the zip and leave Camunda’s OIDC / Keycloak wiring alone. If Camund
 
 Everything runs under project name **`camunda-lab`**, so it doesn’t collide with a random `docker compose up` from a hand-extracted zip.
 
-## Planned packages (toolkit roadmap)
+## Toolkit packages (main branch)
 
-Implemented on main for the toolkit MVP. Deeper cluster API wiring continues incrementally.
+Implemented on main with automated Go and Playwright **mock** evidence. Live disposable-cluster acceptance ([Gate 5](acceptance/platform-toolkit-parity.md)) remains open for OIDC, incidents, and trace.
 
 ```text
 internal/project/     # .camunda.yaml + camunda init scaffold  ✓
 internal/bpmn/        # BPMN XML → normalized IR                 ✓
 internal/diff/ lint/ review/ explain/ testgen/ scan/           ✓
 internal/cluster/     # Orchestration REST /v2 client            ✓
-internal/env/ plan/ drift/ backup/ incidents/ trace/ k8s/      ✓
+internal/env/ plan/ drift/ backup/ incidents/ trace/               ✓
 ```
 
 Project-local config lives in `.camunda.yaml` at a repo root; lab state stays under `~/.camunda-lab`.
 
 ## Not in scope
 
-- Replacing Helm as the production install path (Phase 3 `camunda k8s` is thin kubectl helpers only)
+- Replacing Helm as the production install path (use Camunda’s official charts for Kubernetes)
 - Multi-instance named labs (paths are shaped so we can add that later)
 - Rewriting Camunda’s service graph
 - Cloning official deploy / start-instance UX

@@ -1,9 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
-import { ApiError, getEnv, getK8sStatus, postForm, toolkitJSON, type ToolkitResult } from '../api'
+import { ApiError, getOverview } from '../api'
 import {
-  ConfirmActionModal,
-  type ConfirmAction,
-} from '../components/ConfirmActionModal'
+  addEnv,
+  downloadBackupArchive,
+  getEnv,
+  initProject,
+  removeEnv,
+  restoreBackup,
+  useEnv as activateEnv,
+} from '../api/toolkit'
+import type { ToolkitEnvelope } from '../api/types'
+import { ActionResult } from '../components/ActionResult'
+import { ConfirmDialog, type ConfirmAction } from '../components/ConfirmDialog'
+import { DownloadButton } from '../components/DownloadButton'
 import { getProjectDir, setProjectDir } from '../projectDir'
 
 export function ProjectPage() {
@@ -11,34 +20,41 @@ export function ProjectPage() {
   const [name, setName] = useState('cam-demo')
   const [profile, setProfile] = useState('full')
   const [resources, setResources] = useState('balanced')
+  const [version, setVersion] = useState('')
+  const [supportedVersions, setSupportedVersions] = useState<string[]>([])
   const [force, setForce] = useState(false)
   const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
-  const [output, setOutput] = useState('')
-  const [cli, setCli] = useState('')
+  const [errorCode, setErrorCode] = useState<string | null>(null)
+  const [result, setResult] = useState<ToolkitEnvelope | null>(null)
   const [active, setActive] = useState('lab')
   const [profiles, setProfiles] = useState<Array<{ name: string; kind: string }>>([])
   const [envName, setEnvName] = useState('')
   const [orch, setOrch] = useState('')
-  const [k8sComponent, setK8sComponent] = useState('orchestration')
-  const [replicas, setReplicas] = useState(1)
+  const [restoreForce, setRestoreForce] = useState(false)
   const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null)
   const restoreInputRef = useRef<HTMLInputElement>(null)
 
-  async function run(label: string, fn: () => Promise<ToolkitResult>) {
+  async function run(label: string, fn: () => Promise<ToolkitEnvelope>) {
     setBusy(label)
     setError('')
-    setOutput('')
+    setErrorCode(null)
+    setResult(null)
     try {
       const r = await fn()
-      setOutput(
-        r.output || r.hint || (r.path ? `Wrote ${r.path}` : r.ok ? 'OK' : r.error || 'Done'),
-      )
-      setCli(r.cli || '')
-      if (!r.ok && (r.error || r.hint)) setError(r.error || r.hint || '')
+      setResult(r)
+      if (!r.ok && (r.error || r.hint)) {
+        setError(r.error || r.hint || '')
+        setErrorCode(r.code ?? null)
+      }
       return r
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : String(e))
+      if (e instanceof ApiError) {
+        setError(e.message)
+        setErrorCode(e.code || null)
+      } else {
+        setError(e instanceof Error ? e.message : String(e))
+      }
       return null
     } finally {
       setBusy('')
@@ -46,13 +62,27 @@ export function ProjectPage() {
   }
 
   async function refreshEnv() {
-    const r = await run('env', () => getEnv())
+    const dir = projectPath.trim()
+    const r = await run('env', () => getEnv(dir ? { dir } : undefined))
     if (r?.active) setActive(r.active)
     if (r?.profiles) setProfiles(r.profiles.map((p) => ({ name: p.name, kind: p.kind })))
   }
 
   useEffect(() => {
     void refreshEnv()
+    void getOverview()
+      .then((overview) => {
+        setSupportedVersions(overview.supportedVersions)
+        setVersion(
+          overview.config.version ||
+            overview.defaultVersion ||
+            overview.supportedVersions[0] ||
+            '',
+        )
+      })
+      .catch((e) =>
+        setError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : String(e)),
+      )
   }, [])
 
   return (
@@ -60,7 +90,7 @@ export function ProjectPage() {
       <div className="page-head">
         <h1>Project</h1>
         <p className="lead">
-          Init scaffold, env profiles, backup/restore, and optional Kubernetes helpers.
+          Init scaffold, env profiles, and backup/restore for local Docker Compose labs.
         </p>
       </div>
 
@@ -78,6 +108,16 @@ export function ProjectPage() {
         <label className="field">
           <span>Name</span>
           <input value={name} onChange={(e) => setName(e.target.value)} />
+        </label>
+        <label className="field">
+          <span>Camunda version hint</span>
+          <select value={version} onChange={(e) => setVersion(e.target.value)}>
+            {supportedVersions.map((supported) => (
+              <option key={supported} value={supported}>
+                {supported}
+              </option>
+            ))}
+          </select>
         </label>
         <label className="field">
           <span>Profile hint</span>
@@ -108,13 +148,13 @@ export function ProjectPage() {
             onClick={() => {
               setProjectDir(projectPath.trim())
               void run('init', () =>
-                toolkitJSON('/api/v1/project/init', {
+                initProject({
                   dir: projectPath.trim(),
                   name,
                   profile,
                   resources,
                   force,
-                  version: '8.9',
+                  version,
                 }),
               )
             }}
@@ -130,6 +170,7 @@ export function ProjectPage() {
         </header>
         <p className="hint">
           Active: <code>{active}</code> · CLI: <code>camunda env list</code>
+          {projectPath.trim() ? ' · uses scaffolded project path when set' : ''}
         </p>
         <div className="url-list">
           {profiles.map((p) => (
@@ -142,11 +183,15 @@ export function ProjectPage() {
                 type="button"
                 className="btn-sm"
                 disabled={!!busy || p.name === active}
-                onClick={() =>
-                  void run('use', () => toolkitJSON('/api/v1/env/use', { name: p.name })).then(() =>
-                    refreshEnv(),
-                  )
-                }
+                onClick={() => {
+                  const dir = projectPath.trim()
+                  void run('use', () =>
+                    activateEnv({
+                      name: p.name,
+                      ...(dir ? { dir } : {}),
+                    }),
+                  ).then(() => refreshEnv())
+                }}
               >
                 Use
               </button>
@@ -161,13 +206,8 @@ export function ProjectPage() {
                       message: `Remove the ${p.name} environment profile? This does not delete the remote environment.`,
                       confirmLabel: 'Remove environment',
                       run: async () => {
-                        await run('rm', () =>
-                          toolkitJSON(
-                            `/api/v1/env/${encodeURIComponent(p.name)}`,
-                            undefined,
-                            'DELETE',
-                          ),
-                        )
+                        const dir = projectPath.trim()
+                        await run('rm', () => removeEnv(p.name, dir || undefined))
                         await refreshEnv()
                       },
                     })
@@ -199,15 +239,17 @@ export function ProjectPage() {
           <button
             type="button"
             disabled={!!busy || !envName.trim()}
-            onClick={() =>
+            onClick={() => {
+              const dir = projectPath.trim()
               void run('add', () =>
-                toolkitJSON('/api/v1/env', {
+                addEnv({
                   name: envName.trim(),
                   kind: 'remote',
                   orchestration: orch.trim(),
+                  ...(dir ? { dir } : {}),
                 }),
               ).then(() => refreshEnv())
-            }
+            }}
           >
             Add remote profile
           </button>
@@ -222,19 +264,35 @@ export function ProjectPage() {
           CLI: <code>camunda backup -o …</code> / <code>camunda restore … --yes</code>
         </p>
         <div className="panel-actions">
-          <button
-            type="button"
-            className="primary"
+          <DownloadButton
+            label="Download backup (gzip)"
+            busyLabel="Backing up…"
             disabled={!!busy}
-            onClick={() =>
-              void run('backup', () =>
-                toolkitJSON('/api/v1/backup', { dir: projectPath.trim() || undefined }),
+            onDownload={() =>
+              downloadBackupArchive({ dir: projectPath.trim() || undefined }).then(
+                ({ blob, filename }) => ({ blob, filename }),
               )
             }
-          >
-            {busy === 'backup' ? 'Backing up…' : 'Create backup'}
-          </button>
+            onComplete={({ filename }) => {
+              setResult({
+                ok: true,
+                output: `Downloaded ${filename}`,
+                cli: 'camunda backup -o ./lab-backup.tar.gz',
+              })
+              setError('')
+            }}
+            onError={setError}
+          />
         </div>
+        <label className="pref-switch">
+          <input
+            type="checkbox"
+            checked={restoreForce}
+            onChange={(e) => setRestoreForce(e.target.checked)}
+          />
+          <span className="pref-switch-track" aria-hidden />
+          <span className="pref-switch-label">Force restore while lab is running</span>
+        </label>
         <label className="field">
           <span>Restore archive</span>
           <input
@@ -254,8 +312,9 @@ export function ProjectPage() {
                   const fd = new FormData()
                   fd.append('archive', f)
                   fd.append('yes', 'true')
+                  if (restoreForce) fd.append('force', 'true')
                   if (projectPath.trim()) fd.append('dir', projectPath.trim())
-                  await run('restore', () => postForm('/api/v1/restore', fd))
+                  await run('restore', () => restoreBackup(fd))
                 },
               })
             }}
@@ -263,95 +322,28 @@ export function ProjectPage() {
         </label>
       </section>
 
-      <section className="card panel">
-        <header className="panel-head">
-          <h2>Kubernetes</h2>
-        </header>
-        <p className="hint">
-          Optional — needs kubectl + Camunda Helm. Compose-only labs can skip this.
-        </p>
-        <div className="panel-actions">
-          <button
-            type="button"
-            disabled={!!busy}
-            onClick={() => void run('k8s', () => getK8sStatus())}
-          >
-            {busy === 'k8s' ? 'Checking…' : 'k8s status'}
-          </button>
-        </div>
-        <label className="field">
-          <span>Component</span>
-          <input value={k8sComponent} onChange={(e) => setK8sComponent(e.target.value)} />
-        </label>
-        <label className="field">
-          <span>Replicas (scale)</span>
-          <input
-            type="number"
-            min={0}
-            value={replicas}
-            onChange={(e) => setReplicas(Number(e.target.value))}
-          />
-        </label>
-        <div className="panel-actions">
-          <button
-            type="button"
-            disabled={!!busy}
-            onClick={() =>
-              setConfirmAction({
-                title: 'Restart Kubernetes component',
-                message: `Restart ${k8sComponent}. Work handled by this component may be interrupted.`,
-                confirmLabel: 'Restart component',
-                run: async () => {
-                  await run('k8s-restart', () =>
-                    toolkitJSON('/api/v1/k8s/restart', {
-                      component: k8sComponent,
-                      confirm: true,
-                    }),
-                  )
-                },
-              })
-            }
-          >
-            Restart
-          </button>
-          <button
-            type="button"
-            disabled={!!busy}
-            onClick={() =>
-              setConfirmAction({
-                title: 'Scale Kubernetes component',
-                message: `Scale ${k8sComponent} to ${replicas} replica${replicas === 1 ? '' : 's'}.`,
-                confirmLabel: 'Scale component',
-                run: async () => {
-                  await run('k8s-scale', () =>
-                    toolkitJSON('/api/v1/k8s/scale', {
-                      component: k8sComponent,
-                      replicas,
-                      confirm: true,
-                    }),
-                  )
-                },
-              })
-            }
-          >
-            Scale
-          </button>
-        </div>
-      </section>
-
-      {error && <div className="banner error">{error}</div>}
-      {output && (
-        <section className="card panel">
-          {cli && (
-            <p className="hint">
-              CLI: <code>{cli}</code>
-            </p>
-          )}
-          <pre className="code">{output}</pre>
-        </section>
+      {(busy || error || result) && (
+        <ActionResult
+          loading={!!busy}
+          error={error}
+          code={errorCode}
+          result={result}
+          loadingLabel={
+            busy === 'init'
+              ? 'Creating project…'
+              : busy === 'backup'
+                ? 'Preparing backup…'
+                : busy === 'restore'
+                  ? 'Restoring backup…'
+                  : 'Working…'
+          }
+          idleLabel=""
+          downloadFilename={`camunda-lab-${busy || 'project'}.txt`}
+        />
       )}
+
       {confirmAction && (
-        <ConfirmActionModal
+        <ConfirmDialog
           action={confirmAction}
           onClose={() => {
             if (confirmAction.requiredText === 'RESTORE' && restoreInputRef.current) {

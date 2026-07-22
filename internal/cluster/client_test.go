@@ -7,7 +7,48 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/nasraldin/camunda-lab/internal/inventory"
 )
+
+func TestNormalizeBaseURL(t *testing.T) {
+	tests := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{"origin", "https://cluster.example", "https://cluster.example/v2"},
+		{"origin trailing slash", "https://cluster.example/", "https://cluster.example/v2"},
+		{"already v2", "https://cluster.example/v2", "https://cluster.example/v2"},
+		{"v2 trailing slash", "https://cluster.example/v2/", "https://cluster.example/v2"},
+		{"path prefix", "https://gateway.example/camunda", "https://gateway.example/camunda/v2"},
+		{"path prefix v2", "https://gateway.example/camunda/v2/", "https://gateway.example/camunda/v2"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := NormalizeBaseURL(tt.in)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got != tt.want {
+				t.Fatalf("NormalizeBaseURL(%q) = %q, want %q", tt.in, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestNormalizeBaseURLRejectsUnsafeParts(t *testing.T) {
+	for _, raw := range []string{
+		"cluster.example",
+		"ftp://cluster.example",
+		"https://cluster.example/v2?token=secret",
+		"https://user:pass@cluster.example/v2",
+	} {
+		if _, err := NormalizeBaseURL(raw); err == nil {
+			t.Fatalf("NormalizeBaseURL(%q) succeeded", raw)
+		}
+	}
+}
 
 func TestSearchProcessDefinitionsAndXML(t *testing.T) {
 	mux := http.NewServeMux()
@@ -20,11 +61,12 @@ func TestSearchProcessDefinitionsAndXML(t *testing.T) {
 				"version":              2,
 				"resourceName":         "order.bpmn",
 			}},
+			"page": map[string]any{"totalItems": 1, "endCursor": nil},
 		})
 	})
 	mux.HandleFunc("/v2/process-definitions/111/xml", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/xml")
-		_, _ = w.Write([]byte(`<bpmn:definitions><bpmn:process id="orderProcess"/></bpmn:definitions>`))
+		_, _ = w.Write([]byte(`<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"><process id="orderProcess"><startEvent id="start"/></process></definitions>`))
 	})
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
@@ -41,11 +83,13 @@ func TestSearchProcessDefinitionsAndXML(t *testing.T) {
 	if err != nil || !strings.Contains(xml, "orderProcess") {
 		t.Fatal(err, xml)
 	}
-	inv, err := c.RemoteInventory(context.Background())
+	inv, err := c.BuildInventory(context.Background(), inventory.Source{
+		Type: "remote", Environment: "prod", Endpoint: c.BaseURL,
+	}, InventoryLimits{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(inv) == 0 || inv[0].Digest == "" {
+	if len(inv.Resources) == 0 || inv.Resources[0].Digest == "" {
 		t.Fatalf("%+v", inv)
 	}
 }
@@ -64,6 +108,7 @@ func TestSearchIncidentsAndResolve(t *testing.T) {
 				"creationTime":        "2026-07-17T12:00:00Z",
 				"processDefinitionId": "orderProcess",
 			}},
+			"page": map[string]any{"totalItems": 1, "endCursor": nil},
 		})
 	})
 	mux.HandleFunc("/v2/incidents/99/resolution", func(w http.ResponseWriter, r *http.Request) {
@@ -97,6 +142,7 @@ func TestElementInstancesTimeline(t *testing.T) {
 				{"elementInstanceKey": "1", "elementId": "Start", "elementName": "OrderCreated", "type": "START_EVENT", "state": "COMPLETED", "startDate": "2026-07-17T12:00:00Z"},
 				{"elementInstanceKey": "2", "elementId": "Payment", "elementName": "Payment", "type": "SERVICE_TASK", "state": "ACTIVE", "incidentKey": "99", "startDate": "2026-07-17T12:01:00Z"},
 			},
+			"page": map[string]any{"totalItems": 2, "endCursor": nil},
 		})
 	})
 	srv := httptest.NewServer(mux)

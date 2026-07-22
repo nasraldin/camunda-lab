@@ -89,6 +89,7 @@ export function ToolsPage() {
         <input
           type="file"
           accept=".bpmn,.BPMN"
+          aria-label="Upload BPMN process file"
           disabled={!c8?.installed || !!busy}
           onChange={async (e) => {
             const file = e.target.files?.[0]
@@ -99,7 +100,7 @@ export function ToolsPage() {
             try {
               const fd = new FormData()
               fd.append('file', file)
-              const data = await postForm('/api/v1/tools/deploy', fd)
+              const data = await postForm<{ output?: string }>('/api/v1/tools/deploy', fd)
               setDeployOut(data.output || 'ok')
               setMsg('Process uploaded.')
             } catch (err) {
