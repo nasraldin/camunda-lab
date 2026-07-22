@@ -4,7 +4,7 @@
 
 Local Camunda 8 on Docker. One CLI — **`camunda`** — wraps Camunda’s official Compose zips so you can install a minor, wait until it’s healthy, open Operate, and switch versions without digging through README ports.
 
-Current release: **[v0.6.0](https://github.com/nasraldin/camunda-lab/releases/tag/v0.6.0)** (Lab UI auto-start, friendly Docker errors, `camunda ui logs`, Camunda 8.7–8.10).
+Current release: **[v0.7.0](https://github.com/nasraldin/camunda-lab/releases/tag/v0.7.0)** (platform toolkit, monitoring add-on, visual BPMN lint, Camunda 8.7–8.10).
 
 ![Lab UI Home](assets/screenshots/lab-ui-home.png)
 

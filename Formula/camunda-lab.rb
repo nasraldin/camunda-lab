@@ -13,7 +13,7 @@
 class CamundaLab < Formula
   desc "Unofficial local Camunda 8 Docker lab CLI"
   homepage "https://github.com/nasraldin/camunda-lab"
-  url "https://github.com/nasraldin/camunda-lab/archive/refs/tags/v0.6.0.tar.gz"
+  url "https://github.com/nasraldin/camunda-lab/archive/refs/tags/v0.7.0.tar.gz"
   sha256 "deeb63ff68b1668f33d894a6405f939aec8558fe2cf7e791959ec9f7ecbba6a1"
   license "MIT"
 

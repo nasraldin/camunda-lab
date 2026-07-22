@@ -2,7 +2,7 @@
 
 This is an honest status page — not a delivery calendar. Dates slip; features land when they’re solid.
 
-**Current release:** [v0.6.0](https://github.com/nasraldin/camunda-lab/releases/tag/v0.6.0)  
+**Current release:** [v0.7.0](https://github.com/nasraldin/camunda-lab/releases/tag/v0.7.0)  
 **Docs site:** [nasraldin.github.io/camunda-lab](https://nasraldin.github.io/camunda-lab/)
 
 ## Vision
@@ -11,32 +11,33 @@ Camunda Lab starts as the easiest way to run and manage **local** Camunda enviro
 
 Direction and phase boundaries: [platform toolkit vision](https://github.com/nasraldin/camunda-lab/blob/main/docs/superpowers/specs/2026-07-17-platform-toolkit-vision.md) (in-repo, not on the docs site).
 
-## What’s in v0.6.0 (Phase 1 lab core)
+## What’s in v0.7.0
 
-### Lab UI polish
+### Platform toolkit
 
-- **Auto-start** — `camunda install`, `up`, `restart`, `switch`, and `profile` start the UI in the background; Homebrew `post_install` does too
-- **Friendly Docker errors** — leftover container name conflicts show plain language + **Clean up and try again** in the UI
-- **`camunda ui logs`** / **`camunda ui logs -f`** — tail background UI logs (`~/.camunda-lab/logs/ui.log`)
-- **Local dev** — `make dev`, `make dev-restart-api`, Vite hot reload on `:5173`
+- **CLI** — `init`, BPMN `lint` / `diff` / `explain` / `review` / `test generate` / `scan`, `doctor --deep`, `env`, `plan`, `drift`, `backup` / `restore`, `incidents`, `trace`, `k8s`
+- **Lab UI** — **BPMN**, **Cluster**, and **Project** pages with `/api/v1` wrappers; developer endpoint health probes; OIDC for full-lab REST
 
-### Maintainer / install
+### Monitoring add-on _(idea: @MahmoudSaid037)_
 
-- Homebrew tap publishes automatically on every GitHub Release (no more stale formula)
-- CI hardening: concurrency, `make tidy`, embedded UI dist check, govulncheck advisory, Go 1.24.4
+- **`camunda monitoring enable`** — opt-in **Prometheus + Grafana** (loopback only, `admin`/`admin`) with dashboards for Zeebe/orchestration, Elasticsearch, and connectors
+- `camunda open grafana`, `camunda urls`, Lab UI **Monitoring** page + Apps cards
+- Guide: [Monitoring](monitoring.md)
 
-### From v0.5.0 (still included)
+### Visual BPMN toolkit
 
-- **`camunda ui`** — embedded Camunda Lab Console on `http://localhost:9090`
-- Home, Get started, Apps (auto sign-in), Services, Logs, AI helpers, Reset lab
-- Camunda Compose **8.7–8.10**, profiles, ElasticVue, AI Agent + MCP, official CLI / Modeler tools
+- Lint / review findings on an interactive **bpmn-js** diagram, open **history** panel, project-folder upload for multi-file lint
+
+### From v0.6.0 (still included)
+
+- Lab UI auto-start, friendly Docker errors, `camunda ui logs`, local `make dev`
+- Camunda Compose **8.7–8.10**, profiles, ElasticVue, AI Agent + MCP
 - GitHub Releases, `install.sh`, Homebrew (`camunda-lab`)
 
 ## Next up (maintainer / small DX)
 
 Things we’re actively building or next in line — no hard ETA:
 
-- **Monitoring add-on** *(in review — [PR #15](https://github.com/nasraldin/camunda-lab/pull/15))* — `camunda monitoring enable` wires opt-in **Prometheus + Grafana** (loopback only, admin/admin) with pre-provisioned dashboards for **Zeebe/orchestration, Elasticsearch, and connectors** (via the ES exporter), plus a best-effort Optimize placeholder. Surfaced through `camunda open grafana`, `camunda urls`, and a **Monitoring** page + Apps cards in the Lab UI. Scrape targets are best-effort per Camunda minor and user-editable. Guide: [Monitoring](monitoring.md) _(idea: @MahmoudSaid037)_
 - Optional Cosign verify when `cosign` is on your PATH
 - Scheduled LIVE smoke in CI (nightly-ish; too heavy for every PR)
 - Optional `--write-cursor` to drop MCP JSON into the user’s Cursor config

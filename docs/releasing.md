@@ -10,15 +10,15 @@ Maintainer checklist for cutting a release.
 4. Tag and push:
 
 ```bash
-git tag -a v0.6.0 -m "v0.6.0"
-git push origin v0.6.0
+git tag -a v0.7.0 -m "v0.7.0"
+git push origin v0.7.0
 ```
 
 5. **Release** workflow runs GoReleaser (binaries + `checksums.txt`) and publishes the Homebrew tap
 6. If tap publish failed, backfill manually or via **Actions → Homebrew → Run workflow**:
 
 ```bash
-./scripts/publish-homebrew.sh v0.6.0
+./scripts/publish-homebrew.sh v0.7.0
 ```
 
 7. Smoke on a clean machine:
