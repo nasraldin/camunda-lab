@@ -54,6 +54,7 @@ export type ToolkitEnvelope = {
   profiles?: Array<{ name: string; kind: string }>
   path?: string
   dir?: string
+  inputs?: string[]
   aiStatus?: AIStatus
 }
 

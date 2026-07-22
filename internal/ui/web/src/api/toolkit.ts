@@ -26,6 +26,8 @@ import type {
 export async function lintBpmn(
   body: {
     path?: string
+    paths?: string[]
+    projectDir?: string
     failOn?: LintThreshold
     ignore?: string[]
   },

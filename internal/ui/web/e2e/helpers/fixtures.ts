@@ -19,6 +19,12 @@ export function mockToolkitResponse(state: MockToolkitState): ToolkitEnvelope {
         status: 'completed',
         complete: true,
         output: 'OK',
+        findings: [],
+        contents: {
+          'process.bpmn':
+            '<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"><process id="p"><startEvent id="s"/><endEvent id="e"/><sequenceFlow sourceRef="s" targetRef="e"/></process></definitions>',
+        },
+        inputs: ['process.bpmn'],
         cli: 'camunda lint process.bpmn',
       }
     case 'findings':
@@ -26,8 +32,24 @@ export function mockToolkitResponse(state: MockToolkitState): ToolkitEnvelope {
         ok: false,
         status: 'failed',
         complete: true,
-        findings: [{ rule: 'process-start-event', message: 'missing start event' }],
-        output: '1 finding',
+        findings: [
+          {
+            processId: 'orderProcess',
+            finding: {
+              rule: 'process-start-event',
+              severity: 'error',
+              message: 'Process has no start event',
+              element: 'orderProcess',
+              file: 'process.bpmn',
+            },
+          },
+        ],
+        output: 'process-start-event error   orderProcess Process has no start event',
+        contents: {
+          'process.bpmn':
+            '<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"><process id="orderProcess"><task id="task"/><endEvent id="end"/></process></definitions>',
+        },
+        inputs: ['process.bpmn'],
         cli: 'camunda lint process.bpmn',
       }
     case 'partial':

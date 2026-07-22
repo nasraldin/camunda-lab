@@ -68,6 +68,8 @@ type lintResponse struct {
 	Warnings []toolkit.Warning     `json:"warnings"`
 	Findings []toolkit.LintFinding `json:"findings"`
 	Inputs   []string              `json:"inputs"`
+	Output   string                `json:"output"`
+	Contents map[string]string     `json:"contents,omitempty"`
 	CLI      string                `json:"cli"`
 }
 
@@ -77,6 +79,8 @@ type diffResponse struct {
 	Complete bool                    `json:"complete"`
 	Warnings []toolkit.Warning       `json:"warnings"`
 	Changes  []toolkit.ProcessChange `json:"changes"`
+	Output   string                  `json:"output"`
+	Contents map[string]string       `json:"contents,omitempty"`
 	CLI      string                  `json:"cli"`
 }
 
@@ -92,6 +96,7 @@ type explainResponse struct {
 	Warnings  []toolkit.Warning   `json:"warnings"`
 	Processes []explainProcessDTO `json:"processes"`
 	Output    string              `json:"output"`
+	Contents  map[string]string   `json:"contents,omitempty"`
 	CLI       string              `json:"cli"`
 }
 
@@ -103,6 +108,8 @@ type reviewResponse struct {
 	Findings []toolkit.LintFinding   `json:"findings"`
 	AIStatus toolkit.AIStatus        `json:"aiStatus"`
 	Reviews  []toolkit.ProcessReview `json:"reviews"`
+	Output   string                  `json:"output"`
+	Contents map[string]string       `json:"contents,omitempty"`
 	CLI      string                  `json:"cli"`
 }
 

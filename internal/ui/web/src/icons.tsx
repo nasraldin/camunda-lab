@@ -106,6 +106,26 @@ export function IconMonitoring(p: IconProps) {
   )
 }
 
+export function IconTrash(p: IconProps) {
+  return (
+    <svg className={p.className} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M5 7h14M9 7V5h6v2M8 7l.7 12h6.6L16 7"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M10.5 11v5.5M13.5 11v5.5"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+      />
+    </svg>
+  )
+}
+
 export function IconTools(p: IconProps) {
   return (
     <svg className={p.className} viewBox="0 0 24 24" fill="none" aria-hidden>

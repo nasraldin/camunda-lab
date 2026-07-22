@@ -88,11 +88,12 @@ test('BPMN toolkit disables Run while a request is in flight', async ({ page }) 
   })
 
   await page.goto('/bpmn')
-  await page.getByLabel('Or absolute path').fill('/tmp/process.bpmn')
+  await page.getByPlaceholder('/Users/…/process.bpmn').fill('/tmp/process.bpmn')
   const runButton = page.getByRole('button', { name: 'Run' })
   await runButton.click()
   await expect(page.getByRole('button', { name: 'Running…' })).toBeDisabled()
-  await expect(page.getByText('done')).toBeVisible()
+  await expect(page.getByText('Running lint…')).toBeVisible()
+  await expect(runButton).toBeEnabled({ timeout: 3000 })
 })
 
 test('BPMN toolkit aborts an active request on unmount', async ({ page }) => {
