@@ -45,14 +45,40 @@ Local publish:
 
 ### Secret: `HOMEBREW_TAP_TOKEN`
 
-Create a fine-grained PAT (or classic) and store it as repo secret `HOMEBREW_TAP_TOKEN`.
+This secret pushes into a **different** repo (`nasraldin/homebrew-tools`). The
+workflow’s built-in `GITHUB_TOKEN` only covers `camunda-lab`, so a PAT is required.
+
+If Release fails with:
+
+```text
+remote: Permission to nasraldin/homebrew-tools.git denied to nasraldin.
+```
+
+the script/auth path is fine — the PAT authenticates as you but **cannot write**
+the tap (wrong repo selected, Contents not Read and write, or expired). Local
+`gh` can still push because it uses your interactive login, not this secret.
+
+#### Create / rotate the PAT
+
+1. Open [Fine-grained tokens](https://github.com/settings/personal-access-tokens/new)
+2. **Resource owner:** your user (`nasraldin`)
+3. **Repository access:** Only select repositories → **`homebrew-tools`**
+   (must include the tap; a token scoped only to `camunda-lab` will 403)
+4. **Permissions → Repository → Contents:** **Read and write**
+5. Generate, copy the token
+6. In `camunda-lab` → Settings → Secrets and variables → Actions → update
+   **`HOMEBREW_TAP_TOKEN`**
+7. Verify: **Actions → Homebrew → Run workflow** (tag `v0.7.0` or latest)
+
+Classic PAT alternative: `repo` (or `public_repo` if the tap stays public).
 
 | Target                             | Permission                                          |
 | ---------------------------------- | --------------------------------------------------- |
 | `nasraldin/homebrew-tools`         | **Contents: Read and write**                        |
 | (optional) `nasraldin/camunda-lab` | Metadata read — only if the token is org-restricted |
 
-A token that can read but not push fails with **403** on `git push`. Fix the PAT scopes or publish locally with the script above.
+`scripts/publish-homebrew.sh` checks push access via the API before `git push`
+and prints this diagnosis when the secret is wrong.
 
 | Piece                          | Path                                                     |
 | ------------------------------ | -------------------------------------------------------- |

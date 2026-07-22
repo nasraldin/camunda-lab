@@ -50,13 +50,28 @@ fi
 rm -f "${TMP}"
 echo "==> sha256 ${SHA}"
 
+# Fail early with a clear message when HOMEBREW_TAP_TOKEN can't write the tap.
+# A missing/wrong-scoped PAT still authenticates as the user, then 403s on push
+# ("Permission to … denied to <login>"), which looks like a script bug.
+if [[ -n "${GH_TOKEN:-}" ]]; then
+  LOGIN="$(gh api user -q .login 2>/dev/null || true)"
+  CAN_PUSH="$(gh api "repos/${TAP_REPO}" -q .permissions.push 2>/dev/null || true)"
+  if [[ "${CAN_PUSH}" != "true" ]]; then
+    echo "ERROR: token cannot push to ${TAP_REPO} (authenticated as ${LOGIN:-unknown})." >&2
+    echo "Create a fine-grained PAT with Contents: Read and write on ${TAP_REPO}," >&2
+    echo "then update repo secret HOMEBREW_TAP_TOKEN. See docs/homebrew.md." >&2
+    exit 1
+  fi
+  echo "==> Token OK (push access as ${LOGIN} → ${TAP_REPO})"
+fi
+
 WORKDIR="$(mktemp -d)"
 cleanup() { rm -rf "${WORKDIR}"; }
 trap cleanup EXIT
 
 echo "==> Cloning ${TAP_REPO}"
-# Clone with curl+git so we control auth (gh clone can leave credential helpers
-# that override HOMEBREW_TAP_TOKEN and cause 403 on push in CI).
+# Clone without credentials; push uses GH_TOKEN in the URL below.
+# Keep credential.helper empty so Actions does not inject GITHUB_TOKEN on push.
 git -c credential.helper= clone --depth 1 \
   "https://github.com/${TAP_REPO}.git" "${WORKDIR}/tap"
 mkdir -p "${WORKDIR}/tap/Formula"
