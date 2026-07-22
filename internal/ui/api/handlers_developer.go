@@ -8,6 +8,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -16,6 +17,7 @@ import (
 	"github.com/nasraldin/camunda-lab/internal/config"
 	bpmndiff "github.com/nasraldin/camunda-lab/internal/diff"
 	"github.com/nasraldin/camunda-lab/internal/doctor"
+	"github.com/nasraldin/camunda-lab/internal/lint"
 	"github.com/nasraldin/camunda-lab/internal/review"
 	"github.com/nasraldin/camunda-lab/internal/scan"
 	"github.com/nasraldin/camunda-lab/internal/toolkit"
@@ -206,7 +208,8 @@ func (h *handler) bpmnLint(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, lintResponse{
 		OK: result.Status != toolkit.StatusFailed, Status: result.Status, Complete: result.Complete,
 		Warnings: nonNilWarnings(result.Warnings), Findings: nonNilLintFindings(result.Findings),
-		Inputs: nonNilStrings(result.Inputs), CLI: "camunda lint <file.bpmn>",
+		Inputs: nonNilStrings(result.Inputs), Output: formatLintOutput(result.Findings),
+		Contents: developerBPMNContents(inputs, result.Inputs), CLI: "camunda lint <file.bpmn>",
 	})
 }
 
@@ -252,9 +255,25 @@ func (h *handler) bpmnDiff(w http.ResponseWriter, r *http.Request) {
 		writeDeveloperError(w, err)
 		return
 	}
+	contents := map[string]string{}
+	if len(domainRequest.Before.Content) > 0 {
+		contents["before"] = string(domainRequest.Before.Content)
+	} else if domainRequest.Before.Path != "" {
+		if data, readErr := os.ReadFile(domainRequest.Before.Path); readErr == nil {
+			contents["before"] = string(data)
+		}
+	}
+	if len(domainRequest.After.Content) > 0 {
+		contents["after"] = string(domainRequest.After.Content)
+	} else if domainRequest.After.Path != "" {
+		if data, readErr := os.ReadFile(domainRequest.After.Path); readErr == nil {
+			contents["after"] = string(data)
+		}
+	}
 	writeJSON(w, http.StatusOK, diffResponse{
 		OK: len(result.Changes) == 0, Status: result.Status, Complete: result.Complete,
 		Warnings: nonNilWarnings(result.Warnings), Changes: nonNilChanges(result.Changes),
+		Output: formatDiffOutput(result.Changes), Contents: contents,
 		CLI: "camunda diff before.bpmn after.bpmn",
 	})
 }
@@ -383,7 +402,9 @@ func (h *handler) bpmnExplain(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, explainResponse{
 		OK: true, Status: result.Status, Complete: result.Complete, Warnings: nonNilWarnings(result.Warnings),
-		Processes: processes, Output: output.String(), CLI: "camunda explain <file.bpmn>",
+		Processes: processes, Output: output.String(),
+		Contents: developerBPMNContents([]toolkit.BPMNInput{input}, []string{bpmnInputLabel(input)}),
+		CLI:      "camunda explain <file.bpmn>",
 	})
 }
 
@@ -483,7 +504,9 @@ func (h *handler) bpmnReview(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, reviewResponse{
 		OK: result.Status != toolkit.StatusFailed, Status: result.Status, Complete: result.Complete,
 		Warnings: nonNilWarnings(result.Warnings), Findings: nonNilLintFindings(result.Findings),
-		AIStatus: result.AIStatus, Reviews: nonNilReviews(result.Processes), CLI: "camunda review <file.bpmn>",
+		AIStatus: result.AIStatus, Reviews: nonNilReviews(result.Processes),
+		Output:   formatLintOutput(result.Findings),
+		Contents: developerBPMNContents(inputs, result.Inputs), CLI: "camunda review <file.bpmn>",
 	})
 }
 
@@ -808,4 +831,79 @@ func nonNilScanIssues(value []scan.Issue) []scan.Issue {
 		return []scan.Issue{}
 	}
 	return value
+}
+
+func formatLintOutput(findings []toolkit.LintFinding) string {
+	flat := make([]lint.Finding, 0, len(findings))
+	for _, item := range findings {
+		value := item.Finding
+		if item.ProcessID != "" {
+			value.ProcessID = item.ProcessID
+		}
+		flat = append(flat, value)
+	}
+	return lint.FormatText(lint.Result{Findings: flat})
+}
+
+func formatDiffOutput(changes []toolkit.ProcessChange) string {
+	flat := make([]bpmndiff.Change, 0, len(changes))
+	for _, change := range changes {
+		if change.Change != nil {
+			flat = append(flat, *change.Change)
+			continue
+		}
+		switch change.Kind {
+		case toolkit.ProcessAdded:
+			flat = append(flat, bpmndiff.Change{
+				Kind: bpmndiff.ProcessAdded, ProcessID: change.AfterProcessID,
+				Summary: "process added: " + change.AfterProcessID,
+			})
+		case toolkit.ProcessRemoved:
+			flat = append(flat, bpmndiff.Change{
+				Kind: bpmndiff.ProcessRemoved, ProcessID: change.BeforeProcessID,
+				Summary: "process removed: " + change.BeforeProcessID,
+			})
+		case toolkit.DocumentChanged:
+			flat = append(flat, bpmndiff.Change{Kind: bpmndiff.ProcessAdded, Summary: "document changed"})
+		}
+	}
+	return bpmndiff.FormatText(flat)
+}
+
+func developerBPMNContents(inputs []toolkit.BPMNInput, labels []string) map[string]string {
+	contents := make(map[string]string)
+	for _, input := range inputs {
+		label := bpmnInputLabel(input)
+		if len(input.Content) > 0 {
+			contents[label] = string(input.Content)
+			continue
+		}
+		if input.Path != "" {
+			if data, err := os.ReadFile(input.Path); err == nil {
+				contents[label] = string(data)
+			}
+		}
+	}
+	for _, label := range labels {
+		if _, ok := contents[label]; ok {
+			continue
+		}
+		if data, err := os.ReadFile(label); err == nil {
+			contents[label] = string(data)
+		}
+	}
+	if len(contents) == 0 {
+		return nil
+	}
+	return contents
+}
+
+func bpmnInputLabel(input toolkit.BPMNInput) string {
+	if input.Name != "" {
+		return input.Name
+	}
+	if input.Path != "" {
+		return input.Path
+	}
+	return "<memory>"
 }

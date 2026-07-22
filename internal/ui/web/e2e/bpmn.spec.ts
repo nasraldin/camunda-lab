@@ -46,7 +46,12 @@ for (const workflow of bpmnTabs) {
     await page.waitForLoadState('networkidle')
     await runBpmnTab(page, workflow.tab, workflow.input)
     await expect(page.getByText('success', { exact: true })).toBeVisible()
-    await expect(page.getByText('OK')).toBeVisible()
+    const visualTabs = new Set(['Lint', 'Diff', 'Explain', 'Review'])
+    if (visualTabs.has(workflow.tab)) {
+      await expect(page.locator('.bpmn-diagram-canvas, .banner.ok').first()).toBeVisible()
+    } else {
+      await expect(page.getByText('OK')).toBeVisible()
+    }
     monitor.assertClean()
   })
 }
