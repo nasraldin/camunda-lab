@@ -182,7 +182,7 @@ func writeMonitoringAssets() error {
 
 // ExpectedFiles reports the managed overlay filenames for a configuration
 // without creating or modifying anything on disk.
-func ExpectedFiles(minor, profile string, aiEnabled bool) ([]string, error) {
+func ExpectedFiles(minor, profile string, aiEnabled, monitoringEnabled bool) ([]string, error) {
 	if err := versions.ValidateMinor(minor); err != nil {
 		return nil, err
 	}
@@ -205,12 +205,20 @@ func ExpectedFiles(minor, profile string, aiEnabled bool) ([]string, error) {
 	if aiEnabled && versions.SupportsAIFeature(minor, profile) == nil {
 		out = append(out, "connectors-ai-secrets.yaml")
 	}
+	if monitoringEnabled {
+		out = append(out, "monitoring.yaml")
+	}
 	sort.Strings(out)
 	return out, nil
 }
 
 // ExpectedContent returns the embedded managed content for an overlay filename.
+// For monitoring.yaml the __OVERLAYS_DIR__ placeholder is replaced so the result
+// matches what ComposeOverrideFiles writes to disk.
 func ExpectedContent(name string) ([]byte, bool) {
+	if name == "monitoring.yaml" {
+		return bytes.ReplaceAll(monitoringYAML, []byte(overlaysDirPlaceholder), []byte(paths.OverlaysDir())), true
+	}
 	content := map[string][]byte{
 		"elasticsearch-8.10.yaml":    elasticsearch810YAML,
 		"elasticsearch-cors.yaml":    elasticsearchCorsYAML,

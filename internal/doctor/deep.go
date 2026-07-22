@@ -118,7 +118,7 @@ func RunDeep(ctx context.Context, cfg config.Config, opts DeepOptions) (DeepRepo
 	if err := overlay.ValidateResources(cfg.Resources); err != nil {
 		return DeepReport{}, &FatalError{Code: "invalid_configuration", Message: sanitize(err.Error()), Err: err}
 	}
-	if _, err := overlay.ExpectedFiles(cfg.Version, cfg.Profile, cfg.AI.Enabled); err != nil {
+	if _, err := overlay.ExpectedFiles(cfg.Version, cfg.Profile, cfg.AI.Enabled, cfg.Monitoring.Enabled); err != nil {
 		return DeepReport{}, &FatalError{Code: "invalid_configuration", Message: sanitize(err.Error()), Err: err}
 	}
 	if strings.TrimSpace(cfg.ComposeProject) == "" {
@@ -274,7 +274,7 @@ func RunDeep(ctx context.Context, cfg config.Config, opts DeepOptions) (DeepRepo
 		ID: "overlay.consistency", Category: "configuration", Summary: "Managed overlay consistency",
 		Remediation: "Run `camunda switch` for the selected version/profile to regenerate managed overlays", Required: false,
 	}, func(checkCtx context.Context) (Status, string) {
-		return inspectOverlays(checkCtx, fs, diagnosticPaths.OverlaysDir, cfg.Version, cfg.Profile, cfg.AI.Enabled)
+		return inspectOverlays(checkCtx, fs, diagnosticPaths.OverlaysDir, cfg.Version, cfg.Profile, cfg.AI.Enabled, cfg.Monitoring.Enabled)
 	})
 
 	var envState EnvironmentState

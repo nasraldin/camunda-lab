@@ -74,9 +74,15 @@ func (r *Runner) RemoveByName(names ...string) error {
 			continue
 		}
 		out, err := r.Exec("", []string{"docker", "rm", "-f", name})
-		if err != nil && !strings.Contains(strings.ToLower(out), "no such container") {
-			return fmt.Errorf("docker rm -f %s: %w", name, err)
+		if err == nil {
+			continue
 		}
+		// defaultExec puts Docker's stderr into the returned error; stdout is often empty.
+		msg := strings.ToLower(out + " " + err.Error())
+		if strings.Contains(msg, "no such container") {
+			continue
+		}
+		return fmt.Errorf("docker rm -f %s: %w", name, err)
 	}
 	return nil
 }
