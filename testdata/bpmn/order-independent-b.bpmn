@@ -1,0 +1,9 @@
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL">
+  <process id="a">
+    <startEvent id="a" name="Begin"/>
+    <serviceTask id="n" name="Work"/>
+    <endEvent id="z" name="Done"/>
+    <sequenceFlow id="a1" sourceRef="a" targetRef="n"/>
+    <sequenceFlow id="a2" sourceRef="n" targetRef="z"/>
+  </process>
+</definitions>

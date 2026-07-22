@@ -2,7 +2,9 @@ package urls
 
 import (
 	"fmt"
+	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/nasraldin/camunda-lab/internal/config"
 	"github.com/nasraldin/camunda-lab/internal/versions"
@@ -51,17 +53,17 @@ func lightEntries(cfg config.Config, host string) []Entry {
 		entries = []Entry{
 			{Name: "operate", URL: fmt.Sprintf("http://%s:8081", host), Notes: "demo/demo"},
 			{Name: "tasklist", URL: fmt.Sprintf("http://%s:8082", host), Notes: "demo/demo"},
-			{Name: "connectors", URL: fmt.Sprintf("http://%s:8085", host)},
+			{Name: "connectors", URL: fmt.Sprintf("http://%s:8085/actuator/health", host), Notes: "Connector runtime health (not a web UI)"},
 			{Name: "zeebe-http", URL: fmt.Sprintf("http://%s:8088", host), Notes: "Zeebe gateway HTTP"},
 			{Name: "rest", URL: fmt.Sprintf("http://%s:8088", host), Notes: "Desktop Modeler restAddress"},
-			{Name: "grpc", URL: fmt.Sprintf("%s:26500", host)},
+			{Name: "grpc", URL: fmt.Sprintf("%s:26500", host), Notes: "Zeebe gRPC gateway (not a web UI)"},
 		}
 	} else {
 		port := orchestrationHostPort(version)
 		entries = orchestrationUI(host, port)
 		entries = append(entries,
-			Entry{Name: "connectors", URL: fmt.Sprintf("http://%s:8086", host)},
-			Entry{Name: "grpc", URL: fmt.Sprintf("%s:26500", host)},
+			Entry{Name: "connectors", URL: fmt.Sprintf("http://%s:8086/actuator/health", host), Notes: "Connector runtime health (not a web UI)"},
+			Entry{Name: "grpc", URL: fmt.Sprintf("%s:26500", host), Notes: "Zeebe gRPC gateway (not a web UI)"},
 		)
 	}
 	if versions.HasHostElasticsearch(version, "light") {
@@ -81,12 +83,12 @@ func fullEntries(cfg config.Config, host string) []Entry {
 			{Name: "tasklist", URL: fmt.Sprintf("http://%s:8082", host), Notes: "demo/demo"},
 			{Name: "optimize", URL: fmt.Sprintf("http://%s:8083", host), Notes: "demo/demo"},
 			{Name: "identity", URL: fmt.Sprintf("http://%s:8084", host), Notes: "demo/demo"},
-			{Name: "connectors", URL: fmt.Sprintf("http://%s:8085", host)},
+			{Name: "connectors", URL: fmt.Sprintf("http://%s:8085/actuator/health", host), Notes: "Connector runtime health (not a web UI)"},
 			{Name: "web-modeler", URL: fmt.Sprintf("http://%s:8070", host), Notes: "demo/demo"},
 			{Name: "zeebe-http", URL: fmt.Sprintf("http://%s:8088", host), Notes: "Zeebe gateway HTTP"},
 			{Name: "rest", URL: fmt.Sprintf("http://%s:8088", host), Notes: "Desktop Modeler restAddress"},
 			{Name: "keycloak", URL: fmt.Sprintf("http://%s:18080/auth/", host), Notes: "admin/admin"},
-			{Name: "grpc", URL: fmt.Sprintf("%s:26500", host)},
+			{Name: "grpc", URL: fmt.Sprintf("%s:26500", host), Notes: "Zeebe gRPC gateway (not a web UI)"},
 			{Name: "elasticsearch", URL: fmt.Sprintf("http://%s:9200", host)},
 		}
 	} else {
@@ -95,10 +97,10 @@ func fullEntries(cfg config.Config, host string) []Entry {
 		entries = append(entries,
 			Entry{Name: "optimize", URL: fmt.Sprintf("http://%s:8083", host), Notes: "demo/demo"},
 			Entry{Name: "identity", URL: fmt.Sprintf("http://%s:8084", host), Notes: "demo/demo"},
-			Entry{Name: "connectors", URL: fmt.Sprintf("http://%s:8086", host)},
+			Entry{Name: "connectors", URL: fmt.Sprintf("http://%s:8086/actuator/health", host), Notes: "Connector runtime health (not a web UI)"},
 			Entry{Name: "web-modeler", URL: fmt.Sprintf("http://%s:8070", host), Notes: "demo/demo"},
 			Entry{Name: "keycloak", URL: fmt.Sprintf("http://%s:18080/auth/", host), Notes: "admin/admin"},
-			Entry{Name: "grpc", URL: fmt.Sprintf("%s:26500", host)},
+			Entry{Name: "grpc", URL: fmt.Sprintf("%s:26500", host), Notes: "Zeebe gRPC gateway (not a web UI)"},
 		)
 		// Console exists in 8.8–8.9 full compose; 8.10 full currently ships Hub instead of Console.
 		if version == "8.8" || version == "8.9" {
@@ -155,8 +157,8 @@ func orchestrationUI(host string, port int) []Entry {
 		{Name: "operate", URL: base + "/operate", Notes: "demo/demo"},
 		{Name: "tasklist", URL: base + "/tasklist", Notes: "demo/demo"},
 		{Name: "admin", URL: base + "/admin", Notes: "demo/demo"},
-		{Name: "rest", URL: base + "/v2", Notes: "Orchestration Cluster REST API"},
-		{Name: "orchestration", URL: base, Notes: "Desktop Modeler restAddress (base, no /v2)"},
+		{Name: "rest", URL: base + "/v2", Notes: "Orchestration Cluster REST API (use /v2/… paths; GET /v2 alone is 404)"},
+		{Name: "orchestration", URL: base, Notes: "Desktop Modeler restAddress — not a web UI (health on :9600/actuator/health)"},
 	}
 }
 
@@ -186,6 +188,72 @@ func Find(cfg config.Config, name string) (Entry, error) {
 		}
 	}
 	return Entry{}, fmt.Errorf("unknown app %q", name)
+}
+
+// ProbeURL returns the URL to hit for health/smoke checks.
+// Display URLs in List stay as client addresses; probes use official verify paths.
+func ProbeURL(e Entry) string {
+	kind, target := ProbeTarget(e)
+	if kind == "tcp" {
+		return target
+	}
+	return target
+}
+
+// ProbeTarget returns how to verify an entry is up.
+// kind is "http" or "tcp". For tcp, target is host:port.
+func ProbeTarget(e Entry) (kind, target string) {
+	switch e.Name {
+	case "grpc":
+		addr := e.URL
+		if strings.Contains(addr, "://") {
+			parts := strings.SplitN(addr, "://", 2)
+			addr = parts[1]
+		}
+		return "tcp", addr
+	case "connectors":
+		u := strings.TrimRight(e.URL, "/")
+		if strings.HasSuffix(u, "/actuator/health") {
+			return "http", u
+		}
+		return "http", u + "/actuator/health"
+	case "rest", "zeebe-http":
+		u := strings.TrimRight(e.URL, "/")
+		if strings.HasSuffix(u, "/v2") {
+			return "http", u + "/topology"
+		}
+		if strings.Contains(u, "/v2/") {
+			return "http", u
+		}
+		return "http", u + "/v2/topology"
+	case "orchestration":
+		host := "localhost"
+		if u, err := url.Parse(e.URL); err == nil && u.Hostname() != "" {
+			host = u.Hostname()
+		}
+		return "http", fmt.Sprintf("http://%s:9600/actuator/health", host)
+	default:
+		if strings.HasPrefix(e.URL, "http") {
+			return "http", e.URL
+		}
+		addr := e.URL
+		if strings.Contains(addr, "://") {
+			parts := strings.SplitN(addr, "://", 2)
+			addr = parts[1]
+		}
+		return "tcp", addr
+	}
+}
+
+// IsBrowserApp is true when the URL is meant to open in a web browser UI.
+func IsBrowserApp(name string) bool {
+	switch name {
+	case "operate", "tasklist", "admin", "console", "optimize", "identity",
+		"web-modeler", "keycloak", "elasticvue":
+		return true
+	default:
+		return false
+	}
 }
 
 // ModelerRESTBase returns the REST base URL Desktop Modeler expects (no /v2 path).

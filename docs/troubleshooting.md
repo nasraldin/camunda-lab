@@ -30,11 +30,11 @@ Something else owns the ports for your minor — see [Ports and URLs](profiles.m
 
 Common conflicts:
 
-| Era | Busy hosts |
-| --- | --- |
-| 8.7 | `8081` / `8082` / `8088` / `9200` / `18080` |
-| 8.8 | `8088` / `8086` / `9200` / `18080` |
-| 8.9+ | `8080` / `8086` / `9200` / `18080` |
+| Era  | Busy hosts                                  |
+| ---- | ------------------------------------------- |
+| 8.7  | `8081` / `8082` / `8088` / `9200` / `18080` |
+| 8.8  | `8088` / `8086` / `9200` / `18080`          |
+| 8.9+ | `8080` / `8086` / `9200` / `18080`          |
 
 ```bash
 camunda urls    # what this lab expects
@@ -73,6 +73,68 @@ camunda open elasticvue
 ```
 
 Not listed for **modeler**, **8.9+ light**, or any profile without host Elasticsearch.
+
+## Connectors URL shows “No static resource”
+
+Connectors is a **runtime** (job workers for BPMN connector tasks), not a web console. Official Camunda docs verify it with Actuator:
+
+`http://localhost:8086/actuator/health` (8.8+/light; older light labs use `8085`).
+
+Lab Apps shows a **Developer endpoints** card (describe + docs + **Test health**). `camunda urls` / `camunda open connectors` point at that health URL. Opening bare `/` on the connectors port is expected to fail.
+
+## Orchestration / REST / gRPC are not websites
+
+These are client endpoints, not Camunda web apps:
+
+| Entry         | Display address                | How to verify (official)                                                      |
+| ------------- | ------------------------------ | ----------------------------------------------------------------------------- |
+| Orchestration | `http://localhost:8080` (8.9+) | `GET http://localhost:9600/actuator/health`                                   |
+| REST API      | `http://localhost:8080/v2`     | `GET http://localhost:8080/v2/topology` — bare `GET /v2` is **404 by design** |
+| gRPC          | `localhost:26500`              | TCP open (Camunda / Zeebe client)                                             |
+
+In Lab UI → **Apps → Developer endpoints**, each card explains the endpoint, links to Camunda docs, and has **Test health**.
+
+## `camunda incidents` / `plan` return HTTP 401 on full profile
+
+Full labs protect `/v2` with OIDC. The CLI now fetches a token automatically using the Compose **connectors** client from `~/.camunda-lab/versions/<ver>/.env`.
+
+Override if needed:
+
+```bash
+export CAMUNDA_ACCESS_TOKEN=…          # raw bearer
+# or
+export CAMUNDA_CLIENT_ID=connectors
+export CAMUNDA_CLIENT_SECRET=demo-connectors-secret
+export CAMUNDA_OAUTH_URL=http://localhost:18080/auth/realms/camunda-platform/protocol/openid-connect/token
+```
+
+Light labs leave the API unprotected by default — no token needed.
+
+## `camunda plan` / `drift`: no `.camunda.yaml`
+
+These commands need a project scaffold (not the camunda-lab repo root):
+
+```bash
+camunda init /tmp/my-app -y
+cd /tmp/my-app   # or: camunda plan --dir /tmp/my-app
+camunda plan
+```
+
+## Apps ask for login again (401 on `/v2/...` stats)
+
+Camunda 8.9+ Operate/Tasklist store a CSRF header token in **tab** `sessionStorage`. A new tab keeps `camunda-session` but loses that token, so POSTs return **401** and the UI shows the login form even though you are still signed in.
+
+camunda-lab disables CSRF for local Compose labs (`csrf-disabled.yaml` → `CAMUNDA_SECURITY_CSRF_ENABLED=false`). After upgrading or if you still see the bug:
+
+```bash
+camunda down && camunda up
+```
+
+Then sign in once and open Operate/Tasklist again from Apps — new tabs should stay signed in.
+
+Also keep using `http://localhost:…` (not `127.0.0.1`) so the session cookie matches.
+
+This Compose application-CSRF overlay is unrelated to the Lab API at port `9090`. The Lab API still validates a literal loopback `Host`, exact same-origin `Origin`, and `X-Camunda-Lab-CSRF` on mutations. Disabling Camunda application CSRF does not disable those Lab API checks.
 
 ## HTTP 400 Bad Request on Optimize / Identity / apps
 
@@ -119,6 +181,51 @@ camunda tools c8ctl install   # if you need mcp-proxy
 ```
 
 Light profile can use direct HTTP to `http://localhost:8080/mcp/cluster`.
+
+## Restore is refused because the lab is running
+
+CLI restore checks the configured Compose project before touching files:
+
+```bash
+camunda down
+camunda restore ./lab-backup.tar.gz
+# or, only when you accept the risk:
+camunda restore ./lab-backup.tar.gz --force
+```
+
+`--force` bypasses only the running-container refusal. It cannot make an invalid, oversized, unsafe, or incompatible archive acceptable. `--yes` / `-y` only skips the exact typed `RESTORE` prompt.
+
+The browser restore does not currently perform this running-lab preflight and has no force option. Stop the lab yourself before uploading an archive in **Project → Backup & restore**.
+
+## Project files were not restored
+
+Archived project entries are rooted at `project/` and need an explicit or detected project destination:
+
+```bash
+camunda restore ./lab-backup.tar.gz --project /absolute/path/to/project
+```
+
+Without `--project`, the CLI uses the current Camunda project root when it can find one. If no destination is available, project entries are validated but skipped. The restore can still update lab `config.yaml` and optional `ai.env`.
+
+Only `bpmn/`, `dmn/`, and `forms/` are backed up. Workers, connectors, scripts, tests, Helm files, Docker volumes/databases, and arbitrary project files are outside this backup format. Restore replaces files listed in the archive; it does not delete unrelated destination files.
+
+## Backup did not include AI secret values
+
+That is the safe default. A normal backup records AI key names in `ai.keys.json`, with values omitted. Only the CLI's explicit opt-in includes `ai.env`:
+
+```bash
+camunda backup -o ./lab-with-secrets.tar.gz --include-secrets
+```
+
+The browser backup does not expose this opt-in. Backup archives are written with permission `0600`; keep secret-bearing archives private. On restore, staging and newly created directories use `0700`, `ai.env` uses `0600`, and other restored files use `0644`.
+
+## Lab API rejects a request with 421 or 403
+
+- `421 invalid_host`: use a literal `localhost`, `127.0.0.1`, or `[::1]` host with an optional numeric port.
+- `403 invalid_origin`: mutations must come from exactly `http://<request-host>`, including the same port.
+- `403 csrf_missing` / `csrf_invalid`: fetch `GET /api/v1/session` and send its `csrfToken` as `X-Camunda-Lab-CSRF`. Refetch after the UI process restarts.
+
+The CSRF token is not a login credential and the Lab UI has no authentication. Keep it on loopback; do not expose it through a network proxy.
 
 ## Start over
 

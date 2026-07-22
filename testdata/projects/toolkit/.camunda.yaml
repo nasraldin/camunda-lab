@@ -1,0 +1,10 @@
+name: toolkit-fixture
+camundaVersion: "8.9"
+paths:
+  bpmn: models
+  dmn: decisions
+  forms: forms
+  tests: process-tests
+lint:
+  ignore:
+    - gateway-no-default

@@ -1,0 +1,1 @@
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"><message id="first" name="Duplicate"/><message id="second" name=" duplicate "/><process id="messages-invalid"><startEvent id="start"/><endEvent id="end"/><sequenceFlow id="flow" sourceRef="start" targetRef="end"/></process></definitions>

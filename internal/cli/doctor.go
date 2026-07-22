@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -15,21 +16,74 @@ import (
 )
 
 func newDoctorCmd() *cobra.Command {
-	var fix bool
+	return newDoctorCmdWithDependencies(doctorCommandDependencies{
+		runShallow: doctor.Run,
+		loadConfig: config.Load,
+		runDeep:    doctor.RunDeep,
+	})
+}
+
+type doctorCommandDependencies struct {
+	runShallow func(bool) doctor.Report
+	loadConfig func() (config.Config, error)
+	runDeep    func(context.Context, config.Config, doctor.DeepOptions) (doctor.DeepReport, error)
+}
+
+func newDoctorCmdWithDependencies(deps doctorCommandDependencies) *cobra.Command {
+	var fix, deep, jsonOutput bool
+	var timeout time.Duration
 	cmd := &cobra.Command{
 		Use:   "doctor",
 		Short: "Run health diagnostics",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			rep := doctor.Run(fix)
-			fmt.Fprint(cmd.OutOrStdout(), rep.Format())
-			if !rep.OK {
-				return fmt.Errorf("doctor found issues")
+			if jsonOutput && !deep {
+				return fmt.Errorf("--json requires --deep")
+			}
+			rep := deps.runShallow(fix)
+			if !deep {
+				fmt.Fprint(cmd.OutOrStdout(), rep.Format())
+				if !rep.OK {
+					return policyFailure("doctor")
+				}
+				return nil
+			}
+			cfg, err := deps.loadConfig()
+			if err != nil {
+				return err
+			}
+			deepReport, err := deps.runDeep(cmd.Context(), cfg, doctor.DeepOptions{PerCheckTimeout: timeout})
+			if err != nil {
+				return err
+			}
+			if jsonOutput {
+				checks := append([]doctor.Check(nil), deepReport.Checks...)
+				if !rep.OK {
+					checks = append(checks, doctor.Check{
+						ID: "shallow.prerequisites", Category: "configuration", Status: doctor.StatusFail,
+						Summary: "Basic prerequisites have issues", Detail: "One or more basic prerequisite checks failed",
+						Remediation: rep.FixHint, Required: true,
+					})
+				}
+				report := doctor.DeepReport{Checks: checks}
+				content, marshalErr := report.JSON()
+				if marshalErr != nil {
+					return marshalErr
+				}
+				_, _ = cmd.OutOrStdout().Write(append(content, '\n'))
+			} else {
+				fmt.Fprint(cmd.OutOrStdout(), doctor.FormatDeep(rep, deepReport))
+			}
+			if !rep.OK || !doctor.DeepOK(deepReport) {
+				return policyFailure("doctor")
 			}
 			return nil
 		},
 	}
 	cmd.Flags().BoolVar(&fix, "fix", false, "Attempt common repairs")
-	return cmd
+	cmd.Flags().BoolVar(&deep, "deep", false, "Probe lab component endpoints")
+	cmd.Flags().BoolVar(&jsonOutput, "json", false, "Structured JSON output (requires --deep)")
+	cmd.Flags().DurationVar(&timeout, "timeout", 5*time.Second, "Per-probe timeout for --deep")
+	return developerCommand(cmd)
 }
 
 func newWaitCmd() *cobra.Command {

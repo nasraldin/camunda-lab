@@ -1,0 +1,3 @@
+<definitions>
+  <property name="password" value="fixture-password-value" />
+</definitions>

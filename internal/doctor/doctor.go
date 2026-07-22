@@ -1,10 +1,13 @@
 package doctor
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/nasraldin/camunda-lab/internal/config"
 	"github.com/nasraldin/camunda-lab/internal/display"
@@ -21,24 +24,42 @@ type Report struct {
 }
 
 func Run(fix bool) Report {
+	return runWithCommands(fix, execCommandRunner{})
+}
+
+func runWithCommands(fix bool, commands CommandRunner) Report {
 	var r Report
 	r.OK = true
 
 	check := func(name string, err error) {
 		if err != nil {
 			r.OK = false
-			r.checks = append(r.checks, display.Fail(fmt.Sprintf("%s — %v", name, err)))
+			r.checks = append(r.checks, display.Fail(fmt.Sprintf("%s — %s", name, sanitize(err.Error()))))
 			return
 		}
 		r.checks = append(r.checks, display.Success(name))
 	}
 
-	check("Docker Engine reachable", exec.Command("docker", "version", "--format", "{{.Server.Version}}").Run())
-	out, err := exec.Command("docker", "compose", "version").CombinedOutput()
+	command := func(args ...string) (CommandOutput, error) {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		out, err := commands.Run(ctx, defaultCommandOutputLimit, "docker", args...)
+		if out.Overflow && !errors.Is(err, ErrCommandOutputOverflow) {
+			err = errors.Join(err, ErrCommandOutputOverflow)
+		}
+		return out, err
+	}
+	_, err := command("version", "--format", "{{.Server.Version}}")
+	check("Docker Engine reachable", err)
+	out, err := command("compose", "version")
 	if err != nil {
-		check("Docker Compose v2", fmt.Errorf("%s", strings.TrimSpace(string(out))))
+		detail := strings.TrimSpace(string(out.Stderr))
+		if detail == "" {
+			detail = err.Error()
+		}
+		check("Docker Compose v2", fmt.Errorf("%s", sanitize(detail)))
 	} else {
-		ver := strings.TrimSpace(string(out))
+		ver := strings.TrimSpace(string(out.Stdout))
 		r.checks = append(r.checks, display.Success("Docker Compose v2 ("+ver+")"))
 	}
 

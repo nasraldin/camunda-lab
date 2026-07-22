@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL">
+  <process id="paymentProcess" name="Payment">
+    <startEvent id="paymentStart"/>
+    <endEvent id="paymentEnd"/>
+    <sequenceFlow id="paymentFlow" sourceRef="paymentStart" targetRef="paymentEnd"/>
+  </process>
+  <process id="fulfillment" name="Fulfillment">
+    <startEvent id="start"/>
+    <subProcess id="pack" name="Pack order">
+      <startEvent id="packStart"/>
+      <task id="box" name="Box goods"/>
+      <endEvent id="packEnd"/>
+      <sequenceFlow id="packFlow1" sourceRef="packStart" targetRef="box"/>
+      <sequenceFlow id="packFlow2" sourceRef="box" targetRef="packEnd"/>
+    </subProcess>
+    <callActivity id="charge" name="Charge card" calledElement="paymentProcess"/>
+    <endEvent id="end"/>
+    <sequenceFlow id="f1" sourceRef="start" targetRef="pack"/>
+    <sequenceFlow id="f2" sourceRef="pack" targetRef="charge"/>
+    <sequenceFlow id="f3" sourceRef="charge" targetRef="end"/>
+  </process>
+</definitions>

@@ -1,4 +1,4 @@
-.PHONY: build test vet fmt tidy lint install check ui ui-check dev dev-build dev-stop dev-api dev-ui dev-restart-api install-dev
+.PHONY: build test vet fmt tidy lint install check ui ui-check dev dev-build dev-stop dev-api dev-ui dev-restart-api install-dev acceptance-light acceptance-full acceptance-self-test
 
 VERSION ?= 0.0.0-dev
 GIT_SHA := $(shell git rev-parse --short HEAD 2>/dev/null || echo local)
@@ -71,3 +71,12 @@ dev: dev-build dev-stop
 	@sleep 1
 	@echo "Vite UI: http://127.0.0.1:5173  (Ctrl+C stops Vite; run make dev-stop to stop API)"
 	@cd internal/ui/web && npm run dev
+
+acceptance-self-test:
+	./scripts/acceptance/self-test.sh
+
+acceptance-light:
+	./scripts/acceptance/platform-toolkit-light.sh
+
+acceptance-full:
+	./scripts/acceptance/platform-toolkit-full.sh

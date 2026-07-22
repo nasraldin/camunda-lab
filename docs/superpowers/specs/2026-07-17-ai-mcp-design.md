@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-17  
 **Status:** Approved  
-**Repo:** camunda-lab  
+**Repo:** camunda-lab
 
 ## Goal
 
@@ -10,15 +10,15 @@ Give users a single CLI path to make Camunda’s **Orchestration Cluster MCP**, 
 
 ## Decisions (approved)
 
-| Decision | Choice |
-|----------|--------|
-| Scope | Both MCP client wiring **and** AI Agent LLM secrets |
-| CLI surface | `--ai` on `install`/`switch` **and** `camunda ai enable\|disable\|status\|config` |
-| Approach | Lab-owned overlay + secrets file (same pattern as ElasticVue), not docs-only |
-| LLM providers (v1) | OpenAI + Anthropic + optional OpenAI-compatible base URL (e.g. Ollama) |
-| Local LLM | Not required; optional via base URL only |
-| Version gate | Whole feature requires Camunda **8.9+** (cluster MCP). Processes MCP URL only on **8.10+** |
-| Profiles | **light** and **full**; **modeler**-only rejected |
+| Decision           | Choice                                                                                     |
+| ------------------ | ------------------------------------------------------------------------------------------ |
+| Scope              | Both MCP client wiring **and** AI Agent LLM secrets                                        |
+| CLI surface        | `--ai` on `install`/`switch` **and** `camunda ai enable\|disable\|status\|config`          |
+| Approach           | Lab-owned overlay + secrets file (same pattern as ElasticVue), not docs-only               |
+| LLM providers (v1) | OpenAI + Anthropic + optional OpenAI-compatible base URL (e.g. Ollama)                     |
+| Local LLM          | Not required; optional via base URL only                                                   |
+| Version gate       | Whole feature requires Camunda **8.9+** (cluster MCP). Processes MCP URL only on **8.10+** |
+| Profiles           | **light** and **full**; **modeler**-only rejected                                          |
 
 ## Non-goals (v1)
 
@@ -30,11 +30,11 @@ Give users a single CLI path to make Camunda’s **Orchestration Cluster MCP**, 
 
 ## Official Camunda baseline
 
-| Capability | Availability | Docker Compose default | Lab endpoint |
-|------------|--------------|------------------------|--------------|
-| Orchestration Cluster MCP | 8.9+ | Enabled | `http://localhost:8080/mcp/cluster` |
-| Processes MCP | 8.10+ | Enabled | `http://localhost:8080/mcp/processes` |
-| AI Agent connector | connectors-bundle | Needs provider secrets | N/A (process design) |
+| Capability                | Availability      | Docker Compose default | Lab endpoint                          |
+| ------------------------- | ----------------- | ---------------------- | ------------------------------------- |
+| Orchestration Cluster MCP | 8.9+              | Enabled                | `http://localhost:8080/mcp/cluster`   |
+| Processes MCP             | 8.10+             | Enabled                | `http://localhost:8080/mcp/processes` |
+| AI Agent connector        | connectors-bundle | Needs provider secrets | N/A (process design)                  |
 
 Auth reality (verified on full 8.9 lab): MCP returns **401** when OIDC is on (`unprotectedApi: false`). Light profile uses `unprotectedApi: true` → direct Streamable HTTP works.
 
@@ -72,7 +72,7 @@ Camunda already enables MCP in compose; camunda-lab’s job is **discoverability
 Extend `internal/config.Config`:
 
 ```yaml
-version: "8.9"
+version: '8.9'
 profile: full
 # …
 ai:
@@ -112,25 +112,25 @@ On enable/disable/secret change: recreate **connectors** only (not full stack wi
 
 ### 4. CLI
 
-| Surface | Behavior |
-|---------|----------|
-| `camunda install … --ai` | After successful install path, run the same enable pipeline (prompt/flags for secrets) |
-| `camunda switch … --ai` | Same when switching into a supported version/profile |
-| `camunda ai enable` | Set `ai.enabled`, write/update `ai.env`, apply overlay, recreate connectors, print next steps + `ai config` |
-| `camunda ai disable [--wipe-secrets]` | Clear `ai.enabled`, drop AI overlay from compose selection, recreate connectors; delete `ai.env` only with `--wipe-secrets` |
-| `camunda ai status` | Version/profile gate, `ai.enabled`, masked secret presence, MCP HTTP probe (200 / 401-with-auth / fail), hint for full vs light |
-| `camunda ai config` | Print MCP client JSON for Cursor/Claude/VS Code: light → Streamable HTTP URLs; full → `npx @camunda8/cli mcp-proxy` STDIO template with env placeholders |
+| Surface                               | Behavior                                                                                                                                                 |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `camunda install … --ai`              | After successful install path, run the same enable pipeline (prompt/flags for secrets)                                                                   |
+| `camunda switch … --ai`               | Same when switching into a supported version/profile                                                                                                     |
+| `camunda ai enable`                   | Set `ai.enabled`, write/update `ai.env`, apply overlay, recreate connectors, print next steps + `ai config`                                              |
+| `camunda ai disable [--wipe-secrets]` | Clear `ai.enabled`, drop AI overlay from compose selection, recreate connectors; delete `ai.env` only with `--wipe-secrets`                              |
+| `camunda ai status`                   | Version/profile gate, `ai.enabled`, masked secret presence, MCP HTTP probe (200 / 401-with-auth / fail), hint for full vs light                          |
+| `camunda ai config`                   | Print MCP client JSON for Cursor/Claude/VS Code: light → Streamable HTTP URLs; full → `npx @camunda8/cli mcp-proxy` STDIO template with env placeholders |
 
 Hard failures:
 
-- Version &lt; 8.9 → upgrade hint  
-- Profile `modeler` → unsupported  
-- Enable with no provider configured → actionable error  
+- Version &lt; 8.9 → upgrade hint
+- Profile `modeler` → unsupported
+- Enable with no provider configured → actionable error
 
 Soft hints:
 
-- Full profile + MCP 401 → use `camunda ai config` / `camunda tools c8ctl install`  
-- Missing c8ctl when printing full proxy config → install hint  
+- Full profile + MCP 401 → use `camunda ai config` / `camunda tools c8ctl install`
+- Missing c8ctl when printing full proxy config → install hint
 
 ### 5. URLs + open + smoke
 

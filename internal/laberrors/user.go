@@ -16,6 +16,24 @@ type UserError struct {
 
 func (e *UserError) Error() string { return e.Message }
 
+// SafeCodedError exposes a stable machine code and a detail-free message that
+// may be returned by API boundaries. Implementations must not include secrets
+// or internal diagnostics in SafeMessage.
+type SafeCodedError interface {
+	error
+	SafeCode() string
+	SafeMessage() string
+}
+
+// AsSafeCoded returns a safe coded error through arbitrary wrapping.
+func AsSafeCoded(err error) (SafeCodedError, bool) {
+	var coded SafeCodedError
+	if errors.As(err, &coded) {
+		return coded, true
+	}
+	return nil, false
+}
+
 // AsUser returns a UserError if err is or wraps one.
 func AsUser(err error) (*UserError, bool) {
 	var u *UserError

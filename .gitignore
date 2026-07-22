@@ -24,3 +24,9 @@ ai.env
 # Node
 node_modules/
 internal/ui/web/node_modules/
+
+# Accidental output from `camunda test generate` run in this repo
+/tests/
+
+# Acceptance harness artifacts (local evidence; see docs/acceptance/)
+artifacts/acceptance/

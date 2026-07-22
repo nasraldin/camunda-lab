@@ -42,12 +42,12 @@ SemVer tags: `vMAJOR.MINOR.PATCH`.
 
 ## Channels
 
-| Channel | How |
-| --- | --- |
-| GitHub Release | tag `v*` → GoReleaser |
-| `install.sh` | downloads release tarball + verifies `checksums.txt` |
-| Homebrew | `nasraldin/tools` formula `camunda-lab` (auto-published on tag) |
-| Docs site | MkDocs → GitHub Pages on `main` |
+| Channel        | How                                                             |
+| -------------- | --------------------------------------------------------------- |
+| GitHub Release | tag `v*` → GoReleaser                                           |
+| `install.sh`   | downloads release tarball + verifies `checksums.txt`            |
+| Homebrew       | `nasraldin/tools` formula `camunda-lab` (auto-published on tag) |
+| Docs site      | MkDocs → GitHub Pages on `main`                                 |
 
 ## Repo hygiene (maintainers)
 

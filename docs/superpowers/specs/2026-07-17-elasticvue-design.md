@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-17  
 **Status:** Draft — awaiting user review  
-**Repo:** camunda-lab  
+**Repo:** camunda-lab
 
 ## Goal
 
@@ -10,12 +10,12 @@ Give every lab profile that exposes Elasticsearch a zero-setup [ElasticVue](http
 
 ## Decisions (approved)
 
-| Decision | Choice |
-|----------|--------|
+| Decision        | Choice                                                                                                                     |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | When to include | Auto whenever the profile exposes Elasticsearch (light ≤8.9, full including 8.10 ES overlay; not modeler / not 8.10 light) |
-| Host port | `9800` → `http://localhost:9800` |
-| CLI surface | Full: `urls`, `status`, `open elasticvue`, smoke optional (warn-only) |
-| Approach | Thin Compose overlay (same pattern as 8.10 ES), not a separate project |
+| Host port       | `9800` → `http://localhost:9800`                                                                                           |
+| CLI surface     | Full: `urls`, `status`, `open elasticvue`, smoke optional (warn-only)                                                      |
+| Approach        | Thin Compose overlay (same pattern as 8.10 ES), not a separate project                                                     |
 
 ## Non-goals
 
@@ -48,9 +48,9 @@ Two thin overlays under `overlays/` (mirrored in `internal/overlay/embed/`):
 services:
   elasticsearch:
     environment:
-      http.cors.enabled: "true"
-      http.cors.allow-origin: "/.*/"
-      http.cors.allow-headers: "X-Requested-With,Content-Type,Content-Length,Authorization"
+      http.cors.enabled: 'true'
+      http.cors.allow-origin: '/.*/'
+      http.cors.allow-headers: 'X-Requested-With,Content-Type,Content-Length,Authorization'
 ```
 
 (Exact YAML style to match Compose merge rules used by the 8.10 ES overlay.)
@@ -63,7 +63,7 @@ services:
     image: cars10/elasticvue:<pinned-tag>
     container_name: camunda-lab-elasticvue
     ports:
-      - "9800:8080"
+      - '9800:8080'
     environment:
       ELASTICVUE_CLUSTERS: '[{"name":"camunda-lab","uri":"http://localhost:9200"}]'
     restart: unless-stopped
@@ -79,12 +79,12 @@ Also update **`elasticsearch-8.10.yaml`** so the sidecar ES we invent for 8.10 f
 
 Add `versions.HasHostElasticsearch(minor, profile) bool` (name can vary) aligned with `urls.List` today:
 
-| Profile / minor | Host ES (`:9200`) | ElasticVue overlays |
-|-----------------|-------------------|---------------------|
-| modeler (any) | no | no |
-| light 8.9 / 8.10 | no (official light dropped ES) | no |
-| light 8.7–8.8 | yes | yes |
-| full (any supported) | yes (8.10 via ES overlay) | yes |
+| Profile / minor      | Host ES (`:9200`)              | ElasticVue overlays |
+| -------------------- | ------------------------------ | ------------------- |
+| modeler (any)        | no                             | no                  |
+| light 8.9 / 8.10     | no (official light dropped ES) | no                  |
+| light 8.7–8.8        | yes                            | yes                 |
+| full (any supported) | yes (8.10 via ES overlay)      | yes                 |
 
 `overlay.ComposeOverrideFiles` returns, in order when applicable:
 
@@ -135,20 +135,20 @@ camunda open elasticvue
 
 ## Risks / mitigations
 
-| Risk | Mitigation |
-|------|------------|
-| Upstream Camunda ES service name differs | Stick to `elasticsearch` (official compose name); verify on 8.7–8.9 light/full in live smoke |
-| CORS merge ignored by some Compose versions | Prefer list-style `environment:` keys that merge; document `camunda doctor` note if cluster import works but connection fails |
-| Port 9800 conflict | Document; no CLI flag in v1 (can add later) |
-| Light profile without published `:9200` | Align URL map with reality; if a minor does not publish ES, exclude from `HasHostElasticsearch` (do not start a useless ElasticVue) |
-| Browser still prompts to import | Pin ElasticVue version that auto-imports `ELASTICVUE_CLUSTERS` on open (per upstream README / issue #254 behavior) |
+| Risk                                        | Mitigation                                                                                                                          |
+| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Upstream Camunda ES service name differs    | Stick to `elasticsearch` (official compose name); verify on 8.7–8.9 light/full in live smoke                                        |
+| CORS merge ignored by some Compose versions | Prefer list-style `environment:` keys that merge; document `camunda doctor` note if cluster import works but connection fails       |
+| Port 9800 conflict                          | Document; no CLI flag in v1 (can add later)                                                                                         |
+| Light profile without published `:9200`     | Align URL map with reality; if a minor does not publish ES, exclude from `HasHostElasticsearch` (do not start a useless ElasticVue) |
+| Browser still prompts to import             | Pin ElasticVue version that auto-imports `ELASTICVUE_CLUSTERS` on open (per upstream README / issue #254 behavior)                  |
 
 ## Implementation outline (for later plan)
 
-1. Add `HasHostElasticsearch` + tests  
-2. Author overlays + embed + sync in `ComposeOverrideFiles`  
-3. Wire URLs / status / smoke  
-4. Docs + optional LIVE verify on light 8.9  
+1. Add `HasHostElasticsearch` + tests
+2. Author overlays + embed + sync in `ComposeOverrideFiles`
+3. Wire URLs / status / smoke
+4. Docs + optional LIVE verify on light 8.9
 
 ## Success criteria
 

@@ -22,32 +22,33 @@
 
 ## File map
 
-| Path | Responsibility |
-| --- | --- |
-| `cmd/camunda/main.go` | Entrypoint |
-| `internal/cli/*.go` | Cobra commands |
-| `internal/config/config.go` | Load/save `~/.camunda-lab/config.yaml` |
-| `internal/paths/paths.go` | Home dir layout helpers |
-| `internal/versions/adapter.go` | Minor → compose file mapping |
-| `internal/versions/download.go` | Fetch/verify/extract zip |
-| `internal/overlay/overlay.go` | Pick overlay files |
-| `internal/compose/compose.go` | Run `docker compose` with project name |
-| `internal/doctor/doctor.go` | Preflight + health checks |
-| `internal/smoke/smoke.go` | HTTP smoke checks |
-| `internal/urls/urls.go` | Component URL map |
-| `internal/tools/c8ctl.go` | c8ctl install/status helpers |
-| `internal/tools/modeler.go` | Desktop Modeler profile writer |
-| `overlays/*.yaml` | Resource + 8.10 ES overrides |
-| `Formula/camunda-lab.rb` | Homebrew |
-| `.goreleaser.yaml` | Releases |
-| `install.sh` | One-liner installer |
-| `docs/` + `mkdocs.yml` | Docs site |
+| Path                            | Responsibility                         |
+| ------------------------------- | -------------------------------------- |
+| `cmd/camunda/main.go`           | Entrypoint                             |
+| `internal/cli/*.go`             | Cobra commands                         |
+| `internal/config/config.go`     | Load/save `~/.camunda-lab/config.yaml` |
+| `internal/paths/paths.go`       | Home dir layout helpers                |
+| `internal/versions/adapter.go`  | Minor → compose file mapping           |
+| `internal/versions/download.go` | Fetch/verify/extract zip               |
+| `internal/overlay/overlay.go`   | Pick overlay files                     |
+| `internal/compose/compose.go`   | Run `docker compose` with project name |
+| `internal/doctor/doctor.go`     | Preflight + health checks              |
+| `internal/smoke/smoke.go`       | HTTP smoke checks                      |
+| `internal/urls/urls.go`         | Component URL map                      |
+| `internal/tools/c8ctl.go`       | c8ctl install/status helpers           |
+| `internal/tools/modeler.go`     | Desktop Modeler profile writer         |
+| `overlays/*.yaml`               | Resource + 8.10 ES overrides           |
+| `Formula/camunda-lab.rb`        | Homebrew                               |
+| `.goreleaser.yaml`              | Releases                               |
+| `install.sh`                    | One-liner installer                    |
+| `docs/` + `mkdocs.yml`          | Docs site                              |
 
 ---
 
 ### Task 1: Scaffold Go module and config package
 
 **Files:**
+
 - Create: `go.mod`
 - Create: `cmd/camunda/main.go`
 - Create: `internal/paths/paths.go`
@@ -58,6 +59,7 @@
 - Create: `LICENSE`
 
 **Interfaces:**
+
 - Produces: `paths.Home() string`, `paths.VersionsDir() string`, `paths.ConfigFile() string`
 - Produces: `config.Config` with fields `Version`, `Profile`, `Resources`, `Host`, `ComposeProject`
 - Produces: `config.Load() (Config, error)`, `config.Save(Config) error`, `config.Defaults() Config`
@@ -70,6 +72,7 @@ go mod init github.com/nasraldin/camunda-lab
 ```
 
 `.gitignore`:
+
 ```
 /bin/
 /dist/
@@ -139,6 +142,7 @@ Expected: FAIL (packages missing)
 - [ ] **Step 4: Implement paths + config**
 
 `internal/paths/paths.go`:
+
 ```go
 package paths
 
@@ -187,6 +191,7 @@ func ActiveFile() string   { return filepath.Join(Home(), "active.yaml") }
 ```
 
 `internal/config/config.go`:
+
 ```go
 package config
 
@@ -262,6 +267,7 @@ func Save(c Config) error {
 ```
 
 `cmd/camunda/main.go`:
+
 ```go
 package main
 
@@ -287,6 +293,7 @@ func execute() error {
 ```
 
 `Makefile`:
+
 ```makefile
 .PHONY: build test lint
 VERSION ?= 0.0.0-dev
@@ -323,12 +330,14 @@ git commit -m "feat: scaffold Go module and config package"
 ### Task 2: Cobra CLI skeleton with help/version/about
 
 **Files:**
+
 - Create: `internal/cli/root.go`
 - Create: `internal/cli/version.go`
 - Modify: `cmd/camunda/main.go`
 - Test: `internal/cli/root_test.go`
 
 **Interfaces:**
+
 - Consumes: `main.version` via `cli.SetVersion`
 - Produces: `cli.NewRoot() *cobra.Command`
 
@@ -377,6 +386,7 @@ Expected: FAIL
 - [ ] **Step 4: Implement root command**
 
 `internal/cli/root.go`:
+
 ```go
 package cli
 
@@ -437,6 +447,7 @@ func placeholder(use, short string) *cobra.Command {
 ```
 
 `internal/cli/version.go`:
+
 ```go
 package cli
 
@@ -472,6 +483,7 @@ func newAboutCmd() *cobra.Command {
 ```
 
 Update `cmd/camunda/main.go`:
+
 ```go
 package main
 
@@ -512,10 +524,12 @@ git commit -m "feat: add Cobra CLI skeleton with help and version"
 ### Task 3: Version adapters
 
 **Files:**
+
 - Create: `internal/versions/adapter.go`
 - Create: `internal/versions/adapter_test.go`
 
 **Interfaces:**
+
 - Produces: `versions.Supported = []string{"8.7","8.8","8.9","8.10"}`
 - Produces: `versions.IsPreview(minor string) bool` — true for `8.10`
 - Produces: `versions.ComposeFiles(minor, profile string) (files []string, err error)`
@@ -678,11 +692,13 @@ git commit -m "feat: add Camunda minor version adapters"
 ### Task 4: Distribution downloader
 
 **Files:**
+
 - Create: `internal/versions/download.go`
 - Create: `internal/versions/download_test.go`
 - Create: `internal/versions/testdata/fake-dist.zip` (generated in test)
 
 **Interfaces:**
+
 - Produces: `versions.Ensure(minor string, opts DownloadOptions) (dir string, err error)`
 - `DownloadOptions` has `HTTPClient *http.Client`, `SkipIfPresent bool`
 
@@ -703,6 +719,7 @@ func TestEnsureExtractsZip(t *testing.T) {
 `DownloadOptions` must include `URL string` (if non-empty, use instead of `ZipURL(minor)`), `HTTPClient *http.Client`, `SkipIfPresent bool`.
 
 Implement `Ensure` to:
+
 1. Skip if `VersionDir(minor)` already has expected compose file and `SkipIfPresent`
 2. Download zip to temp
 3. Extract to `versions/<minor>/` (handle zip root folder if present)
@@ -727,6 +744,7 @@ git commit -m "feat: download and extract official Camunda compose zips"
 ### Task 5: Overlay selection + checked-in overlay YAMLs
 
 **Files:**
+
 - Create: `overlays/resources-small.yaml`
 - Create: `overlays/resources-balanced.yaml`
 - Create: `overlays/resources-power.yaml`
@@ -736,12 +754,14 @@ git commit -m "feat: download and extract official Camunda compose zips"
 - Create: `internal/overlay/embed.go` (embed FS)
 
 **Interfaces:**
+
 - Produces: `overlay.Files(resources string, minor string, profile string) ([]string, error)` — returns absolute paths after syncing embeds to `~/.camunda-lab/overlays/`
 - Produces: `overlay.SyncToHome() error`
 
 - [ ] **Step 1: Write overlay YAML files**
 
 `overlays/resources-balanced.yaml` (example — tune in implementation):
+
 ```yaml
 # camunda-lab resource overlay — balanced
 services:
@@ -760,10 +780,12 @@ services:
 For 8.7 use service names `zeebe` / `operate` / `tasklist` in addition via separate files OR keep overlays soft (only apply keys that exist — Compose ignores unknown service keys? Actually Compose fails on unknown services in some versions). **Safer approach:** resource overlays are best-effort documentation + only apply memory env where universal:
 
 Prefer overlays that set only common services per era:
+
 - `resources-*-88.yaml` style OR
 - Single overlay using extension fields that won't break
 
 **Simplest safe v1:** overlays only for:
+
 1. `elasticsearch-8.10.yaml` — full ES service definition + network join
 2. Resource overlays that only touch `orchestration` + `elasticsearch` + `zeebe` (all optional keys) — Docker Compose v2 **errors** on undefined services.
 
@@ -772,6 +794,7 @@ Prefer overlays that set only common services per era:
 Update design implementation note: `camunda resources` writes `resources.env` and records choice in config; compose runner always passes `--env-file` when present.
 
 `overlays/elasticsearch-8.10.yaml`:
+
 ```yaml
 services:
   elasticsearch:
@@ -780,12 +803,12 @@ services:
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
-      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+      - 'ES_JAVA_OPTS=-Xms1g -Xmx1g'
       - cluster.name=elasticsearch
     ports:
-      - "9200:9200"
+      - '9200:9200'
     healthcheck:
-      test: ["CMD-SHELL", "curl -s http://localhost:9200 >/dev/null || exit 1"]
+      test: ['CMD-SHELL', 'curl -s http://localhost:9200 >/dev/null || exit 1']
       interval: 30s
       timeout: 10s
       retries: 10
@@ -800,11 +823,11 @@ Ensure network name matches upstream `camunda-platform`.
 
 Returns paths to compose override files to pass as extra `-f` args. For resources, write `resources.env` with:
 
-| profile | JAVA_TOOL_OPTIONS / notes |
-| --- | --- |
-| small | `-Xms256m -Xmx512m` |
-| balanced | `-Xms512m -Xmx1024m` |
-| power | `-Xms1g -Xmx2g` |
+| profile  | JAVA_TOOL_OPTIONS / notes |
+| -------- | ------------------------- |
+| small    | `-Xms256m -Xmx512m`       |
+| balanced | `-Xms512m -Xmx1024m`      |
+| power    | `-Xms1g -Xmx2g`           |
 
 - [ ] **Step 3: Tests + commit**
 
@@ -819,10 +842,12 @@ git commit -m "feat: add overlays for resources env and 8.10 Elasticsearch"
 ### Task 6: Compose runner
 
 **Files:**
+
 - Create: `internal/compose/compose.go`
 - Create: `internal/compose/compose_test.go`
 
 **Interfaces:**
+
 - Produces: `compose.Runner` with methods:
   - `Up(ctx, workDir string, files []string, envFiles []string, project string) error`
   - `Down(ctx, workDir string, files []string, project string, volumes bool) error`
@@ -856,6 +881,7 @@ git commit -m "feat: add docker compose runner"
 ### Task 7: Install + up/down/status commands
 
 **Files:**
+
 - Create: `internal/lab/lab.go` — orchestrates ensure + overlays + compose
 - Create: `internal/cli/install.go`
 - Create: `internal/cli/lifecycle.go`
@@ -863,6 +889,7 @@ git commit -m "feat: add docker compose runner"
 - Create: `internal/prompt/prompt.go` — interactive selects (stdin)
 
 **Interfaces:**
+
 - Produces: `lab.Install(ctx, opts lab.InstallOpts) error`
 - `InstallOpts`: Version, Profile, Resources, Yes bool
 - Produces: `lab.Up/Down/Status`
@@ -904,12 +931,14 @@ git commit -m "feat: implement install and lifecycle commands"
 ### Task 8: switch, profile, resources
 
 **Files:**
+
 - Create: `internal/cli/switch.go`
 - Create: `internal/cli/profile.go`
 - Create: `internal/cli/resources.go`
 - Create: `internal/lab/switch.go`
 
 **Interfaces:**
+
 - `lab.Switch(ctx, minor string, wipe bool) error` — stop; if wipe `Down(volumes=true)`; update config; Ensure; Up
 - Warn on cross-minor without wipe to stderr
 
@@ -930,16 +959,19 @@ git commit -m "feat: add switch, profile, and resources commands"
 ### Task 9: URLs, open, logs
 
 **Files:**
+
 - Create: `internal/urls/urls.go`
 - Create: `internal/urls/urls_test.go`
 - Create: `internal/cli/urls.go`
 - Create: `internal/cli/logs.go`
 
 **Interfaces:**
+
 - `urls.List(cfg config.Config) []urls.Entry` where `Entry{Name, URL, Notes}`
 - Port map must match upstream defaults (Operate/Tasklist differ for light vs full and 8.7 vs 8.8+)
 
 Reference defaults from Camunda docs (8.8+ light):
+
 - Operate/Tasklist/Admin: `http://localhost:8080/...`
 - gRPC: `localhost:26500`
 - Full: Console `8087`, Optimize `8083`, Identity `8084`, Web Modeler `8070`, Keycloak `18080`
@@ -963,6 +995,7 @@ git commit -m "feat: add urls, open, and logs commands"
 ### Task 10: doctor, wait, smoke
 
 **Files:**
+
 - Create: `internal/doctor/doctor.go`
 - Create: `internal/doctor/doctor_test.go`
 - Create: `internal/smoke/smoke.go`
@@ -971,6 +1004,7 @@ git commit -m "feat: add urls, open, and logs commands"
 - Create: `internal/cli/smoke.go`
 
 **Interfaces:**
+
 - `doctor.Run(fix bool) (Report, error)` — docker, compose v2, disk, config present, version dir, optional port check
 - `smoke.Run(ctx, cfg) error` — HTTP GET Operate or `/actuator/health` endpoints with timeout; treat 401/302 as success for protected UIs
 - `wait.UntilHealthy(ctx, cfg, timeout)` — poll smoke until ok or timeout
@@ -990,17 +1024,20 @@ git commit -m "feat: add doctor, wait, and smoke commands"
 ### Task 11: tools c8ctl + modeler profile
 
 **Files:**
+
 - Create: `internal/tools/c8ctl.go`
 - Create: `internal/tools/modeler.go`
 - Create: `internal/tools/modeler_test.go`
 - Create: `internal/cli/tools.go`
 
 **Interfaces:**
+
 - `tools.C8ctlStatus() (installed bool, path string, err error)`
 - `tools.C8ctlInstall() error` — prefer `npm install -g @camunda8/cli`; clear error if npm missing
 - `tools.WriteModelerProfile(cfg config.Config) (path string, err error)` — write JSON profile under OS-specific Camunda Modeler config dir; include gRPC `26500` and REST base URL; auth mode basic for light, OIDC notes for full
 
 Modeler paths:
+
 - macOS: `~/Library/Application Support/camunda-modeler/resources/profiles.json` (confirm during impl; create if missing)
 - Linux: `~/.config/camunda-modeler/...`
 
@@ -1019,11 +1056,13 @@ git commit -m "feat: add c8ctl and Desktop Modeler tool helpers"
 ### Task 12: nuke + active.yaml fingerprint
 
 **Files:**
+
 - Create: `internal/cli/nuke.go`
 - Create: `internal/lab/active.go`
 - Modify: `internal/lab/lab.go` to write `active.yaml` on up
 
 **Interfaces:**
+
 - `active.yaml` stores: version, profile, workDir, compose files, startedAt
 - `nuke`: confirm unless `CONFIRM=yes` or `--yes`; `Down(volumes=true)`; remove `~/.camunda-lab/versions`, overlays copy, config (or entire home)
 
@@ -1040,6 +1079,7 @@ git commit -m "feat: add nuke and active lab fingerprint"
 ### Task 13: README, install.sh, MkDocs stub
 
 **Files:**
+
 - Create: `README.md`
 - Create: `install.sh`
 - Create: `mkdocs.yml`
@@ -1069,13 +1109,14 @@ git commit -m "docs: add README, install script, and MkDocs site stub"
 ### Task 14: CI, goreleaser, Homebrew formula
 
 **Files:**
+
 - Create: `.github/workflows/ci.yml`
 - Create: `.github/workflows/release.yml`
 - Create: `.goreleaser.yaml`
 - Create: `Formula/camunda-lab.rb` (template with version/url/sha placeholders + comment that `scripts/publish-homebrew.sh` updates them)
 
 CI: `go test ./...`, `go build`, golangci-lint  
-Release: tag `v*` → goreleaser  
+Release: tag `v*` → goreleaser
 
 Formula installs binary named `camunda` from release assets.
 
@@ -1101,10 +1142,12 @@ git commit -m "ci: add test workflow, goreleaser, and Homebrew formula stub"
 ### Task 15: LIVE integration test script
 
 **Files:**
+
 - Create: `scripts/live-smoke.sh`
 - Create: `internal/lab/lab_live_test.go` with `//go:build live`
 
 Script:
+
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
@@ -1131,22 +1174,22 @@ git commit -m "test: add optional LIVE smoke script for light profile"
 
 ## Spec coverage checklist
 
-| Spec requirement | Task |
-| --- | --- |
-| A+ official zip wrapper | 4, 7 |
-| Versions 8.7–8.10 adapters | 3 |
-| Profiles light/full/modeler | 3, 7, 8 |
-| Interactive install + `--yes` | 7 |
-| Resource profiles | 5, 8 |
-| 8.10 ES overlay | 5 |
-| Lifecycle up/down/status/switch | 7, 8 |
-| doctor / wait / smoke | 10 |
-| urls / open / logs | 9 |
-| tools c8ctl + modeler | 11 |
-| nuke | 12 |
-| Go CLI + Homebrew + install.sh + docs | 2, 13, 14 |
-| Single lab, paths ready for v2 | 1 (`CAMUNDA_LAB_HOME`) |
-| Unofficial disclaimer | 2, 13 |
+| Spec requirement                      | Task                   |
+| ------------------------------------- | ---------------------- |
+| A+ official zip wrapper               | 4, 7                   |
+| Versions 8.7–8.10 adapters            | 3                      |
+| Profiles light/full/modeler           | 3, 7, 8                |
+| Interactive install + `--yes`         | 7                      |
+| Resource profiles                     | 5, 8                   |
+| 8.10 ES overlay                       | 5                      |
+| Lifecycle up/down/status/switch       | 7, 8                   |
+| doctor / wait / smoke                 | 10                     |
+| urls / open / logs                    | 9                      |
+| tools c8ctl + modeler                 | 11                     |
+| nuke                                  | 12                     |
+| Go CLI + Homebrew + install.sh + docs | 2, 13, 14              |
+| Single lab, paths ready for v2        | 1 (`CAMUNDA_LAB_HOME`) |
+| Unofficial disclaimer                 | 2, 13                  |
 
 ## Plan self-review notes
 

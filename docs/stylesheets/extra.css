@@ -6,9 +6,9 @@
 }
 
 /* Dark mode: invert the black Camunda wordmark */
-[data-md-color-scheme="slate"] .md-header__button.md-logo img,
-[data-md-color-scheme="slate"] .md-nav__title .md-nav__button.md-logo img,
-[data-md-color-scheme="slate"] .brand-logo {
+[data-md-color-scheme='slate'] .md-header__button.md-logo img,
+[data-md-color-scheme='slate'] .md-nav__title .md-nav__button.md-logo img,
+[data-md-color-scheme='slate'] .brand-logo {
   filter: invert(1) brightness(1.1);
 }
 

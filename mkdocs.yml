@@ -100,6 +100,7 @@ nav:
       - App screenshots: screenshots.md
   - Reference:
       - CLI reference: cli-reference.md
+      - Lab API reference: api-reference.md
       - Troubleshooting: troubleshooting.md
   - Project:
       - Roadmap: roadmap.md

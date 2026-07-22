@@ -106,39 +106,41 @@ Ports differ by Camunda minor — run `camunda urls` (see [profiles](https://nas
 
 ## Handy commands
 
-| Command | Meaning |
-| --- | --- |
-| `camunda install` | Fetch zip, configure, start |
-| `camunda about` | Project + runtime info |
-| `camunda wait` / `doctor` / `smoke` | Health |
-| `camunda urls` / `open` | Where the UIs live |
-| `camunda ui` | Lab UI in background (http://localhost:9090) |
-| `camunda ui logs -f` | Follow background UI logs |
-| `camunda ai enable` / `config` | MCP + AI Agent secrets (8.9+) |
-| `camunda monitoring enable` | Prometheus + Grafana dashboards |
-| `camunda switch 8.9 --wipe` | Another minor, clean volumes |
-| `camunda profile light\|full\|modeler` | Compose profile |
-| `camunda resources small\|balanced\|power` | Heap settings |
-| `camunda tools c8ctl install` | Official deploy/debug CLI |
-| `camunda nuke` | Wipe `~/.camunda-lab` |
+| Command                                    | Meaning                                      |
+| ------------------------------------------ | -------------------------------------------- |
+| `camunda install`                          | Fetch zip, configure, start                  |
+| `camunda about`                            | Project + runtime info                       |
+| `camunda wait` / `doctor` / `smoke`        | Health                                       |
+| `camunda urls` / `open`                    | Where the UIs live                           |
+| `camunda ui`                               | Lab UI in background (http://localhost:9090) |
+| `camunda ui logs -f`                       | Follow background UI logs                    |
+| `camunda ai enable` / `config`             | MCP + AI Agent secrets (8.9+)                |
+| `camunda monitoring enable`                | Prometheus + Grafana dashboards              |
+| `camunda switch 8.9 --wipe`                | Another minor, clean volumes                 |
+| `camunda profile light\|full\|modeler`     | Compose profile                              |
+| `camunda resources small\|balanced\|power` | Heap settings                                |
+| `camunda tools c8ctl install`              | Official deploy/debug CLI                    |
+| `camunda nuke`                             | Wipe `~/.camunda-lab`                        |
 
-More: [CLI reference](https://nasraldin.github.io/camunda-lab/cli-reference/) · [AI and MCP](https://nasraldin.github.io/camunda-lab/ai-mcp/) · [Roadmap](https://nasraldin.github.io/camunda-lab/roadmap/).
+More: [CLI reference](https://nasraldin.github.io/camunda-lab/cli-reference/) · [Lab API reference](https://nasraldin.github.io/camunda-lab/api-reference/) · [AI and MCP](https://nasraldin.github.io/camunda-lab/ai-mcp/) · [Roadmap](https://nasraldin.github.io/camunda-lab/roadmap/).
 
 ---
 
 ## Docs
 
-| Page | About |
-| --- | --- |
-| [Home](https://nasraldin.github.io/camunda-lab/) | Overview |
-| [Installation](https://nasraldin.github.io/camunda-lab/installation/) | First boot |
-| [Lab UI](https://nasraldin.github.io/camunda-lab/lab-ui/) | Browser control panel |
-| [Why Camunda Lab](https://nasraldin.github.io/camunda-lab/comparison/) | vs zip / Helm / 8 Run |
-| [Profiles](https://nasraldin.github.io/camunda-lab/profiles/) | Versions, ports, ElasticVue |
-| [AI and MCP](https://nasraldin.github.io/camunda-lab/ai-mcp/) | Cursor MCP + connector secrets |
-| [Monitoring](https://nasraldin.github.io/camunda-lab/monitoring/) | Prometheus + Grafana dashboards |
-| [Roadmap](https://nasraldin.github.io/camunda-lab/roadmap/) | Shipped and next |
-| [Troubleshooting](https://nasraldin.github.io/camunda-lab/troubleshooting/) | When it breaks |
+| Page                                                                        | About                          |
+| --------------------------------------------------------------------------- | ------------------------------ |
+| [Home](https://nasraldin.github.io/camunda-lab/)                            | Overview                       |
+| [Installation](https://nasraldin.github.io/camunda-lab/installation/)       | First boot                     |
+| [Lab UI](https://nasraldin.github.io/camunda-lab/lab-ui/)                   | Browser control panel          |
+| [Why Camunda Lab](https://nasraldin.github.io/camunda-lab/comparison/)      | vs zip / Helm / 8 Run          |
+| [Profiles](https://nasraldin.github.io/camunda-lab/profiles/)               | Versions, ports, ElasticVue    |
+| [AI and MCP](https://nasraldin.github.io/camunda-lab/ai-mcp/)               | Cursor MCP + connector secrets |
+| [Monitoring](https://nasraldin.github.io/camunda-lab/monitoring/)           | Prometheus + Grafana dashboards |
+| [CLI reference](https://nasraldin.github.io/camunda-lab/cli-reference/)     | Every command                  |
+| [Lab API reference](https://nasraldin.github.io/camunda-lab/api-reference/) | `/api/v1` toolkit routes       |
+| [Roadmap](https://nasraldin.github.io/camunda-lab/roadmap/)                 | Implemented features and next  |
+| [Troubleshooting](https://nasraldin.github.io/camunda-lab/troubleshooting/) | When it breaks                 |
 
 ---
 

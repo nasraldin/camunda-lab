@@ -118,10 +118,13 @@ func (l *Lab) Install(ctx context.Context, opts InstallOpts) error {
 	}
 	display.Done(os.Stdout, "Distribution ready for Camunda %s.", version)
 
-	cfg.Version = version
-	cfg.Profile = profile
-	cfg.Resources = resources
-	if err := config.Save(cfg); err != nil {
+	if err := config.Update(func(current *config.Config) error {
+		current.Version = version
+		current.Profile = profile
+		current.Resources = resources
+		cfg = *current
+		return nil
+	}); err != nil {
 		return err
 	}
 

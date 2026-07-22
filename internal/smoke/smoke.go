@@ -57,8 +57,9 @@ func Probe(ctx context.Context, cfg config.Config) Result {
 		if required {
 			requiredTotal++
 		}
-		c := Check{Name: e.Name, URL: e.URL}
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, e.URL, nil)
+		probe := urls.ProbeURL(e)
+		c := Check{Name: e.Name, URL: probe}
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, probe, nil)
 		if err != nil {
 			c.Detail = err.Error()
 			res.Checks = append(res.Checks, c)
