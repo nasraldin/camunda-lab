@@ -21,24 +21,20 @@ var monitoringContainers = []string{
 }
 
 func (l *Lab) EnableMonitoring(ctx context.Context) error {
-	cfg, err := config.Load()
-	if err != nil {
-		return err
-	}
-	cfg.Monitoring.Enabled = true
-	if err := config.Save(cfg); err != nil {
+	if err := config.Update(func(current *config.Config) error {
+		current.Monitoring.Enabled = true
+		return nil
+	}); err != nil {
 		return err
 	}
 	return l.RecreateMonitoring(ctx)
 }
 
 func (l *Lab) DisableMonitoring(ctx context.Context) error {
-	cfg, err := config.Load()
-	if err != nil {
-		return err
-	}
-	cfg.Monitoring.Enabled = false
-	if err := config.Save(cfg); err != nil {
+	if err := config.Update(func(current *config.Config) error {
+		current.Monitoring.Enabled = false
+		return nil
+	}); err != nil {
 		return err
 	}
 	// Stop and remove the monitoring containers now that the overlay is dropped.

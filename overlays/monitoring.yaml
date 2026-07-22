@@ -15,7 +15,8 @@ services:
     volumes:
       - __OVERLAYS_DIR__/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     ports:
-      - "9490:9090"
+      # Loopback only — no LAN exposure (Prometheus has no auth).
+      - "127.0.0.1:9490:9090"
     restart: unless-stopped
     networks:
       - camunda-platform
@@ -33,7 +34,8 @@ services:
       - __OVERLAYS_DIR__/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
       - __OVERLAYS_DIR__/monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
     ports:
-      - "3000:3000"
+      # Loopback only — admin/admin credentials must not be reachable on the LAN.
+      - "127.0.0.1:3000:3000"
     depends_on:
       - prometheus
     restart: unless-stopped

@@ -32,16 +32,11 @@ Direction and phase boundaries: [platform toolkit vision](https://github.com/nas
 - Camunda Compose **8.7–8.10**, profiles, ElasticVue, AI Agent + MCP, official CLI / Modeler tools
 - GitHub Releases, `install.sh`, Homebrew (`camunda-lab`)
 
-## Landed on `main` (next release)
-
-Merged and usable from source; rolls into the next tagged release:
-
-- **Monitoring add-on** — `camunda monitoring enable` wires opt-in **Prometheus + Grafana** (admin/admin) with pre-provisioned dashboards for **Zeebe/orchestration, Elasticsearch, and connectors** (via the ES exporter), plus a best-effort Optimize placeholder. Surfaced through `camunda open grafana`, `camunda urls`, and a **Monitoring** page + Apps cards in the Lab UI. Scrape targets are best-effort per Camunda minor and user-editable. Guide: [Monitoring](monitoring.md) _(idea: @MahmoudSaid037)_
-
 ## Next up (maintainer / small DX)
 
 Things we’re actively building or next in line — no hard ETA:
 
+- **Monitoring add-on** *(in review — [PR #15](https://github.com/nasraldin/camunda-lab/pull/15))* — `camunda monitoring enable` wires opt-in **Prometheus + Grafana** (loopback only, admin/admin) with pre-provisioned dashboards for **Zeebe/orchestration, Elasticsearch, and connectors** (via the ES exporter), plus a best-effort Optimize placeholder. Surfaced through `camunda open grafana`, `camunda urls`, and a **Monitoring** page + Apps cards in the Lab UI. Scrape targets are best-effort per Camunda minor and user-editable. Guide: [Monitoring](monitoring.md) _(idea: @MahmoudSaid037)_
 - Optional Cosign verify when `cosign` is on your PATH
 - Scheduled LIVE smoke in CI (nightly-ish; too heavy for every PR)
 - Optional `--write-cursor` to drop MCP JSON into the user’s Cursor config

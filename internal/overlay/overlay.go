@@ -143,8 +143,12 @@ func ComposeOverrideFiles(minor, profile string, aiEnabled, monitoringEnabled bo
 	return out, nil
 }
 
-// writeMonitoringAssets extracts the embedded monitoring/ tree (prometheus
-// config, Grafana provisioning + dashboards) into ~/.camunda-lab/overlays/.
+// writeMonitoringAssets seeds the embedded monitoring/ tree (prometheus config,
+// Grafana provisioning + dashboards) into ~/.camunda-lab/overlays/ — but only
+// for files that don't already exist. This is write-if-missing on purpose: users
+// are told they can edit prometheus.yml and the dashboards, so a `camunda up` /
+// `restart` / re-enable must not clobber those edits. Delete a file (or the whole
+// monitoring/ dir) to re-seed the shipped defaults.
 func writeMonitoringAssets() error {
 	return fs.WalkDir(monitoringAssets, "embed/monitoring", func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -158,6 +162,12 @@ func writeMonitoringAssets() error {
 		dest := filepath.Join(paths.OverlaysDir(), filepath.FromSlash(rel))
 		if d.IsDir() {
 			return os.MkdirAll(dest, 0o755)
+		}
+		// Preserve existing (possibly user-edited) files.
+		if _, statErr := os.Stat(dest); statErr == nil {
+			return nil
+		} else if !os.IsNotExist(statErr) {
+			return statErr
 		}
 		data, err := monitoringAssets.ReadFile(p)
 		if err != nil {

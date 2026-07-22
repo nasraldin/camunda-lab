@@ -192,6 +192,36 @@ func TestComposeOverrideFilesMonitoring(t *testing.T) {
 	}
 }
 
+// TestMonitoringAssetsPreserveEdits guards the documented promise that user
+// edits under overlays/monitoring/ survive a `camunda restart` / re-enable.
+func TestMonitoringAssetsPreserveEdits(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("CAMUNDA_LAB_HOME", home)
+	paths.Reset()
+
+	// First seed.
+	if _, err := overlay.ComposeOverrideFiles("8.9", "light", false, true); err != nil {
+		t.Fatal(err)
+	}
+	promPath := filepath.Join(paths.OverlaysDir(), "monitoring", "prometheus.yml")
+	edited := []byte("# user edit\nglobal: {}\n")
+	if err := os.WriteFile(promPath, edited, 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Re-run (simulates a later up/restart) — the edit must survive.
+	if _, err := overlay.ComposeOverrideFiles("8.9", "light", false, true); err != nil {
+		t.Fatal(err)
+	}
+	got, err := os.ReadFile(promPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(got, edited) {
+		t.Fatalf("prometheus.yml was overwritten on re-seed; user edits lost")
+	}
+}
+
 func TestOverlaysInSync(t *testing.T) {
 	root := repoRoot(t)
 	names := []string{"elasticsearch-8.10.yaml", "elasticsearch-cors.yaml", "elasticvue.yaml", "http-headers.yaml", "connectors-ai-secrets.yaml", "csrf-disabled.yaml", "monitoring.yaml"}

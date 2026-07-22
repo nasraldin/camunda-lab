@@ -63,16 +63,20 @@ func (r *Runner) UpService(workDir string, files, envFiles []string, project, se
 	return nil
 }
 
-// RemoveByName force-removes containers by name (docker rm -f), ignoring any
-// that don't exist. Used to tear down overlay add-ons whose services are no
-// longer in the active compose file set. Containers must set container_name.
+// RemoveByName force-removes containers by name (docker rm -f), skipping any
+// that don't exist. Removal is per-name and a "No such container" error is
+// treated as success, so engine differences in how `docker rm -f` handles a
+// missing name don't matter. Used to tear down overlay add-ons whose services
+// are no longer in the active compose file set. Containers must set container_name.
 func (r *Runner) RemoveByName(names ...string) error {
-	if len(names) == 0 {
-		return nil
-	}
-	args := append([]string{"docker", "rm", "-f"}, names...)
-	if _, err := r.Exec("", args); err != nil {
-		return fmt.Errorf("docker rm -f: %w", err)
+	for _, name := range names {
+		if name == "" {
+			continue
+		}
+		out, err := r.Exec("", []string{"docker", "rm", "-f", name})
+		if err != nil && !strings.Contains(strings.ToLower(out), "no such container") {
+			return fmt.Errorf("docker rm -f %s: %w", name, err)
+		}
 	}
 	return nil
 }
