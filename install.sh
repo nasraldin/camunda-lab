@@ -10,20 +10,26 @@ SKIP_CHECKSUM="${SKIP_CHECKSUM:-0}"
 os="$(uname -s | tr '[:upper:]' '[:lower:]')"
 arch="$(uname -m)"
 case "$arch" in
-  x86_64|amd64) arch=amd64 ;;
-  aarch64|arm64) arch=arm64 ;;
-  *) echo "unsupported arch: $arch" >&2; exit 1 ;;
+  x86_64 | amd64) arch=amd64 ;;
+  aarch64 | arm64) arch=arm64 ;;
+  *)
+    echo "unsupported arch: $arch" >&2
+    exit 1
+    ;;
 esac
 case "$os" in
-  darwin|linux) ;;
-  *) echo "unsupported OS: $os (macOS/Linux only)" >&2; exit 1 ;;
+  darwin | linux) ;;
+  *)
+    echo "unsupported OS: $os (macOS/Linux only)" >&2
+    exit 1
+    ;;
 esac
 
 sha256_file() {
   local f="$1"
-  if command -v shasum >/dev/null 2>&1; then
+  if command -v shasum > /dev/null 2>&1; then
     shasum -a 256 "$f" | awk '{print $1}'
-  elif command -v sha256sum >/dev/null 2>&1; then
+  elif command -v sha256sum > /dev/null 2>&1; then
     sha256sum "$f" | awk '{print $1}'
   else
     echo "ERROR: need shasum or sha256sum to verify the download" >&2
@@ -33,9 +39,9 @@ sha256_file() {
 
 resolve_latest_version() {
   local api="https://api.github.com/repos/${REPO}/releases/latest"
-  if command -v jq >/dev/null 2>&1; then
+  if command -v jq > /dev/null 2>&1; then
     curl -fsSL "$api" | jq -r .tag_name
-  elif command -v python3 >/dev/null 2>&1; then
+  elif command -v python3 > /dev/null 2>&1; then
     curl -fsSL "$api" | python3 -c "import sys,json; print(json.load(sys.stdin)['tag_name'])"
   else
     curl -fsSL "$api" | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p' | head -1
@@ -97,8 +103,8 @@ echo "Ensure $INSTALL_DIR is on your PATH"
 
 echo ""
 echo "Starting Lab UI in the background..."
-if "$INSTALL_DIR/camunda" ui --no-open 2>/dev/null; then
-  cat <<'EOF'
+if "$INSTALL_DIR/camunda" ui --no-open 2> /dev/null; then
+  cat << 'EOF'
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   Camunda Lab UI is running

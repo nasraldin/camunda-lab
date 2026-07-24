@@ -26,7 +26,7 @@ acceptance_die() {
 }
 
 acceptance_require_cmd() {
-  command -v "$1" >/dev/null 2>&1 || acceptance_die "required command not found: $1"
+  command -v "$1" > /dev/null 2>&1 || acceptance_die "required command not found: $1"
 }
 
 acceptance_normalize_path() {
@@ -63,7 +63,7 @@ acceptance_manifest_path() {
 acceptance_json_field() {
   local file="$1"
   local field="$2"
-  python3 - "$file" "$field" <<'PY'
+  python3 - "$file" "$field" << 'PY'
 import json, sys
 path, field = sys.argv[1], sys.argv[2]
 with open(path, encoding="utf-8") as fh:
@@ -90,7 +90,7 @@ PY
 
 acceptance_write_manifest() {
   mkdir -p "${ACCEPTANCE_ARTIFACT_DIR}"
-  python3 - <<PY
+  python3 - << PY
 import json, os, time
 manifest = {
     "marker": os.environ["ACCEPTANCE_OWNERSHIP_MARKER"],
@@ -117,7 +117,7 @@ acceptance_validate_manifest_core() {
 
   [[ -f "${manifest_file}" ]] || acceptance_die "ownership manifest missing: ${manifest_file}"
 
-  marker="$(acceptance_json_field "${manifest_file}" marker 2>/dev/null || true)"
+  marker="$(acceptance_json_field "${manifest_file}" marker 2> /dev/null || true)"
   [[ "${marker}" == "${ACCEPTANCE_OWNERSHIP_MARKER}" ]] || acceptance_die "ownership marker mismatch or missing in ${manifest_file}"
 
   home="$(acceptance_json_field "${manifest_file}" camunda_lab_home)"
@@ -133,7 +133,7 @@ acceptance_validate_manifest_core() {
     [[ "${compose}" == "${ACCEPTANCE_EXPECT_COMPOSE_PROJECT}" ]] || acceptance_die "compose project mismatch: ${compose} != ${ACCEPTANCE_EXPECT_COMPOSE_PROJECT}"
   fi
 
-  pids_json="$(acceptance_json_field "${manifest_file}" pids 2>/dev/null || printf '[]')"
+  pids_json="$(acceptance_json_field "${manifest_file}" pids 2> /dev/null || printf '[]')"
   if [[ -n "${ACCEPTANCE_EXPECT_PIDS_JSON:-}" && "${pids_json}" != "${ACCEPTANCE_EXPECT_PIDS_JSON}" ]]; then
     acceptance_die "tracked PID list mismatch"
   fi
@@ -160,7 +160,7 @@ acceptance_validate_manifest_file() {
 }
 
 acceptance_find_free_port() {
-  python3 - <<'PY'
+  python3 - << 'PY'
 import socket
 s = socket.socket()
 s.bind(("127.0.0.1", 0))
@@ -171,7 +171,7 @@ PY
 
 acceptance_port_in_use() {
   local port="$1"
-  python3 - "$port" <<'PY'
+  python3 - "$port" << 'PY'
 import socket, sys
 port = int(sys.argv[1])
 s = socket.socket()
@@ -226,7 +226,7 @@ acceptance_init_run() {
 
 acceptance_iter_manifest_pids() {
   local pids_json="$1"
-  python3 - "${pids_json}" <<'PY'
+  python3 - "${pids_json}" << 'PY'
 import json, sys
 for entry in json.loads(sys.argv[1] or "[]"):
     if isinstance(entry, dict):
@@ -253,7 +253,8 @@ acceptance_register_pid() {
   local pid="$1"
   local pattern="${2:-}"
   [[ -n "${pattern}" ]] || acceptance_die "PID ${pid} registration requires cmdline pattern"
-  ACCEPTANCE_PIDS_JSON="$(python3 - <<PY
+  ACCEPTANCE_PIDS_JSON="$(
+    python3 - << PY
 import json, os
 pids = json.loads(os.environ.get("ACCEPTANCE_PIDS_JSON", "[]"))
 pid = int("${pid}")
@@ -262,7 +263,7 @@ updated = [entry for entry in pids if (entry.get("pid") if isinstance(entry, dic
 updated.append({"pid": pid, "pattern": pattern})
 print(json.dumps(updated))
 PY
-)"
+  )"
   export ACCEPTANCE_PIDS_JSON
   acceptance_write_manifest
 }
@@ -272,9 +273,9 @@ acceptance_verify_pid_cmdline() {
   local pattern="$2"
   local cmdline=""
   if [[ ! -d "/proc/${pid}" && "$(uname -s)" != "Linux" ]]; then
-    cmdline="$(ps -p "${pid}" -o command= 2>/dev/null || true)"
+    cmdline="$(ps -p "${pid}" -o command= 2> /dev/null || true)"
   else
-    cmdline="$(ps -p "${pid}" -o args= 2>/dev/null || true)"
+    cmdline="$(ps -p "${pid}" -o args= 2> /dev/null || true)"
   fi
   [[ -n "${cmdline}" ]] || acceptance_die "PID ${pid} is not running"
   [[ "${cmdline}" == *"${pattern}"* ]] || acceptance_die "PID ${pid} cmdline does not match expected pattern '${pattern}': ${cmdline}"
@@ -286,10 +287,10 @@ acceptance_inventory_snapshot() {
   {
     printf 'timestamp=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
     printf 'compose_project=%s\n' "${ACCEPTANCE_COMPOSE_PROJECT:-}"
-    if command -v docker >/dev/null 2>&1; then
-      docker ps -a --filter "label=com.docker.compose.project=${ACCEPTANCE_COMPOSE_PROJECT:-__none__}" --format '{{.ID}}\t{{.Names}}\t{{.Status}}' 2>/dev/null || true
+    if command -v docker > /dev/null 2>&1; then
+      docker ps -a --filter "label=com.docker.compose.project=${ACCEPTANCE_COMPOSE_PROJECT:-__none__}" --format '{{.ID}}\t{{.Names}}\t{{.Status}}' 2> /dev/null || true
     fi
-  } >"${out}"
+  } > "${out}"
   printf '%s' "${out}"
 }
 
@@ -305,33 +306,33 @@ acceptance_mark_unavailable() {
   local step="$1"
   local reason="$2"
   local marker="${ACCEPTANCE_ARTIFACT_DIR}/unavailable-${step}.txt"
-  printf 'step=%s\nreason=%s\nrun_id=%s\n' "${step}" "${reason}" "${ACCEPTANCE_RUN_ID}" >"${marker}"
+  printf 'step=%s\nreason=%s\nrun_id=%s\n' "${step}" "${reason}" "${ACCEPTANCE_RUN_ID}" > "${marker}"
   acceptance_log "UNAVAILABLE: ${step} — ${reason}"
 }
 
 acceptance_docker_available() {
-  command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1
+  command -v docker > /dev/null 2>&1 && docker info > /dev/null 2>&1
 }
 
 acceptance_cleanup_compose_project() {
   local project="$1"
   [[ -n "${project}" ]] || return 0
-  command -v docker >/dev/null 2>&1 || return 0
+  command -v docker > /dev/null 2>&1 || return 0
   local ids
-  ids="$(docker ps -aq --filter "label=com.docker.compose.project=${project}" 2>/dev/null || true)"
+  ids="$(docker ps -aq --filter "label=com.docker.compose.project=${project}" 2> /dev/null || true)"
   if [[ -n "${ids}" ]]; then
     acceptance_log "stopping compose project containers: ${project}"
     # shellcheck disable=SC2086
-    docker stop ${ids} >/dev/null 2>&1 || true
+    docker stop ${ids} > /dev/null 2>&1 || true
     # shellcheck disable=SC2086
-    docker rm ${ids} >/dev/null 2>&1 || true
+    docker rm ${ids} > /dev/null 2>&1 || true
   fi
   local vols
-  vols="$(docker volume ls -q --filter "label=com.docker.compose.project=${project}" 2>/dev/null || true)"
+  vols="$(docker volume ls -q --filter "label=com.docker.compose.project=${project}" 2> /dev/null || true)"
   if [[ -n "${vols}" ]]; then
     acceptance_log "removing compose project volumes: ${project}"
     # shellcheck disable=SC2086
-    docker volume rm ${vols} >/dev/null 2>&1 || true
+    docker volume rm ${vols} > /dev/null 2>&1 || true
   fi
 }
 
@@ -340,10 +341,10 @@ acceptance_cleanup_pids() {
   local pid pattern
   acceptance_validate_manifest_pids "${pids_json}"
   while IFS=$'\t' read -r pid pattern; do
-    if kill -0 "${pid}" 2>/dev/null; then
+    if kill -0 "${pid}" 2> /dev/null; then
       acceptance_verify_pid_cmdline "${pid}" "${pattern}"
       acceptance_log "terminating owned PID ${pid}"
-      kill "${pid}" 2>/dev/null || true
+      kill "${pid}" 2> /dev/null || true
     fi
   done < <(acceptance_iter_manifest_pids "${pids_json}")
 }
@@ -362,10 +363,10 @@ acceptance_cleanup_owned_resources() {
 
   local compose pids_json home project chrome
   compose="$(acceptance_json_field "${manifest_file}" compose_project)"
-  pids_json="$(acceptance_json_field "${manifest_file}" pids 2>/dev/null || printf '[]')"
+  pids_json="$(acceptance_json_field "${manifest_file}" pids 2> /dev/null || printf '[]')"
   home="$(acceptance_json_field "${manifest_file}" camunda_lab_home)"
   project="$(acceptance_json_field "${manifest_file}" project_root)"
-  chrome="$(acceptance_json_field "${manifest_file}" chrome_profile 2>/dev/null || true)"
+  chrome="$(acceptance_json_field "${manifest_file}" chrome_profile 2> /dev/null || true)"
 
   acceptance_cleanup_pids "${pids_json}"
   acceptance_cleanup_compose_project "${compose}"
@@ -386,9 +387,9 @@ acceptance_cleanup_owned_resources() {
 acceptance_on_exit() {
   local code=$?
   if [[ -n "${ACCEPTANCE_ARTIFACT_DIR:-}" ]]; then
-    acceptance_record_inventory_after >/dev/null 2>&1 || true
+    acceptance_record_inventory_after > /dev/null 2>&1 || true
   fi
-  if [[ -f "$(acceptance_manifest_path 2>/dev/null || echo /dev/null)" ]]; then
+  if [[ -f "$(acceptance_manifest_path 2> /dev/null || echo /dev/null)" ]]; then
     acceptance_cleanup_owned_resources "$(acceptance_manifest_path)" || true
   fi
   exit "${code}"
@@ -419,7 +420,7 @@ acceptance_write_lab_config() {
   local profile="$2"
   local resources="$3"
   mkdir -p "${ACCEPTANCE_CAMUNDA_LAB_HOME}"
-  cat >"${ACCEPTANCE_CAMUNDA_LAB_HOME}/config.yaml" <<EOF
+  cat > "${ACCEPTANCE_CAMUNDA_LAB_HOME}/config.yaml" << EOF
 version: "${version}"
 profile: ${profile}
 resources: ${resources}
@@ -443,11 +444,11 @@ acceptance_run_live_profile() {
   acceptance_build_camunda
   mkdir -p "${ACCEPTANCE_PROJECT_ROOT}"
   acceptance_write_lab_config "${version}" "${profile}" "${resources}"
-  (cd "${ACCEPTANCE_PROJECT_ROOT}" && "${bin}" init --yes >/dev/null 2>&1 || true)
+  (cd "${ACCEPTANCE_PROJECT_ROOT}" && "${bin}" init --yes > /dev/null 2>&1 || true)
 
   "${bin}" install --version "${version}" --profile "${profile}" --resources "${resources}" --yes \
-    >"${ACCEPTANCE_ARTIFACT_DIR}/install.log" 2>&1 || return 1
-  "${bin}" wait --timeout 15m >>"${ACCEPTANCE_ARTIFACT_DIR}/install.log" 2>&1 || return 1
-  "${bin}" smoke >>"${ACCEPTANCE_ARTIFACT_DIR}/install.log" 2>&1 || return 1
-  "${bin}" down >>"${ACCEPTANCE_ARTIFACT_DIR}/install.log" 2>&1 || return 1
+    > "${ACCEPTANCE_ARTIFACT_DIR}/install.log" 2>&1 || return 1
+  "${bin}" wait --timeout 15m >> "${ACCEPTANCE_ARTIFACT_DIR}/install.log" 2>&1 || return 1
+  "${bin}" smoke >> "${ACCEPTANCE_ARTIFACT_DIR}/install.log" 2>&1 || return 1
+  "${bin}" down >> "${ACCEPTANCE_ARTIFACT_DIR}/install.log" 2>&1 || return 1
 }
