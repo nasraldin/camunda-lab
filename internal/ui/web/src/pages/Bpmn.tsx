@@ -92,14 +92,20 @@ export function BpmnPage() {
     [],
   )
 
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    const abortActive = () => {
       requestGeneration.current += 1
       activeRequest.current?.abort()
       activeRequest.current = null
-    },
-    [],
-  )
+    }
+    // React 19.2+ may tear down the document on hard navigations before effect
+    // cleanups run; pagehide still aborts in-flight toolkit fetches.
+    window.addEventListener('pagehide', abortActive)
+    return () => {
+      window.removeEventListener('pagehide', abortActive)
+      abortActive()
+    }
+  }, [])
 
   function resetResult() {
     setError('')

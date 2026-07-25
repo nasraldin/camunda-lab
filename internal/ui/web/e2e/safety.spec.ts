@@ -108,8 +108,12 @@ test('BPMN toolkit aborts an active request on unmount', async ({ page }) => {
       return
     }
     if (path === '/api/v1/bpmn/lint') {
-      await new Promise((resolve) => setTimeout(resolve, 500))
-      await route.fulfill({ json: { ok: true, output: 'late result' } })
+      await new Promise((resolve) => setTimeout(resolve, 5000))
+      try {
+        await route.fulfill({ json: { ok: true, output: 'late result' } })
+      } catch {
+        // Request may already be aborted by unmount / pagehide.
+      }
       return
     }
     await route.fulfill({ json: { ok: true } })
@@ -117,7 +121,12 @@ test('BPMN toolkit aborts an active request on unmount', async ({ page }) => {
 
   await page.goto('/bpmn')
   await page.getByLabel('Or absolute path').fill('/tmp/process.bpmn')
+  const pendingLint = page.waitForRequest(
+    (request) => new URL(request.url()).pathname === '/api/v1/bpmn/lint',
+  )
   await page.getByRole('button', { name: 'Run' }).click()
-  await page.goto('/')
+  await pendingLint
+  // SPA navigation unmounts BPMN; hard goto can race React 19.2 effect cleanup.
+  await page.getByRole('link', { name: 'Home' }).click()
   await expect.poll(() => aborted).toBe(true)
 })
