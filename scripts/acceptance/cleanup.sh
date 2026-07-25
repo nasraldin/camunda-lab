@@ -7,7 +7,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "${SCRIPT_DIR}/lib.sh"
 
 usage() {
-  cat <<EOF
+  cat << EOF
 Usage: $(basename "$0") --manifest PATH
 
 Remove only resources listed in an acceptance ownership manifest.
@@ -22,7 +22,7 @@ while [[ $# -gt 0 ]]; do
       MANIFEST="${2:-}"
       shift 2
       ;;
-    -h|--help)
+    -h | --help)
       usage
       exit 0
       ;;

@@ -13,7 +13,7 @@ FAIL=0
 assert_fails() {
   local name="$1"
   shift
-  if ( "$@" ); then
+  if ("$@"); then
     printf 'FAIL %s (expected rejection)\n' "${name}" >&2
     FAIL=$((FAIL + 1))
   else
@@ -25,7 +25,7 @@ assert_fails() {
 assert_passes() {
   local name="$1"
   shift
-  if "$@" >/dev/null 2>&1; then
+  if "$@" > /dev/null 2>&1; then
     printf 'PASS %s\n' "${name}"
     PASS=$((PASS + 1))
   else
@@ -62,7 +62,7 @@ test_valid_manifest_and_cleanup() {
   project="${tmp}/project"
   manifest="${tmp}/ownership.json"
   mkdir -p "${home}" "${project}"
-  python3 - "${manifest}" "${home}" "${project}" <<'PY'
+  python3 - "${manifest}" "${home}" "${project}" << 'PY'
 import json, os, sys
 manifest, home, project = sys.argv[1:4]
 data = {
@@ -94,8 +94,8 @@ test_pid_cmdline_check() {
   (sleep 60) &
   pid=$!
   acceptance_verify_pid_cmdline "${pid}" "sleep 60"
-  kill "${pid}" 2>/dev/null || true
-  wait "${pid}" 2>/dev/null || true
+  kill "${pid}" 2> /dev/null || true
+  wait "${pid}" 2> /dev/null || true
   rm -rf "${tmp}"
 }
 
@@ -106,7 +106,7 @@ test_reject_missing_pid_pattern() {
   project="${tmp}/project"
   manifest="${tmp}/ownership.json"
   mkdir -p "${home}" "${project}"
-  python3 - "${manifest}" "${home}" "${project}" <<'PY'
+  python3 - "${manifest}" "${home}" "${project}" << 'PY'
 import json, os, sys
 manifest, home, project = sys.argv[1:4]
 data = {
@@ -140,7 +140,7 @@ test_cleanup_rejects_pid_cmdline_mismatch() {
   mkdir -p "${home}" "${project}"
   (sleep 60) &
   pid=$!
-  python3 - "${manifest}" "${home}" "${project}" "${pid}" <<'PY'
+  python3 - "${manifest}" "${home}" "${project}" "${pid}" << 'PY'
 import json, os, sys
 manifest, home, project, pid = sys.argv[1:5]
 data = {
@@ -160,8 +160,8 @@ with open(manifest, "w", encoding="utf-8") as fh:
     json.dump(data, fh)
 PY
   acceptance_cleanup_owned_resources "${manifest}"
-  kill "${pid}" 2>/dev/null || true
-  wait "${pid}" 2>/dev/null || true
+  kill "${pid}" 2> /dev/null || true
+  wait "${pid}" 2> /dev/null || true
   rm -rf "${tmp}"
   return 1
 }
@@ -173,7 +173,7 @@ test_reject_compose_prefix() {
   project="${tmp}/project"
   manifest="${tmp}/ownership.json"
   mkdir -p "${home}" "${project}"
-  python3 - "${manifest}" "${home}" "${project}" <<'PY'
+  python3 - "${manifest}" "${home}" "${project}" << 'PY'
 import json, os, sys
 manifest, home, project = sys.argv[1:4]
 data = {
@@ -202,7 +202,7 @@ test_no_docker_system_prune() {
   local found=0 file
   for file in "${SCRIPT_DIR}/lib.sh" "${SCRIPT_DIR}/cleanup.sh" \
     "${SCRIPT_DIR}/platform-toolkit-light.sh" "${SCRIPT_DIR}/platform-toolkit-full.sh"; do
-    if grep -q "docker system prune" "${file}" 2>/dev/null; then
+    if grep -q "docker system prune" "${file}" 2> /dev/null; then
       found=1
     fi
   done
