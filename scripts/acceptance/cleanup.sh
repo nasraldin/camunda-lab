@@ -7,7 +7,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "${SCRIPT_DIR}/lib.sh"
 
 usage() {
-  cat << EOF
+	cat <<EOF
 Usage: $(basename "$0") --manifest PATH
 
 Remove only resources listed in an acceptance ownership manifest.
@@ -17,24 +17,24 @@ EOF
 
 MANIFEST=""
 while [[ $# -gt 0 ]]; do
-  case "$1" in
-    --manifest)
-      MANIFEST="${2:-}"
-      shift 2
-      ;;
-    -h | --help)
-      usage
-      exit 0
-      ;;
-    *)
-      acceptance_die "unknown argument: $1"
-      ;;
-  esac
+	case "$1" in
+	--manifest)
+		MANIFEST="${2:-}"
+		shift 2
+		;;
+	-h | --help)
+		usage
+		exit 0
+		;;
+	*)
+		acceptance_die "unknown argument: $1"
+		;;
+	esac
 done
 
 [[ -n "${MANIFEST}" ]] || {
-  usage
-  exit 2
+	usage
+	exit 2
 }
 
 acceptance_cleanup_owned_resources "${MANIFEST}"
