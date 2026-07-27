@@ -15,12 +15,7 @@ type CanvasApi = {
     element: DiagramElement | string,
     padding?: number | { top?: number; right?: number; bottom?: number; left?: number },
   ) => void
-  viewbox: (box?: {
-    x: number
-    y: number
-    width: number
-    height: number
-  }) => {
+  viewbox: (box?: { x: number; y: number; width: number; height: number }) => {
     outer: { width: number; height: number }
     inner: { x: number; y: number; width: number; height: number }
     scale: number

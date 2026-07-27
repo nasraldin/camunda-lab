@@ -22,6 +22,7 @@
 ### Task 1: Transactional bounded archive restore
 
 **Files:**
+
 - Create: `internal/backup/manifest.go`
 - Create: `internal/backup/restore.go`
 - Create: `internal/backup/restore_test.go`
@@ -29,6 +30,7 @@
 - Modify: `internal/backup/backup_test.go`
 
 **Interfaces:**
+
 - Produces:
 
   ```go
@@ -90,12 +92,14 @@
 ### Task 2: Running-lab restore gate
 
 **Files:**
+
 - Modify: `internal/lab/containers.go`
 - Create: `internal/lab/containers_running_test.go`
 - Modify: `internal/cli/toolkit.go`
 - Create: `internal/cli/toolkit_safety_test.go`
 
 **Interfaces:**
+
 - Consumes: `backup.Restore(context.Context, backup.RestoreOptions)`.
 - Produces:
 
@@ -126,6 +130,7 @@
 ### Task 3: Safe environment identities and atomic active state
 
 **Files:**
+
 - Create: `internal/env/name.go`
 - Create: `internal/env/active.go`
 - Create: `internal/env/name_test.go`
@@ -136,6 +141,7 @@
 - Modify: `internal/ui/api/handlers_toolkit.go`
 
 **Interfaces:**
+
 - Produces:
 
   ```go
@@ -174,10 +180,12 @@
 ### Task 4: Canonical symlink-safe path authorization
 
 **Files:**
+
 - Modify: `internal/ui/api/pathsafety.go`
 - Modify: `internal/ui/api/pathsafety_test.go`
 
 **Interfaces:**
+
 - Produces:
 
   ```go
@@ -208,6 +216,7 @@
 ### Task 5: Host, Origin, and CSRF middleware
 
 **Files:**
+
 - Create: `internal/ui/api/security.go`
 - Create: `internal/ui/api/security_test.go`
 - Modify: `internal/ui/api/handlers.go`
@@ -215,6 +224,7 @@
 - Modify: `internal/ui/server_test.go`
 
 **Interfaces:**
+
 - Produces:
 
   ```go
@@ -247,6 +257,7 @@
 ### Task 6: Frontend CSRF transport and deliberate confirmations
 
 **Files:**
+
 - Modify: `internal/ui/web/src/api.ts`
 - Modify: `internal/ui/web/vite.config.ts`
 - Modify: `internal/ui/web/package.json`
@@ -263,17 +274,18 @@
 - Test through Playwright files created by the parity plan.
 
 **Interfaces:**
+
 - Consumes: `GET /api/v1/session` and `X-Camunda-Lab-CSRF`.
 - Produces:
 
   ```ts
   type ConfirmAction = {
-    title: string;
-    message: string;
-    requiredText?: string;
-    confirmLabel: string;
-    run: () => Promise<void>;
-  };
+    title: string
+    message: string
+    requiredText?: string
+    confirmLabel: string
+    run: () => Promise<void>
+  }
   ```
 
 - [ ] **Step 1: Add failing browser assertions**
@@ -314,6 +326,7 @@
 ### Task 7: Safety documentation and gate
 
 **Files:**
+
 - Modify: `docs/cli-reference.md`
 - Modify: `docs/lab-ui.md`
 - Modify: `docs/troubleshooting.md`

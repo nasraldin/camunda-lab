@@ -128,19 +128,19 @@ More: [CLI reference](https://nasraldin.github.io/camunda-lab/cli-reference/) ·
 
 ## Docs
 
-| Page                                                                        | About                          |
-| --------------------------------------------------------------------------- | ------------------------------ |
-| [Home](https://nasraldin.github.io/camunda-lab/)                            | Overview                       |
-| [Installation](https://nasraldin.github.io/camunda-lab/installation/)       | First boot                     |
-| [Lab UI](https://nasraldin.github.io/camunda-lab/lab-ui/)                   | Browser control panel          |
-| [Why Camunda Lab](https://nasraldin.github.io/camunda-lab/comparison/)      | vs zip / Helm / 8 Run          |
-| [Profiles](https://nasraldin.github.io/camunda-lab/profiles/)               | Versions, ports, ElasticVue    |
-| [AI and MCP](https://nasraldin.github.io/camunda-lab/ai-mcp/)               | Cursor MCP + connector secrets |
+| Page                                                                        | About                           |
+| --------------------------------------------------------------------------- | ------------------------------- |
+| [Home](https://nasraldin.github.io/camunda-lab/)                            | Overview                        |
+| [Installation](https://nasraldin.github.io/camunda-lab/installation/)       | First boot                      |
+| [Lab UI](https://nasraldin.github.io/camunda-lab/lab-ui/)                   | Browser control panel           |
+| [Why Camunda Lab](https://nasraldin.github.io/camunda-lab/comparison/)      | vs zip / Helm / 8 Run           |
+| [Profiles](https://nasraldin.github.io/camunda-lab/profiles/)               | Versions, ports, ElasticVue     |
+| [AI and MCP](https://nasraldin.github.io/camunda-lab/ai-mcp/)               | Cursor MCP + connector secrets  |
 | [Monitoring](https://nasraldin.github.io/camunda-lab/monitoring/)           | Prometheus + Grafana dashboards |
-| [CLI reference](https://nasraldin.github.io/camunda-lab/cli-reference/)     | Every command                  |
-| [Lab API reference](https://nasraldin.github.io/camunda-lab/api-reference/) | `/api/v1` toolkit routes       |
-| [Roadmap](https://nasraldin.github.io/camunda-lab/roadmap/)                 | Implemented features and next  |
-| [Troubleshooting](https://nasraldin.github.io/camunda-lab/troubleshooting/) | When it breaks                 |
+| [CLI reference](https://nasraldin.github.io/camunda-lab/cli-reference/)     | Every command                   |
+| [Lab API reference](https://nasraldin.github.io/camunda-lab/api-reference/) | `/api/v1` toolkit routes        |
+| [Roadmap](https://nasraldin.github.io/camunda-lab/roadmap/)                 | Implemented features and next   |
+| [Troubleshooting](https://nasraldin.github.io/camunda-lab/troubleshooting/) | When it breaks                  |
 
 ---
 

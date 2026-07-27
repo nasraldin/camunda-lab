@@ -99,9 +99,11 @@ export async function generateTestsUpload(
   return postForm<GenerateResult>('/api/v1/bpmn/test-generate', form, signal)
 }
 
-export async function downloadGeneratedTests(
-  body: { path?: string; lang?: GenerateLanguage; projectDir?: string },
-): Promise<BinaryDownload> {
+export async function downloadGeneratedTests(body: {
+  path?: string
+  lang?: GenerateLanguage
+  projectDir?: string
+}): Promise<BinaryDownload> {
   return downloadBinary(
     '/api/v1/bpmn/test-generate/download',
     {

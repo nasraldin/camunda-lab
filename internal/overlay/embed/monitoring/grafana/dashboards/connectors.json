@@ -16,9 +16,7 @@
       "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
       "datasource": null,
       "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
-      "targets": [
-        { "expr": "sum(up{job=\"connectors\"})", "legendFormat": "up" }
-      ]
+      "targets": [{ "expr": "sum(up{job=\"connectors\"})", "legendFormat": "up" }]
     },
     {
       "type": "timeseries",
@@ -37,7 +35,10 @@
       "datasource": null,
       "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
       "targets": [
-        { "expr": "rate(http_server_requests_seconds_count{job=\"connectors\"}[1m])", "legendFormat": "{{method}} {{status}}" }
+        {
+          "expr": "rate(http_server_requests_seconds_count{job=\"connectors\"}[1m])",
+          "legendFormat": "{{method}} {{status}}"
+        }
       ]
     },
     {

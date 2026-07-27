@@ -22,6 +22,7 @@
 ### Task 1: Safe project configuration and recursive discovery
 
 **Files:**
+
 - Create: `internal/project/discovery.go`
 - Create: `internal/project/discovery_test.go`
 - Modify: `internal/project/config.go`
@@ -54,6 +55,7 @@ func (o ScaffoldOpts) Validate() error
 ### Task 2: Multi-process BPMN document IR and graph
 
 **Files:**
+
 - Modify: `internal/bpmn/model.go`
 - Modify: `internal/bpmn/parse.go`
 - Create: `internal/bpmn/normalize.go`
@@ -89,6 +91,7 @@ func (g Graph) DeadEnds() []string
 ### Task 3: Typed toolkit application service
 
 **Files:**
+
 - Create: `internal/toolkit/contracts.go`
 - Create: `internal/toolkit/dependencies.go`
 - Create: `internal/toolkit/errors.go`
@@ -119,6 +122,7 @@ func (s Service) Scan(context.Context, ScanRequest) (ScanResult, error)
 ### Task 4: Complete deterministic lint
 
 **Files:**
+
 - Create: `internal/lint/rule.go`
 - Create: `internal/lint/rules.go`
 - Create: `internal/lint/rules_process.go`
@@ -150,6 +154,7 @@ func Run(bpmn.Document, Options) Result
 ### Task 5: Complete semantic diff and Git modes
 
 **Files:**
+
 - Create: `internal/diff/change.go`
 - Create: `internal/diff/format.go`
 - Create: `internal/diff/git.go`
@@ -177,6 +182,7 @@ func Compare(before, after bpmn.Document) []Change
 ### Task 6: Graph-based explain and provider-neutral review AI
 
 **Files:**
+
 - Create: `internal/ai/chat.go`
 - Create: `internal/ai/chat_test.go`
 - Create: `internal/explain/graph.go`
@@ -207,6 +213,7 @@ type AIStatus string // disabled|skipped|succeeded|failed
 ### Task 7: Render-first test generation
 
 **Files:**
+
 - Create: `internal/testgen/java.go`
 - Create: `internal/testgen/js.go`
 - Create: `internal/testgen/write.go`
@@ -236,6 +243,7 @@ func Write(root string, artifacts []Artifact, force bool) ([]string, error)
 ### Task 8: Complete scan accounting and ignore behavior
 
 **Files:**
+
 - Create: `internal/scan/walk.go`
 - Create: `internal/scan/ignore.go`
 - Create: `internal/scan/rules.go`
@@ -263,6 +271,7 @@ type Result struct {
 ### Task 9: Complete `doctor --deep`
 
 **Files:**
+
 - Create: `internal/doctor/report.go`
 - Create: `internal/doctor/compose.go`
 - Create: `internal/doctor/docker.go`
@@ -289,6 +298,7 @@ type Inspector interface {
 ### Task 10: Thin CLI/API/UI edges and gate
 
 **Files:**
+
 - Split: `internal/cli/toolkit.go` into focused command files
 - Create: `internal/cli/exit.go`
 - Modify: `cmd/camunda/main.go`

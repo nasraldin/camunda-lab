@@ -18,14 +18,19 @@
       "fieldConfig": {
         "defaults": {
           "mappings": [
-            { "type": "value", "options": { "0": { "text": "green", "color": "green" }, "1": { "text": "yellow", "color": "yellow" }, "2": { "text": "red", "color": "red" } } }
+            {
+              "type": "value",
+              "options": {
+                "0": { "text": "green", "color": "green" },
+                "1": { "text": "yellow", "color": "yellow" },
+                "2": { "text": "red", "color": "red" }
+              }
+            }
           ]
         },
         "overrides": []
       },
-      "targets": [
-        { "expr": "elasticsearch_cluster_health_status", "legendFormat": "status" }
-      ]
+      "targets": [{ "expr": "elasticsearch_cluster_health_status", "legendFormat": "status" }]
     },
     {
       "type": "stat",
@@ -43,9 +48,7 @@
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
       "datasource": null,
       "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
-      "targets": [
-        { "expr": "elasticsearch_indices_docs", "legendFormat": "docs" }
-      ]
+      "targets": [{ "expr": "elasticsearch_indices_docs", "legendFormat": "docs" }]
     },
     {
       "type": "timeseries",
@@ -53,9 +56,7 @@
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
       "datasource": null,
       "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
-      "targets": [
-        { "expr": "elasticsearch_jvm_memory_used_bytes", "legendFormat": "{{area}}" }
-      ]
+      "targets": [{ "expr": "elasticsearch_jvm_memory_used_bytes", "legendFormat": "{{area}}" }]
     },
     {
       "type": "timeseries",

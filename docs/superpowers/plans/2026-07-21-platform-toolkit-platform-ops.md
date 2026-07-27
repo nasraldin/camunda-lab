@@ -23,6 +23,7 @@
 ### Task 1: Project/global environment service and config migration
 
 **Files:**
+
 - Create: `internal/env/service.go`
 - Modify: `internal/env/profile.go`
 - Modify: `internal/env/profile_test.go`
@@ -60,6 +61,7 @@ func (s *Service) Remove(name, projectRoot string, source ProfileSource) error
 ### Task 2: Remote OIDC token source and cluster factory
 
 **Files:**
+
 - Create: `internal/cluster/token.go`
 - Create: `internal/cluster/factory.go`
 - Create: `internal/cluster/factory_test.go`
@@ -90,6 +92,7 @@ type Factory interface {
 ### Task 3: Shared canonical inventory
 
 **Files:**
+
 - Create: `internal/inventory/model.go`
 - Create: `internal/inventory/canonical.go`
 - Create: `internal/inventory/local.go`
@@ -123,6 +126,7 @@ func ResourceIDs(kind Kind, raw []byte) ([]string, error)
 ### Task 4: Trustworthy plan service
 
 **Files:**
+
 - Create: `internal/plan/service.go`
 - Create: `internal/plan/format.go`
 - Modify: `internal/plan/plan.go`
@@ -150,6 +154,7 @@ func FormatText(Result) string
 ### Task 5: Git-aware drift service
 
 **Files:**
+
 - Create: `internal/drift/git.go`
 - Create: `internal/drift/service.go`
 - Create: `internal/drift/format.go`
@@ -176,6 +181,7 @@ func HasUnknown(Report) bool
 ### Task 6: Complete incidents service
 
 **Files:**
+
 - Create: `internal/incidents/service.go`
 - Create: `internal/incidents/format.go`
 - Modify: `internal/incidents/incidents.go`
@@ -199,6 +205,7 @@ func OperateLink(baseURL, processInstanceKey, incidentKey string) (string, error
 ### Task 7: Shared trace derivation and bounded follow
 
 **Files:**
+
 - Create: `internal/trace/service.go`
 - Create: `internal/trace/follow.go`
 - Create: `internal/trace/format.go`
@@ -226,6 +233,7 @@ func (s *Service) Follow(
 ### Task 8: Complete backup feature contract
 
 **Files:**
+
 - Build on: `internal/backup/manifest.go`, `restore.go`
 - Create: `internal/backup/create.go`
 - Create: `internal/backup/validate.go`
@@ -239,6 +247,7 @@ func (s *Service) Follow(
 ### Task 9: Complete Kubernetes service
 
 **Files:**
+
 - Create: `internal/k8s/runner.go`
 - Create: `internal/k8s/components.go`
 - Create: `internal/k8s/service.go`
@@ -268,6 +277,7 @@ func (s *Service) Scale(context.Context, Options, string, int) (Result, error)
 ### Task 10: Complete CLI/API/UI platform edges
 
 **Files:**
+
 - Split: `internal/cli/toolkit.go` into `env.go`, `plan.go`, `drift.go`, `incidents.go`, `trace.go`, `backup.go`, `k8s.go`
 - Create: `internal/cli/dependencies.go`
 - Create: `internal/cli/platform_test.go`

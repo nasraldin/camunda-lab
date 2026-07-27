@@ -1,6 +1,13 @@
 import { expect, test } from '@playwright/test'
 
-import { auditPage, assertCardBorderVisible, prepareMockPage, primaryRoutes, setTheme, visitClean } from './helpers/page'
+import {
+  auditPage,
+  assertCardBorderVisible,
+  prepareMockPage,
+  primaryRoutes,
+  setTheme,
+  visitClean,
+} from './helpers/page'
 
 test.describe('navigation', () => {
   for (const route of primaryRoutes) {

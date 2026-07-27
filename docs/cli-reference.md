@@ -7,39 +7,39 @@ Binary: **`camunda`**. Project / Homebrew formula: **`camunda-lab`**.
 
 ## Command map
 
-| Command              | Purpose                                                                 |
-| -------------------- | ----------------------------------------------------------------------- |
-| `init`               | Scaffold a Camunda application project                                  |
-| `install`            | Download zip, configure, start                                          |
-| `ui`                 | Local Lab UI (http://localhost:9090)                                    |
-| `ai`                 | MCP + AI Agent connector secrets                                        |
-| `monitoring`         | Prometheus + Grafana dashboards                                         |
-| `lint`               | Deterministic BPMN lint                                                 |
-| `diff`               | Semantic BPMN diff (files, `--against`, or Git `--base`)                |
-| `explain`            | Offline BPMN summary                                                    |
-| `review`             | Lint + optional AI review                                               |
-| `test generate`      | Test skeletons from BPMN (`-o` output dir)                              |
-| `scan`               | Secrets scanner                                                         |
-| `env`                | Environment profiles                                                    |
-| `plan`               | Deployment preview (no deploy; `--dir`, `--env`, `--json`)              |
-| `drift`              | Git/project vs cluster drift (`--dir`, `--ref`, `--env`, `--json`)      |
-| `backup` / `restore` | Lab-oriented backup                                                     |
-| `incidents`          | Incident list/retry (OIDC on full labs; auto token from lab `.env`)     |
-| `trace`              | Process instance timeline                                               |
-| `up` / `start`       | Start                                                                   |
-| `down` / `stop`      | Stop (keep volumes)                                                     |
-| `restart`            | Restart                                                                 |
-| `status`             | Config + compose ps                                                     |
-| `switch`             | Change minor                                                            |
-| `profile`            | light / full / modeler                                                  |
-| `resources`          | small / balanced / power                                                |
-| `urls` / `open`      | Component links                                                         |
-| `logs`               | Container logs                                                          |
-| `doctor`             | Diagnostics (`--deep` for component probes)                             |
-| `wait` / `smoke`     | Health                                                                  |
-| `tools`              | c8ctl + Modeler helpers                                                 |
-| `nuke`               | Wipe lab home                                                           |
-| `version` / `about`  | Meta                                                                    |
+| Command              | Purpose                                                             |
+| -------------------- | ------------------------------------------------------------------- |
+| `init`               | Scaffold a Camunda application project                              |
+| `install`            | Download zip, configure, start                                      |
+| `ui`                 | Local Lab UI (http://localhost:9090)                                |
+| `ai`                 | MCP + AI Agent connector secrets                                    |
+| `monitoring`         | Prometheus + Grafana dashboards                                     |
+| `lint`               | Deterministic BPMN lint                                             |
+| `diff`               | Semantic BPMN diff (files, `--against`, or Git `--base`)            |
+| `explain`            | Offline BPMN summary                                                |
+| `review`             | Lint + optional AI review                                           |
+| `test generate`      | Test skeletons from BPMN (`-o` output dir)                          |
+| `scan`               | Secrets scanner                                                     |
+| `env`                | Environment profiles                                                |
+| `plan`               | Deployment preview (no deploy; `--dir`, `--env`, `--json`)          |
+| `drift`              | Git/project vs cluster drift (`--dir`, `--ref`, `--env`, `--json`)  |
+| `backup` / `restore` | Lab-oriented backup                                                 |
+| `incidents`          | Incident list/retry (OIDC on full labs; auto token from lab `.env`) |
+| `trace`              | Process instance timeline                                           |
+| `up` / `start`       | Start                                                               |
+| `down` / `stop`      | Stop (keep volumes)                                                 |
+| `restart`            | Restart                                                             |
+| `status`             | Config + compose ps                                                 |
+| `switch`             | Change minor                                                        |
+| `profile`            | light / full / modeler                                              |
+| `resources`          | small / balanced / power                                            |
+| `urls` / `open`      | Component links                                                     |
+| `logs`               | Container logs                                                      |
+| `doctor`             | Diagnostics (`--deep` for component probes)                         |
+| `wait` / `smoke`     | Health                                                              |
+| `tools`              | c8ctl + Modeler helpers                                             |
+| `nuke`               | Wipe lab home                                                       |
+| `version` / `about`  | Meta                                                                |
 
 Details for each command are in the sections below.
 
@@ -54,14 +54,14 @@ camunda init ./order-service --name orders --version 8.10 --yes
 camunda init ./order-service --force
 ```
 
-| Flag           | Meaning                                                                           |
-| -------------- | --------------------------------------------------------------------------------- |
-| `--name`       | Project name (default: directory basename)                                        |
+| Flag           | Meaning                                                                                     |
+| -------------- | ------------------------------------------------------------------------------------------- |
+| `--name`       | Project name (default: directory basename)                                                  |
 | `--version`    | Camunda version hint in `.camunda.yaml` (default: active lab version or configured default) |
-| `--profile`    | Lab profile hint (`light` \| `full` \| `modeler`)                                 |
-| `--resources`  | Lab resources hint (`small` \| `balanced` \| `power`)                             |
-| `--yes` / `-y` | Non-interactive                                                                   |
-| `--force`      | Allow scaffolding into a non-empty directory                                      |
+| `--profile`    | Lab profile hint (`light` \| `full` \| `modeler`)                                           |
+| `--resources`  | Lab resources hint (`small` \| `balanced` \| `power`)                                       |
+| `--yes` / `-y` | Non-interactive                                                                             |
+| `--force`      | Allow scaffolding into a non-empty directory                                                |
 
 Creates `bpmn/`, `dmn/`, `forms/`, `workers/`, `connectors/`, `scripts/`, `tests/`, `environments/`, `helm/`, stub `docker-compose.yml`, `.camunda.yaml`, and `README.md`.
 
@@ -169,11 +169,11 @@ camunda monitoring disable
 camunda open grafana
 ```
 
-| Subcommand | Meaning |
-|------------|---------|
-| `enable` | Set `monitoring.enabled`, start Prometheus + Grafana with provisioned dashboards |
-| `disable` | Clear `monitoring.enabled` and remove the monitoring containers |
-| `status` | Enablement + Grafana health probe |
+| Subcommand | Meaning                                                                          |
+| ---------- | -------------------------------------------------------------------------------- |
+| `enable`   | Set `monitoring.enabled`, start Prometheus + Grafana with provisioned dashboards |
+| `disable`  | Clear `monitoring.enabled` and remove the monitoring containers                  |
+| `status`   | Enablement + Grafana health probe                                                |
 
 Grafana on `http://localhost:3000` (`admin`/`admin`), Prometheus on `http://localhost:9490`. See [Monitoring](monitoring.md).
 
@@ -419,24 +419,24 @@ camunda env add remote-prod --kind remote --orchestration https://cluster.exampl
 camunda env remove remote-prod
 ```
 
-| Subcommand | Purpose |
-| ---------- | ------- |
-| `list` | List global and project-local profiles |
-| `show` | Print active profile name |
-| `use` | Set active profile (project-local when run inside a project) |
-| `add` | Create a global profile |
-| `remove` | Delete a profile (refuses when referenced) |
+| Subcommand | Purpose                                                      |
+| ---------- | ------------------------------------------------------------ |
+| `list`     | List global and project-local profiles                       |
+| `show`     | Print active profile name                                    |
+| `use`      | Set active profile (project-local when run inside a project) |
+| `add`      | Create a global profile                                      |
+| `remove`   | Delete a profile (refuses when referenced)                   |
 
-| Flag (`env add`) | Meaning |
-| ---------------- | ------- |
-| `--kind` | `lab` or `remote` (default `remote`) |
-| `--orchestration` | Orchestration REST base URL |
-| `--client-id-env` | Env var holding OIDC client id (default `CAMUNDA_CLIENT_ID`) |
-| `--client-secret-env` | Env var holding OIDC client secret |
-| `--token-url` | HTTPS OIDC token endpoint |
-| `--token-url-env` | Env var holding token URL instead of `--token-url` |
-| `--audience` | OIDC audience for cluster API token |
-| `--scope` | OIDC scope |
+| Flag (`env add`)      | Meaning                                                      |
+| --------------------- | ------------------------------------------------------------ |
+| `--kind`              | `lab` or `remote` (default `remote`)                         |
+| `--orchestration`     | Orchestration REST base URL                                  |
+| `--client-id-env`     | Env var holding OIDC client id (default `CAMUNDA_CLIENT_ID`) |
+| `--client-secret-env` | Env var holding OIDC client secret                           |
+| `--token-url`         | HTTPS OIDC token endpoint                                    |
+| `--token-url-env`     | Env var holding token URL instead of `--token-url`           |
+| `--audience`          | OIDC audience for cluster API token                          |
+| `--scope`             | OIDC scope                                                   |
 
 Secrets are **never** stored in profile YAML — only env-var references. Full labs with Keycloak resolve tokens from lab `.env` automatically for local Orchestration REST calls.
 
@@ -452,12 +452,12 @@ camunda incidents retry 9007199254740993 --yes
 camunda incidents retry 9007199254740993 --dry-run
 ```
 
-| Flag | Meaning |
-| ---- | ------- |
-| `--env` | Environment profile (default: resolved active) |
-| `--limit` | Max incidents returned (default `50`) |
-| `--yes` / `-y` | Confirm resolve (`retry` only) |
-| `--dry-run` | Validate resolve without mutation |
+| Flag           | Meaning                                        |
+| -------------- | ---------------------------------------------- |
+| `--env`        | Environment profile (default: resolved active) |
+| `--limit`      | Max incidents returned (default `50`)          |
+| `--yes` / `-y` | Confirm resolve (`retry` only)                 |
+| `--dry-run`    | Validate resolve without mutation              |
 
 Uses Orchestration REST `POST /v2/incidents/search` and `POST /v2/incidents/{key}/resolution`. Requires a reachable cluster and OIDC credentials when not on a local full lab.
 
@@ -472,15 +472,15 @@ camunda trace 9007199254740993 --follow --interval 2s --timeout 5m
 camunda trace 9007199254740993 --follow --idle-stop 30s --max-events 10
 ```
 
-| Flag | Meaning |
-| ---- | ------- |
-| `--env` | Environment profile |
-| `--json` | Emit JSON timeline |
-| `--follow` / `-f` | Poll until terminal state or timeout |
-| `--interval` | Follow poll interval (default `2s`) |
-| `--timeout` | Follow timeout (CLI default `5m`; API follow defaults to `30s`) |
-| `--idle-stop` | Stop follow after idle period (**CLI-only**) |
-| `--max-events` | Max changed timelines while following (`0` = domain default) |
+| Flag              | Meaning                                                         |
+| ----------------- | --------------------------------------------------------------- |
+| `--env`           | Environment profile                                             |
+| `--json`          | Emit JSON timeline                                              |
+| `--follow` / `-f` | Poll until terminal state or timeout                            |
+| `--interval`      | Follow poll interval (default `2s`)                             |
+| `--timeout`       | Follow timeout (CLI default `5m`; API follow defaults to `30s`) |
+| `--idle-stop`     | Stop follow after idle period (**CLI-only**)                    |
+| `--max-events`    | Max changed timelines while following (`0` = domain default)    |
 
 ---
 

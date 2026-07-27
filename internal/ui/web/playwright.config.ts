@@ -11,7 +11,10 @@ export default defineConfig({
   retries: 0,
   forbidOnly: Boolean(process.env.CI),
   outputDir: path.join(rootDir, 'test-results'),
-  reporter: [['list'], ['html', { open: 'never', outputFolder: path.join(rootDir, 'playwright-report') }]],
+  reporter: [
+    ['list'],
+    ['html', { open: 'never', outputFolder: path.join(rootDir, 'playwright-report') }],
+  ],
   use: {
     ...devices['Desktop Chrome'],
     baseURL: 'http://127.0.0.1:4173',

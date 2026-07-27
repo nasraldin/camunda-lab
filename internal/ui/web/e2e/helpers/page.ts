@@ -9,7 +9,10 @@ export type PreparedPage = {
   mutations: Awaited<ReturnType<typeof mockAPI>>
 }
 
-export async function prepareMockPage(page: Page, options: ApiMockOptions = {}): Promise<PreparedPage> {
+export async function prepareMockPage(
+  page: Page,
+  options: ApiMockOptions = {},
+): Promise<PreparedPage> {
   const monitor = attachTestMonitor(page)
   const mutations = await mockAPI(page, options)
   return { monitor, mutations }
@@ -35,10 +38,13 @@ export async function setTheme(page: Page, theme: 'light' | 'dark'): Promise<voi
 }
 
 export async function assertCardBorderVisible(page: Page): Promise<void> {
-  const borderWidth = await page.locator('.card').first().evaluate((element) => {
-    const style = window.getComputedStyle(element)
-    return style.borderTopWidth
-  })
+  const borderWidth = await page
+    .locator('.card')
+    .first()
+    .evaluate((element) => {
+      const style = window.getComputedStyle(element)
+      return style.borderTopWidth
+    })
   expect(borderWidth).not.toBe('0px')
 }
 

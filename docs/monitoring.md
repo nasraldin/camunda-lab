@@ -21,9 +21,9 @@ You can also toggle it from the **Monitoring** page in `camunda ui`, and the
 
 ## What you get
 
-| Component | Host URL | Notes |
-| --- | --- | --- |
-| Grafana | `http://localhost:3000` | `admin` / `admin`, dashboards preloaded |
+| Component  | Host URL                | Notes                                               |
+| ---------- | ----------------------- | --------------------------------------------------- |
+| Grafana    | `http://localhost:3000` | `admin` / `admin`, dashboards preloaded             |
 | Prometheus | `http://localhost:9490` | scraper UI (`9090` is the Lab UI, so it's remapped) |
 
 Bundled starter dashboards (folder **Camunda Lab** in Grafana):
@@ -41,7 +41,7 @@ consolidated cluster as the `orchestration` service; 8.5–8.7 use `zeebe`. The
 shipped `prometheus.yml` targets both, plus `connectors` and the ES exporter.
 
 Scrape targets are **best-effort per Camunda minor**: unknown targets simply show
-as *down* in Prometheus and their panels stay empty — harmless for a lab. Tune
+as _down_ in Prometheus and their panels stay empty — harmless for a lab. Tune
 them by editing:
 
 ```

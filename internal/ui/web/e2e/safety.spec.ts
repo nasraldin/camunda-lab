@@ -15,9 +15,9 @@ test('confirmation gates lab stop and restart', async ({ page }) => {
   await page.getByRole('button', { name: 'Restart lab' }).click()
   expect(mutations).toHaveLength(count)
   await page.getByRole('button', { name: 'Restart lab', exact: true }).last().click()
-  await expect.poll(() => mutations.map((r) => new URL(r.url()).pathname)).toContain(
-    '/api/v1/restart',
-  )
+  await expect
+    .poll(() => mutations.map((r) => new URL(r.url()).pathname))
+    .toContain('/api/v1/restart')
   monitor.assertClean()
 })
 

@@ -49,8 +49,7 @@ export type Container = {
 }
 
 export type UrlEntry =
-  | { Name: string; URL: string; Notes?: string }
-  | { name: string; url: string; notes?: string }
+  { Name: string; URL: string; Notes?: string } | { name: string; url: string; notes?: string }
 
 export type ProbeResult = {
   name: string

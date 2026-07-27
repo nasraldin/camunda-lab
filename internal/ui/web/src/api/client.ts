@@ -33,7 +33,10 @@ export async function mutationFetch(
   const res = await fetch(path, { ...init, headers })
 
   if (!refreshed && res.status === 403) {
-    const payload = (await res.clone().json().catch(() => null)) as { code?: string } | null
+    const payload = (await res
+      .clone()
+      .json()
+      .catch(() => null)) as { code?: string } | null
     if (payload?.code === 'csrf_invalid') {
       sessionToken = undefined
       return mutationFetch(path, init, true)
@@ -71,11 +74,7 @@ export async function toolkitJSON<T>(
   return parseJSON<T>(await mutationFetch(path, init))
 }
 
-export async function postForm<T>(
-  path: string,
-  form: FormData,
-  signal?: AbortSignal,
-): Promise<T> {
+export async function postForm<T>(path: string, form: FormData, signal?: AbortSignal): Promise<T> {
   return parseJSON<T>(await mutationFetch(path, { method: 'POST', body: form, signal }))
 }
 
@@ -109,6 +108,10 @@ export function triggerBrowserDownload(blob: Blob, filename: string): void {
   URL.revokeObjectURL(url)
 }
 
-export function triggerTextDownload(text: string, filename: string, mediaType = 'text/plain'): void {
+export function triggerTextDownload(
+  text: string,
+  filename: string,
+  mediaType = 'text/plain',
+): void {
   triggerBrowserDownload(new Blob([text], { type: mediaType }), filename)
 }

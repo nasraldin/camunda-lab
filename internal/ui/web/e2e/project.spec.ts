@@ -66,7 +66,9 @@ test('project restore requires typed RESTORE confirmation', async ({ page }) => 
   await expect(page.getByRole('button', { name: 'Restore backup' })).toBeDisabled()
   await page.getByLabel('Type RESTORE to confirm').fill('RESTORE')
   await page.getByRole('button', { name: 'Restore backup' }).click()
-  await expect.poll(() => mutations.map((r) => new URL(r.url()).pathname)).toContain('/api/v1/restore')
+  await expect
+    .poll(() => mutations.map((r) => new URL(r.url()).pathname))
+    .toContain('/api/v1/restore')
   monitor.assertClean()
 })
 

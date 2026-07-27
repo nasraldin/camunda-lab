@@ -39,7 +39,9 @@ test('cluster trace partial follow result', async ({ page }) => {
   await page.goto('/cluster')
   await page.waitForLoadState('networkidle')
   await page.getByPlaceholder('2251799813685249').fill('2251799813685249')
-  await page.getByRole('checkbox', { name: 'Bounded follow (max 20 events / 30s)' }).click({ force: true })
+  await page
+    .getByRole('checkbox', { name: 'Bounded follow (max 20 events / 30s)' })
+    .click({ force: true })
   await page.getByRole('button', { name: 'Follow timeline' }).click()
   await expect(page.getByText('partial', { exact: true })).toBeVisible()
   monitor.assertClean()

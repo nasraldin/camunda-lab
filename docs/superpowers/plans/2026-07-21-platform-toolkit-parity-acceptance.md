@@ -22,12 +22,14 @@
 ### Task 1: Characterize complete CLI/API parity
 
 **Files:**
+
 - Create: `internal/cli/toolkit_contract_test.go`
 - Create: `internal/cli/toolkit_execution_test.go`
 - Create: `internal/ui/api/routes_toolkit_test.go`
 - Create: `internal/toolkit/parity_test.go`
 
 **Interfaces:**
+
 - Consumes stable domain request/result types from the developer-tools and platform-ops plans.
 - Produces an executable inventory of every promised command, flag, route, field, status, JSON shape, and exit code.
 
@@ -54,6 +56,7 @@
 ### Task 2: CLI exit and JSON contracts
 
 **Files:**
+
 - Create: `internal/cli/execute.go`
 - Create: `internal/cli/exit_test.go`
 - Modify: `cmd/camunda/main.go`
@@ -73,6 +76,7 @@ func ExitCode(error) int
 ### Task 3: Full HTTP integration and stable errors
 
 **Files:**
+
 - Create: `internal/ui/api/dependencies.go`
 - Create: `internal/ui/api/errors_test.go`
 - Expand: `internal/ui/api/routes_toolkit_test.go`
@@ -100,6 +104,7 @@ func ExitCode(error) int
 ### Task 4: Secure browser artifact downloads
 
 **Files:**
+
 - Create: `internal/toolkit/artifact.go`
 - Create: `internal/ui/api/downloads_test.go`
 - Create: `internal/testgen/artifact_test.go`
@@ -121,6 +126,7 @@ POST /api/v1/backup/download             -> application/gzip
 ### Task 5: Typed React API and explicit result states
 
 **Files:**
+
 - Create: `internal/ui/web/src/api/client.ts`
 - Create: `internal/ui/web/src/api/toolkit.ts`
 - Create: `internal/ui/web/src/api/types.ts`
@@ -142,6 +148,7 @@ POST /api/v1/backup/download             -> application/gzip
 ### Task 6: Frontend quality and Chrome setup
 
 **Files:**
+
 - Modify: `internal/ui/web/package.json`
 - Modify: `internal/ui/web/package-lock.json`
 - Create: `internal/ui/web/eslint.config.js`
@@ -182,6 +189,7 @@ npm install --save-dev @axe-core/playwright eslint typescript-eslint eslint-plug
 ### Task 7: Browser workflow coverage
 
 **Files:**
+
 - Create: `internal/ui/web/e2e/navigation.spec.ts`
 - Create: `internal/ui/web/e2e/bpmn.spec.ts`
 - Create: `internal/ui/web/e2e/cluster.spec.ts`
@@ -203,6 +211,7 @@ npm install --save-dev @axe-core/playwright eslint typescript-eslint eslint-plug
 ### Task 8: Ownership-safe acceptance harness
 
 **Files:**
+
 - Create: `scripts/acceptance/lib.sh`
 - Create: `scripts/acceptance/platform-toolkit-light.sh`
 - Create: `scripts/acceptance/platform-toolkit-full.sh`
@@ -239,6 +248,7 @@ ownership manifest
 ### Task 9: Chrome DevTools live acceptance
 
 **Files:**
+
 - Create: `docs/acceptance/platform-toolkit-parity.md`
 - Write ignored artifacts under: `artifacts/acceptance/<run-id>/`
 
@@ -270,6 +280,7 @@ ownership manifest
 ### Task 10: Documentation truthfulness and final gate
 
 **Files:**
+
 - Create: `docs/api-reference.md`
 - Create: `internal/cli/docs_contract_test.go`
 - Create: `internal/ui/api/docs_contract_test.go`

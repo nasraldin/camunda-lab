@@ -3,14 +3,7 @@ export type ToolkitStatus = 'completed' | 'partial' | 'failed' | 'skipped'
 export type AIStatus = 'disabled' | 'skipped' | 'succeeded' | 'failed'
 
 export type ResultPhase =
-  | 'idle'
-  | 'loading'
-  | 'empty'
-  | 'success'
-  | 'findings'
-  | 'partial'
-  | 'unsupported'
-  | 'failure'
+  'idle' | 'loading' | 'empty' | 'success' | 'findings' | 'partial' | 'unsupported' | 'failure'
 
 export type ToolkitWarning = {
   code: string

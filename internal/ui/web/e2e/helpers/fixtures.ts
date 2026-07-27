@@ -1,13 +1,7 @@
 import type { ToolkitEnvelope } from '../../src/api/types'
 
 export type MockToolkitState =
-  | 'loading'
-  | 'empty'
-  | 'success'
-  | 'findings'
-  | 'partial'
-  | 'unsupported'
-  | 'failure'
+  'loading' | 'empty' | 'success' | 'findings' | 'partial' | 'unsupported' | 'failure'
 
 export function mockToolkitResponse(state: MockToolkitState): ToolkitEnvelope {
   switch (state) {

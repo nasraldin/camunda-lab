@@ -35,7 +35,9 @@ function writeRaw(entries: BpmnHistoryEntry[]): void {
   }
 }
 
-function entryKey(entry: Pick<BpmnHistoryEntry, 'kind' | 'path' | 'projectDir' | 'fileName' | 'xml'>): string {
+function entryKey(
+  entry: Pick<BpmnHistoryEntry, 'kind' | 'path' | 'projectDir' | 'fileName' | 'xml'>,
+): string {
   if (entry.kind === 'path') return `path:${entry.path ?? ''}`
   if (entry.kind === 'project') return `project:${entry.projectDir ?? ''}`
   return `upload:${entry.fileName ?? 'file'}:${(entry.xml ?? '').slice(0, 120)}`
@@ -73,7 +75,9 @@ export function addBpmnHistory(
         : entry.fileName || 'Uploaded BPMN')
 
   const xml =
-    entry.kind === 'upload' && entry.xml && entry.xml.length <= MAX_XML_CHARS ? entry.xml : undefined
+    entry.kind === 'upload' && entry.xml && entry.xml.length <= MAX_XML_CHARS
+      ? entry.xml
+      : undefined
 
   const normalized: BpmnHistoryEntry = {
     id: `${openedAt}-${Math.random().toString(36).slice(2, 8)}`,

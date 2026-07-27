@@ -77,9 +77,7 @@ test('BPMN idle state shows guidance before run', async ({ page }) => {
   const { monitor } = await prepareMockPage(page)
   await page.goto('/bpmn')
   await page.waitForLoadState('networkidle')
-  await expect(
-    page.getByText('Choose inputs and run the selected developer tool.'),
-  ).toBeVisible()
+  await expect(page.getByText('Choose inputs and run the selected developer tool.')).toBeVisible()
   monitor.assertClean()
 })
 

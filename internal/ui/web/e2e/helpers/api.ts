@@ -268,9 +268,9 @@ export async function expectNoMutationBeforeConfirm(
   await expect(page.getByRole('dialog')).toBeVisible()
   expect(mutations).toHaveLength(0)
   await page.getByRole('button', { name: confirmButton }).click()
-  await expect.poll(() => mutations.map((request) => new URL(request.url()).pathname)).toContain(
-    expectedPath,
-  )
+  await expect
+    .poll(() => mutations.map((request) => new URL(request.url()).pathname))
+    .toContain(expectedPath)
 }
 
 export function assertSameOriginMutations(mutations: Request[], baseURL: string): void {

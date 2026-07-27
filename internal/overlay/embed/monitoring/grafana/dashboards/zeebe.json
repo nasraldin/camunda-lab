@@ -16,9 +16,7 @@
       "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
       "datasource": null,
       "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
-      "targets": [
-        { "expr": "sum(up{job=\"orchestration\"})", "legendFormat": "up" }
-      ]
+      "targets": [{ "expr": "sum(up{job=\"orchestration\"})", "legendFormat": "up" }]
     },
     {
       "type": "timeseries",
@@ -27,7 +25,10 @@
       "datasource": null,
       "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
       "targets": [
-        { "expr": "jvm_memory_used_bytes{job=\"orchestration\"}", "legendFormat": "{{area}} {{id}}" }
+        {
+          "expr": "jvm_memory_used_bytes{job=\"orchestration\"}",
+          "legendFormat": "{{area}} {{id}}"
+        }
       ]
     },
     {
@@ -37,7 +38,10 @@
       "datasource": null,
       "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] },
       "targets": [
-        { "expr": "rate(zeebe_stream_processor_records_total[1m])", "legendFormat": "{{action}} p{{partition}}" }
+        {
+          "expr": "rate(zeebe_stream_processor_records_total[1m])",
+          "legendFormat": "{{action}} p{{partition}}"
+        }
       ]
     },
     {
@@ -56,9 +60,7 @@
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
       "datasource": null,
       "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] },
-      "targets": [
-        { "expr": "process_cpu_usage{job=\"orchestration\"}", "legendFormat": "cpu" }
-      ]
+      "targets": [{ "expr": "process_cpu_usage{job=\"orchestration\"}", "legendFormat": "cpu" }]
     }
   ]
 }

@@ -85,9 +85,9 @@ test('csrf transport covers JSON, multipart, DELETE, and one invalid-token refre
   })
   await page.getByLabel('Type RESTORE to confirm').fill('RESTORE')
   await page.getByRole('button', { name: 'Restore backup' }).click()
-  await expect.poll(() => mutations.some((r) => r.postDataBuffer()?.includes(Buffer.from('archive')))).toBe(
-    true,
-  )
+  await expect
+    .poll(() => mutations.some((r) => r.postDataBuffer()?.includes(Buffer.from('archive'))))
+    .toBe(true)
   const multipart = mutations.at(-1)
   expect(multipart?.headers()['x-camunda-lab-csrf']).toBe(csrfToken)
   expect(multipart?.headers()['content-type']).toMatch(/^multipart\/form-data; boundary=/)

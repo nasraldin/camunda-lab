@@ -8,22 +8,22 @@ This document records what passed in the current environment versus what remains
 
 ## Summary
 
-| Layer | Status | Evidence |
-|-------|--------|----------|
-| A8 harness self-tests | **PASS** | `make acceptance-self-test`, `artifacts/.../a9-selftest.log` |
-| `make acceptance-light` | Harness **PASS**; live **UNAVAILABLE** | `light/unavailable-live-light.txt`, `light/install.log` |
-| `make acceptance-full` | Harness **PASS**; live **UNAVAILABLE** | `full/unavailable-live-full.txt`, `full/install.log` |
-| Go contract/parity suites | **PASS** | `a9-go-tests.log` |
-| Playwright mock (A7) | **PASS** (58/58) | `a9-playwright.log`, `internal/ui/web/playwright-report/` |
-| Chrome DevTools live | **UNAVAILABLE** | No live UI stack; harness does not emit DevTools artifacts yet |
-| Live OIDC / incidents / trace | **UNAVAILABLE** | Requires disposable Camunda stack + cluster credentials |
+| Layer                         | Status                                 | Evidence                                                       |
+| ----------------------------- | -------------------------------------- | -------------------------------------------------------------- |
+| A8 harness self-tests         | **PASS**                               | `make acceptance-self-test`, `artifacts/.../a9-selftest.log`   |
+| `make acceptance-light`       | Harness **PASS**; live **UNAVAILABLE** | `light/unavailable-live-light.txt`, `light/install.log`        |
+| `make acceptance-full`        | Harness **PASS**; live **UNAVAILABLE** | `full/unavailable-live-full.txt`, `full/install.log`           |
+| Go contract/parity suites     | **PASS**                               | `a9-go-tests.log`                                              |
+| Playwright mock (A7)          | **PASS** (58/58)                       | `a9-playwright.log`, `internal/ui/web/playwright-report/`      |
+| Chrome DevTools live          | **UNAVAILABLE**                        | No live UI stack; harness does not emit DevTools artifacts yet |
+| Live OIDC / incidents / trace | **UNAVAILABLE**                        | Requires disposable Camunda stack + cluster credentials        |
 
 **Overall A9 gate:** **partial** — automated mock and Go evidence is green; live Chrome DevTools acceptance is **not** complete. **A10** added docs-contract tests, `docs/api-reference.md`, and qualified roadmap/architecture claims; Gate 5 remains open.
 
 ## Environment
 
-| Check | Value |
-|-------|-------|
+| Check  | Value     |
+| ------ | --------- |
 | Docker | Available |
 
 ## What passed
@@ -111,14 +111,14 @@ Playwright **mock** axe/console checks (A7) are linked above; they are not a sub
 
 Without a disposable live stack, the following were **not** exercised:
 
-| Workflow | Status |
-|----------|--------|
-| Install / up / wait / smoke (real Compose) | UNAVAILABLE (see install logs) |
-| Home deep diagnostics, endpoint cards | UNAVAILABLE |
-| OIDC token acquisition | UNAVAILABLE |
-| Live incidents list/show/resolve/refresh | UNAVAILABLE |
-| Live trace / follow | UNAVAILABLE |
-| Live plan / drift against cluster | UNAVAILABLE |
+| Workflow                                    | Status                                      |
+| ------------------------------------------- | ------------------------------------------- |
+| Install / up / wait / smoke (real Compose)  | UNAVAILABLE (see install logs)              |
+| Home deep diagnostics, endpoint cards       | UNAVAILABLE                                 |
+| OIDC token acquisition                      | UNAVAILABLE                                 |
+| Live incidents list/show/resolve/refresh    | UNAVAILABLE                                 |
+| Live trace / follow                         | UNAVAILABLE                                 |
+| Live plan / drift against cluster           | UNAVAILABLE                                 |
 | Backup/restore round trip (live filesystem) | UNAVAILABLE (mock download/restore UI only) |
 
 ## Artifact layout

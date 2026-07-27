@@ -9,12 +9,12 @@ The Lab API binds loopback addresses, rejects non-local `Host` headers, and requ
 
 ## Request boundary
 
-| Check | Rule |
-| ----- | ---- |
-| Bind | Loopback only (`localhost`, `127.0.0.1`, `[::1]`) |
-| `Host` | Must match bind address (optional numeric port) |
-| Read methods | `GET`, `HEAD`, `OPTIONS` — no CSRF |
-| Mutations | `Origin` must equal `http://<Host>`; send `X-Camunda-Lab-CSRF` from `GET /api/v1/session` |
+| Check        | Rule                                                                                      |
+| ------------ | ----------------------------------------------------------------------------------------- |
+| Bind         | Loopback only (`localhost`, `127.0.0.1`, `[::1]`)                                         |
+| `Host`       | Must match bind address (optional numeric port)                                           |
+| Read methods | `GET`, `HEAD`, `OPTIONS` — no CSRF                                                        |
+| Mutations    | `Origin` must equal `http://<Host>`; send `X-Camunda-Lab-CSRF` from `GET /api/v1/session` |
 
 Fetch the CSRF token once per page load:
 
@@ -38,15 +38,15 @@ Failed requests return JSON:
 }
 ```
 
-| HTTP status | Typical `code` | Meaning |
-| ----------- | ---------------- | ------- |
-| 400 | `invalid_request` | Malformed JSON, unknown fields, missing required input |
-| 403 | `path_forbidden`, `invalid_origin`, `invalid_csrf` | Path outside allowed roots or failed security boundary |
-| 404 | `not_found` | Missing resource (incident, trace instance, env profile) |
-| 409 | `conflict`, `artifact` | Env profile in use, artifact already exists |
-| 413 | `payload_too_large` | Upload exceeds limit (restore archives capped at **50 MiB** compressed) |
-| 422 | `invalid_request`, `invalid` | Unsupported capability (e.g. unknown test-gen language) |
-| 502 | `upstream`, `ai` | Orchestration REST or AI provider failure |
+| HTTP status | Typical `code`                                     | Meaning                                                                 |
+| ----------- | -------------------------------------------------- | ----------------------------------------------------------------------- |
+| 400         | `invalid_request`                                  | Malformed JSON, unknown fields, missing required input                  |
+| 403         | `path_forbidden`, `invalid_origin`, `invalid_csrf` | Path outside allowed roots or failed security boundary                  |
+| 404         | `not_found`                                        | Missing resource (incident, trace instance, env profile)                |
+| 409         | `conflict`, `artifact`                             | Env profile in use, artifact already exists                             |
+| 413         | `payload_too_large`                                | Upload exceeds limit (restore archives capped at **50 MiB** compressed) |
+| 422         | `invalid_request`, `invalid`                       | Unsupported capability (e.g. unknown test-gen language)                 |
+| 502         | `upstream`, `ai`                                   | Orchestration REST or AI provider failure                               |
 
 Internal failures use `internal_error` with a generic message (no stack traces or temp paths).
 
@@ -63,50 +63,50 @@ BPMN toolkit routes (`/api/v1/bpmn/*`) return a stable success shape:
 }
 ```
 
-| Field | Meaning |
-| ----- | ------- |
-| `ok` | `true` when the operation completed without policy failure |
-| `status` | Domain status (`completed`, `partial`, `refused`, …) |
+| Field      | Meaning                                                           |
+| ---------- | ----------------------------------------------------------------- |
+| `ok`       | `true` when the operation completed without policy failure        |
+| `status`   | Domain status (`completed`, `partial`, `refused`, …)              |
 | `complete` | `false` when scan/review could not finish (e.g. unreadable files) |
-| `findings` | Lint/scan/review findings (shape varies by route) |
+| `findings` | Lint/scan/review findings (shape varies by route)                 |
 
 Plan, drift, incidents, and trace routes follow their domain schemas but always set `ok` honestly — incomplete remote inventory never reports success.
 
 ## Session and overview
 
-| Method | Path | Purpose |
-| ------ | ---- | ------- |
-| `GET` | `/api/v1/session` | CSRF token + session metadata |
-| `GET` | `/api/v1/overview` | Lab status strip (version, profile, health summary) |
+| Method | Path               | Purpose                                             |
+| ------ | ------------------ | --------------------------------------------------- |
+| `GET`  | `/api/v1/session`  | CSRF token + session metadata                       |
+| `GET`  | `/api/v1/overview` | Lab status strip (version, profile, health summary) |
 
 ## Lab lifecycle (selected)
 
-| Method | Path | Purpose |
-| ------ | ---- | ------- |
-| `POST` | `/api/v1/install` | Guided install |
-| `POST` | `/api/v1/up` / `/down` / `/restart` | Compose lifecycle |
-| `POST` | `/api/v1/switch` | Change Camunda minor |
-| `POST` | `/api/v1/profile` / `/resources` | Profile and heap presets |
-| `GET` | `/api/v1/doctor` / `/smoke` | Shallow health |
-| `GET` | `/api/v1/containers` | Service list |
-| `POST` | `/api/v1/containers/{service}/restart` | Restart one service (confirmation in UI) |
-| `GET` | `/api/v1/logs/{service}` | Container logs |
-| `POST` | `/api/v1/nuke` | Wipe lab home (typed `DELETE` + UI confirmation) |
+| Method | Path                                   | Purpose                                          |
+| ------ | -------------------------------------- | ------------------------------------------------ |
+| `POST` | `/api/v1/install`                      | Guided install                                   |
+| `POST` | `/api/v1/up` / `/down` / `/restart`    | Compose lifecycle                                |
+| `POST` | `/api/v1/switch`                       | Change Camunda minor                             |
+| `POST` | `/api/v1/profile` / `/resources`       | Profile and heap presets                         |
+| `GET`  | `/api/v1/doctor` / `/smoke`            | Shallow health                                   |
+| `GET`  | `/api/v1/containers`                   | Service list                                     |
+| `POST` | `/api/v1/containers/{service}/restart` | Restart one service (confirmation in UI)         |
+| `GET`  | `/api/v1/logs/{service}`               | Container logs                                   |
+| `POST` | `/api/v1/nuke`                         | Wipe lab home (typed `DELETE` + UI confirmation) |
 
 Full lab routes are implemented in `internal/ui/api/handlers.go`; this page focuses on toolkit parity.
 
 ## BPMN developer toolkit
 
-| Method | Path | CLI equivalent |
-| ------ | ---- | -------------- |
-| `POST` | `/api/v1/bpmn/lint` | `camunda lint` |
-| `POST` | `/api/v1/bpmn/diff` | `camunda diff` |
-| `POST` | `/api/v1/bpmn/explain` | `camunda explain` |
-| `POST` | `/api/v1/bpmn/review` | `camunda review` |
-| `POST` | `/api/v1/bpmn/test-generate` | `camunda test generate` |
+| Method | Path                                  | CLI equivalent          |
+| ------ | ------------------------------------- | ----------------------- |
+| `POST` | `/api/v1/bpmn/lint`                   | `camunda lint`          |
+| `POST` | `/api/v1/bpmn/diff`                   | `camunda diff`          |
+| `POST` | `/api/v1/bpmn/explain`                | `camunda explain`       |
+| `POST` | `/api/v1/bpmn/review`                 | `camunda review`        |
+| `POST` | `/api/v1/bpmn/test-generate`          | `camunda test generate` |
 | `POST` | `/api/v1/bpmn/test-generate/download` | In-browser ZIP download |
-| `POST` | `/api/v1/bpmn/scan` | `camunda scan` |
-| `GET` | `/api/v1/doctor/deep` | `camunda doctor --deep` |
+| `POST` | `/api/v1/bpmn/scan`                   | `camunda scan`          |
+| `GET`  | `/api/v1/doctor/deep`                 | `camunda doctor --deep` |
 
 JSON bodies reject unknown fields (`invalid_request`). Paths must be absolute and under allowed roots (home, `/tmp`, lab home).
 
@@ -124,11 +124,11 @@ Exactly one mode per request:
 
 ## Environment profiles
 
-| Method | Path | CLI equivalent |
-| ------ | ---- | -------------- |
-| `GET` | `/api/v1/env?dir=` | `camunda env list` |
-| `POST` | `/api/v1/env` | `camunda env add` |
-| `POST` | `/api/v1/env/use` | `camunda env use` |
+| Method   | Path                      | CLI equivalent       |
+| -------- | ------------------------- | -------------------- |
+| `GET`    | `/api/v1/env?dir=`        | `camunda env list`   |
+| `POST`   | `/api/v1/env`             | `camunda env add`    |
+| `POST`   | `/api/v1/env/use`         | `camunda env use`    |
 | `DELETE` | `/api/v1/env/{name}?dir=` | `camunda env remove` |
 
 Remote profiles store **OIDC** auth by reference (`client-id-env`, `client-secret-env`, `token-url`, `token-url-env`, `audience`, `scope`) — never inline secrets. Full labs resolve tokens from lab `.env` automatically; remote profiles use named environment variables.
@@ -139,24 +139,24 @@ Query `dir` must be an absolute authorized project path when scoping project-loc
 
 Requires `.camunda.yaml` in the project directory (`dir` field). Uses Orchestration REST `/v2` via the active env profile.
 
-| Method | Path | CLI equivalent |
-| ------ | ---- | -------------- |
-| `POST` | `/api/v1/plan` | `camunda plan` |
-| `POST` | `/api/v1/drift` | `camunda drift` |
-| `GET` | `/api/v1/incidents?dir=` | `camunda incidents list` |
-| `POST` | `/api/v1/incidents/{key}/retry` | `camunda incidents retry` (UI confirmation gate) |
-| `GET` | `/api/v1/trace/{instanceKey}?dir=&follow=` | `camunda trace` |
+| Method | Path                                       | CLI equivalent                                   |
+| ------ | ------------------------------------------ | ------------------------------------------------ |
+| `POST` | `/api/v1/plan`                             | `camunda plan`                                   |
+| `POST` | `/api/v1/drift`                            | `camunda drift`                                  |
+| `GET`  | `/api/v1/incidents?dir=`                   | `camunda incidents list`                         |
+| `POST` | `/api/v1/incidents/{key}/retry`            | `camunda incidents retry` (UI confirmation gate) |
+| `GET`  | `/api/v1/trace/{instanceKey}?dir=&follow=` | `camunda trace`                                  |
 
 Upstream cluster failures return **502** with `upstream`. Missing instances return **404** `not_found`.
 
 ## Project, backup, restore
 
-| Method | Path | CLI equivalent |
-| ------ | ---- | -------------- |
-| `POST` | `/api/v1/project/init` | `camunda init` |
-| `POST` | `/api/v1/backup` | `camunda backup -o …` (requires `output`) |
-| `POST` | `/api/v1/backup/download` | Browser gzip download |
-| `POST` | `/api/v1/restore` | `camunda restore` (multipart upload) |
+| Method | Path                      | CLI equivalent                            |
+| ------ | ------------------------- | ----------------------------------------- |
+| `POST` | `/api/v1/project/init`    | `camunda init`                            |
+| `POST` | `/api/v1/backup`          | `camunda backup -o …` (requires `output`) |
+| `POST` | `/api/v1/backup/download` | Browser gzip download                     |
+| `POST` | `/api/v1/restore`         | `camunda restore` (multipart upload)      |
 
 ### Backup contents and exclusions
 
