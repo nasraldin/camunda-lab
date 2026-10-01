@@ -13,8 +13,6 @@ ACCEPTANCE_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ACCEPTANCE_REPO_ROOT="$(cd "${ACCEPTANCE_LIB_DIR}/../.." && pwd)"
 
 ACCEPTANCE_CLEANUP_RAN=0
-ACCEPTANCE_INVENTORY_BEFORE=""
-ACCEPTANCE_INVENTORY_AFTER=""
 
 acceptance_log() {
   printf '[acceptance] %s\n' "$*" >&2
@@ -295,11 +293,11 @@ acceptance_inventory_snapshot() {
 }
 
 acceptance_record_inventory_before() {
-  ACCEPTANCE_INVENTORY_BEFORE="$(acceptance_inventory_snapshot before)"
+  acceptance_inventory_snapshot before > /dev/null
 }
 
 acceptance_record_inventory_after() {
-  ACCEPTANCE_INVENTORY_AFTER="$(acceptance_inventory_snapshot after)"
+  acceptance_inventory_snapshot after > /dev/null
 }
 
 acceptance_mark_unavailable() {

@@ -30,8 +30,11 @@ tidy:
 	git diff --exit-code -- go.mod go.sum
 
 lint:
-	@command -v golangci-lint >/dev/null 2>&1 || { echo "golangci-lint not installed — skipping (CI uses vet/fmt)"; exit 0; }
-	golangci-lint run ./...
+	@if command -v golangci-lint >/dev/null 2>&1; then \
+		golangci-lint run ./...; \
+	else \
+		echo "golangci-lint not installed — skipping (CI uses vet/fmt)"; \
+	fi
 
 check: fmt-check tidy vet test
 
